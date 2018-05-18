@@ -1,7 +1,7 @@
 pragma solidity ^0.4.23;
-import "./token/StandardToken.sol";
+import "./token/UTXORedeemableToken.sol";
 
-contract BitcoinHex is StandardToken {
+contract BitcoinHex is UTXORedeemableToken {
     string public name = "BitcoinHex"; 
     string public symbol = "BHX";
     uint public decimals = 18;

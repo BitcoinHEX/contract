@@ -44,7 +44,18 @@ contract UTXORedeemableToken is StandardToken {
     uint public maximumRedeemable;
 
     /* Redemption event, containing all relevant data for later analysis if desired. */
-    event UTXORedeemed(bytes32 txid, uint8 outputIndex, uint satoshis, bytes32[] proof, bytes pubKey, uint8 v, bytes32 r, bytes32 s, address indexed redeemer, uint numberOfTokens);
+    event UTXORedeemed(
+        bytes32 txid,
+        uint8 outputIndex,
+        uint satoshis,
+        bytes32[] proof,
+        bytes pubKey,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        address indexed redeemer,
+        uint numberOfTokens
+    );
 
     /**
      * @dev Extract a bytes32 subarray from an arbitrary length bytes array.
@@ -173,7 +184,17 @@ contract UTXORedeemableToken is StandardToken {
      * @param s s parameter of ECDSA signature
      * @return The number of tokens redeemed, if successful
      */
-    function redeemUTXO (bytes32 txid, uint8 outputIndex, uint satoshis, bytes32[] proof, bytes pubKey, bool isCompressed, uint8 v, bytes32 r, bytes32 s) public returns (uint tokensRedeemed) {
+    function redeemUTXO (
+        bytes32 txid,
+        uint8 outputIndex,
+        uint satoshis,
+        bytes32[] proof,
+        bytes pubKey,
+        bool isCompressed,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public returns (uint tokensRedeemed) {
 
         /* Calculate original Bitcoin-style address associated with the provided public key. */
         bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey, isCompressed);
