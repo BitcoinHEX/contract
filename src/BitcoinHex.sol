@@ -1,5 +1,5 @@
 pragma solidity ^0.4.21;
-import "./StandardToken.sol";
+import "./token/StandardToken.sol";
 
 contract BitcoinHex is StandardToken {
     string public name = "BitcoinHex"; 
