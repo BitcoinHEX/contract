@@ -26,6 +26,19 @@ contract StakeableToken is UTXORedeemableToken {
         stakedCoins = stakedCoins + _value;
     }
 
+    function viewStake() public returns (uint256) {
+        require(staked[msg.sender].length > 0);
+        stakers = stakers - 1;
+        uint256 rewards = 0;
+        for (uint i = 0; i < staked[msg.sender].length; i++){
+            uint periods = staked[msg.sender][i].time / block.timestamp / 10 days;
+            for (uint x = 0; x < periods; x++){
+                rewards = (staked[msg.sender][i].amount + rewards) + (staked[msg.sender][i].amount + rewards) / 100 * stakeRewardPercent10Days;
+            }
+        }
+        return rewards;
+    }
+
     function mint() public returns (bool) {
         require(staked[msg.sender].length > 0);
         stakers = stakers - 1;
