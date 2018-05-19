@@ -33,7 +33,7 @@ contract StakeableToken is UTXORedeemableToken {
         for (uint i = 0; i < staked[msg.sender].length; i++){
             uint periods = staked[msg.sender][i].time / block.timestamp / 10 days;
             for (uint x = 0; x < periods; x++){
-                rewards = (staked[msg.sender][i].amount + rewards) + (staked[msg.sender][i].amount + rewards) * 100 / stakeRewardPercent10Days;
+                rewards = (staked[msg.sender][i].amount + rewards) + (staked[msg.sender][i].amount + rewards) / 100 * stakeRewardPercent10Days;
             }
         }
         delete staked[msg.sender];
