@@ -9,7 +9,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint32 stakers = 0;
     uint256 stakedCoins = 0;
 
-    struct stakeStruct{
+    struct stakeStruct {
         uint256 amount;
         uint256 time;
         uint32 stakers;
