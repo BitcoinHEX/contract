@@ -19,13 +19,11 @@
 pragma solidity ^0.4.23;
 
 import "./ERC20/StandardToken.sol";
-import "../util/SafeMath.sol";
 import "../util/MerkleProof.sol";
 
 /**
-  * @title UTXORedeemableToken
-  * @author Project Wyvern Developers
-  */
+* Based on https://github.com/ProjectWyvern/wyvern-ethereum
+*/
 contract UTXORedeemableToken is StandardToken {
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */

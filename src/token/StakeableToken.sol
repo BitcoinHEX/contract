@@ -22,8 +22,8 @@ contract StakeableToken is UTXORedeemableToken {
         require(_value <= balances[msg.sender]);
         balances[msg.sender] = balances[msg.sender].sub(_value);
         staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakers, stakedCoins);
-        stakers = stakers + 1;
-        stakedCoins = stakedCoins + _value;
+        stakers = stakers.add(1);
+        stakedCoins = stakedCoins.add(_value);
     }
 
     function calculateViralRewards() public view returns (uint256) {
@@ -46,7 +46,8 @@ contract StakeableToken is UTXORedeemableToken {
     function mint() public returns (bool) {
         require(staked[msg.sender].amount > 0);
         require(block.timestamp > staked[msg.sender].unlockTime);
-        stakers = stakers - 1;
+        stakers = stakers.sub(1);
+        stakedCoins = stakedCoins.sub(staked[msg.sender].amount);
         uint256 rewards = calculateRewards();
         delete staked[msg.sender];
         emit Mint(msg.sender, rewards);
