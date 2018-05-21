@@ -47,7 +47,7 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function calculateStakingRewards() public view returns (uint256) {
-
+        
     }
 
     function calculateRewards() public view returns (uint256) {
