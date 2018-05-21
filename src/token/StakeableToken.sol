@@ -5,18 +5,26 @@ import "./UTXORedeemableToken.sol";
 contract StakeableToken is UTXORedeemableToken {
     event Mint(address indexed _address, uint _reward);
 
-    uint32 stakers = 0;
+    uint256 stakers = 0;
     uint256 stakedCoins = 0;
 
     struct stakeStruct {
         uint256 amount;
         uint256 time;
         uint256 unlockTime;
-        uint32 stakers;
+        uint256 stakers;
         uint256 stakedCoins;
     }
 
     mapping(address => stakeStruct) staked;
+
+    function compound(uint256 _principle, uint256 _periods, uint256 _interestRate) internal pure returns (uint256) {
+        uint256 result = 0;
+        for (uint256 i = 0; i < _periods; i++) {
+            result = result.add(_principle.mul(_interestRate.div(100)));
+        }
+        return result;
+    }
 
     function stake(uint256 _value, uint256 _unlockTime) public {
         require(_value <= balances[msg.sender]);
@@ -24,6 +32,10 @@ contract StakeableToken is UTXORedeemableToken {
         staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakers, stakedCoins);
         stakers = stakers.add(1);
         stakedCoins = stakedCoins.add(_value);
+    }
+
+    function calculateLazyRewards() public view returns (uint256) {
+
     }
 
     function calculateViralRewards() public view returns (uint256) {
