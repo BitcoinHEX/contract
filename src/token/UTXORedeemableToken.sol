@@ -18,7 +18,7 @@
 
 pragma solidity ^0.4.23;
 
-import "./StandardToken.sol";
+import "./ERC20/StandardToken.sol";
 import "../util/SafeMath.sol";
 import "../util/MerkleProof.sol";
 
