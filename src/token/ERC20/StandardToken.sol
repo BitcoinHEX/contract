@@ -27,9 +27,9 @@ contract StandardToken is ERC20, BasicToken {
         require(_value <= balances[_from]);
         require(_value <= allowed[_from][msg.sender]);
 
-        balances[_from] = balances[_from].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
+        balances[_from] = SafeMath.sub(balances[_from], _value);
+        balances[_to] = SafeMath.add(balances[_to], _value);
+        allowed[_from][msg.sender] = SafeMath.sub(allowed[_from][msg.sender], _value);
         emit Transfer(_from, _to, _value);
         return true;
     }
@@ -71,7 +71,7 @@ contract StandardToken is ERC20, BasicToken {
     * @param _addedValue The amount of tokens to increase the allowance by.
     */
     function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-        allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(_addedValue);
+        allowed[msg.sender][_spender] = SafeMath.add(allowed[msg.sender][_spender], _addedValue);
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
     }
@@ -91,7 +91,7 @@ contract StandardToken is ERC20, BasicToken {
         if (_subtractedValue > oldValue) {
             allowed[msg.sender][_spender] = 0;
         } else {
-            allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
+            allowed[msg.sender][_spender] = SafeMath.sub(oldValue, _subtractedValue);
         }
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;

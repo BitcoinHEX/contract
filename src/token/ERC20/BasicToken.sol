@@ -33,8 +33,8 @@ contract BasicToken is ERC20Basic {
         require(_value <= balances[msg.sender]);
 
         // SafeMath.sub will throw if there is not enough balance.
-        balances[msg.sender] = balances[msg.sender].sub(_value);
-        balances[_to] = balances[_to].add(_value);
+        balances[msg.sender] = SafeMath.sub(balances[msg.sender], _value);
+        balances[_to] = SafeMath.add(balances[_to], _value);
         emit Transfer(msg.sender, _to, _value);
         return true;
     }
