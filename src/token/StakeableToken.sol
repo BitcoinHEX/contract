@@ -33,6 +33,7 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function stake(uint256 _value, uint256 _unlockTime) public {
+        require(staked[msg.sender].amount = 0);
         require(_value <= balances[msg.sender]);
         balances[msg.sender] = SafeMath.sub(balances[msg.sender], _value);
         staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakers, stakedCoins);
