@@ -5,6 +5,8 @@ import "./UTXORedeemableToken.sol";
 contract StakeableToken is UTXORedeemableToken {
     event Mint(address indexed _address, uint _reward);
 
+    uint256 launchTime;
+
     uint256 stakers = 0;
     uint256 stakedCoins = 0;
 

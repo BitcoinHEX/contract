@@ -8,5 +8,6 @@ contract BitcoinHex is StakeableToken {
 
     constructor () public {
         totalSupply_ = 0;
+        launchTime = block.timestamp;
     }
 }
