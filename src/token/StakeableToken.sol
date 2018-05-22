@@ -21,17 +21,23 @@ contract StakeableToken is UTXORedeemableToken {
     function compound(uint256 _principle, uint256 _periods, uint256 _interestRate) internal pure returns (uint256) {
         uint256 result = 0;
         for (uint256 i = 0; i < _periods; i++) {
-            result = result.add(_principle.mul(_interestRate.div(100)));
+            result = SafeMath.add(
+                result,
+                SafeMath.mul(
+                    _principle,
+                    SafeMath.div(_interestRate, 100)
+                )
+            );
         }
         return result;
     }
 
     function stake(uint256 _value, uint256 _unlockTime) public {
         require(_value <= balances[msg.sender]);
-        balances[msg.sender] = balances[msg.sender].sub(_value);
+        balances[msg.sender] = SafeMath.sub(balances[msg.sender], _value);
         staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakers, stakedCoins);
-        stakers = stakers.add(1);
-        stakedCoins = stakedCoins.add(_value);
+        stakers = SafeMath.add(stakers, 1);
+        stakedCoins = SafeMath.add(stakedCoins, _value);
     }
 
     function calculateLazyRewards() public view returns (uint256) {
@@ -58,8 +64,8 @@ contract StakeableToken is UTXORedeemableToken {
     function mint() public returns (bool) {
         require(staked[msg.sender].amount > 0);
         require(block.timestamp > staked[msg.sender].unlockTime);
-        stakers = stakers.sub(1);
-        stakedCoins = stakedCoins.sub(staked[msg.sender].amount);
+        stakers = SafeMath.sub(stakers, 1);
+        stakedCoins = SafeMath.sub(stakedCoins, staked[msg.sender].amount);
         uint256 rewards = calculateRewards();
         delete staked[msg.sender];
         emit Mint(msg.sender, rewards);
