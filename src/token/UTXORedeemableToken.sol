@@ -192,7 +192,7 @@ contract UTXORedeemableToken is StandardToken {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public returns (uint tokensRedeemed) {
+    ) public returns (uint256 tokensRedeemed) {
 
         /* Calculate original Bitcoin-style address associated with the provided public key. */
         bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey, isCompressed);
@@ -230,6 +230,38 @@ contract UTXORedeemableToken is StandardToken {
         /* Return the number of tokens redeemed. */
         return tokensRedeemed;
 
+    }
+
+    function redeemUTXO (
+        bytes32 txid,
+        uint8 outputIndex,
+        uint satoshis,
+        bytes32[] proof,
+        bytes pubKey,
+        bool isCompressed,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        address referrer
+    ) public returns (uint256 tokensRedeemed) {
+        uint256 claimAmount = redeemUTXO (
+            txid,
+            outputIndex,
+            satoshis,
+            proof,
+            pubKey,
+            isCompressed,
+            v,
+            r,
+            s
+        );
+
+        balances[referrer] = SafeMath.add(
+            balances[referrer],
+            SafeMath.div(claimAmount, 20)
+        );
+
+        return claimAmount;
     }
 
 }
