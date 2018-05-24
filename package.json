@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Bitcoin fork onto Ethereum",
   "dependencies": {
+    "ethereumjs-testrpc": "^6.0.3",
     "truffle": "^4.1.11",
     "truffle-wallet-provider": "^0.0.5"
   },
