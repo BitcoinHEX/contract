@@ -18,8 +18,8 @@
 
 pragma solidity ^0.4.23;
 
-import "./ERC20/StandardToken.sol";
-import "../util/MerkleProof.sol";
+import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
+import "./MerkleProof.sol";
 
 /**
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
