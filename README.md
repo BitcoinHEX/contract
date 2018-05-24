@@ -23,10 +23,9 @@ module.exports = {infuraKey: infuraKey, mainnetPK: mainnetPK, ropstenPK:ropstenP
 
 ### Compilation
 ```bash
-# Install Truffle, testrpc, and dependency packages:
 $ npm install
-$ truffle compile
-$ truffle test
+$ npm run compile
+$ npm run test
 ```
 
 [ethereum]: https://www.ethereum.org/
