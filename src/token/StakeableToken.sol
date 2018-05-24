@@ -21,18 +21,8 @@ contract StakeableToken is UTXORedeemableToken {
     mapping(address => stakeStruct) staked;
 
     function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
-        uint256 result = 0;
-        for (uint256 i = 0; i < _periods; i++) {
-            result = SafeMath.add(
-                result,
-                SafeMath.mul(
-                    _principle,
-                    // This needs work since solidity can't handle decimals.
-                    SafeMath.div(_interestRateTimesHundred, 1000)
-                )
-            );
-        }
-        return result;
+        // Needs Sanity Check
+        return (_principle * (1000 + _interestRateTimesHundred) ** _periods)/(1000 ** _periods);
     }
 
     function stake(uint256 _value, uint256 _unlockTime) public {
