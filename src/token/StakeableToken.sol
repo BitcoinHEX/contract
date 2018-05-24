@@ -20,14 +20,15 @@ contract StakeableToken is UTXORedeemableToken {
 
     mapping(address => stakeStruct) staked;
 
-    function compound(uint256 _principle, uint256 _periods, uint256 _interestRate) internal pure returns (uint256) {
+    function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
         uint256 result = 0;
         for (uint256 i = 0; i < _periods; i++) {
             result = SafeMath.add(
                 result,
                 SafeMath.mul(
                     _principle,
-                    SafeMath.div(_interestRate, 100)
+                    // This needs work since solidity can't handle decimals.
+                    SafeMath.div(_interestRateTimesHundred, 1000)
                 )
             );
         }
@@ -56,6 +57,7 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function calculateStakingRewards() public view returns (uint256) {
+        uint256 interestRateTimesHundred = 100;
         
     }
 
