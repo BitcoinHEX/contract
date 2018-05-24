@@ -25,6 +25,7 @@ import "./MerkleProof.sol";
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
 */
 contract UTXORedeemableToken is StandardToken {
+    using SafeMath for uint256;
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
     bytes32 public rootUTXOMerkleTreeHash;
@@ -210,16 +211,16 @@ contract UTXORedeemableToken is StandardToken {
         redeemedUTXOs[merkleLeafHash] = true;
 
         /* Calculate the redeemed tokens. */
-        tokensRedeemed = SafeMath.mul(satoshis, multiplier);
+        tokensRedeemed = satoshis.mul(multiplier);
 
         /* Track total redeemed tokens. */
-        totalRedeemed = SafeMath.add(totalRedeemed, tokensRedeemed);
+        totalRedeemed = totalRedeemed.add(tokensRedeemed);
 
         /* Sanity check. */
         require(totalRedeemed <= maximumRedeemable);
 
         /* Credit the redeemer. */ 
-        balances[msg.sender] = SafeMath.add(balances[msg.sender], tokensRedeemed);
+        balances[msg.sender] = balances[msg.sender].add(tokensRedeemed);
 
         /* Mark the transfer event. */
         emit Transfer(address(0), msg.sender, tokensRedeemed);
@@ -256,10 +257,7 @@ contract UTXORedeemableToken is StandardToken {
             s
         );
 
-        balances[referrer] = SafeMath.add(
-            balances[referrer],
-            SafeMath.div(claimAmount, 20)
-        );
+        balances[referrer] = balances[referrer].add( claimAmount.div(20) );
 
         return claimAmount;
     }

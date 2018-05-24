@@ -3,6 +3,8 @@ pragma solidity ^0.4.23;
 import "./UTXORedeemableToken.sol";
 
 contract StakeableToken is UTXORedeemableToken {
+    using SafeMath for uint256;
+
     event Mint(address indexed _address, uint _reward);
 
     uint256 launchTime;
@@ -28,10 +30,10 @@ contract StakeableToken is UTXORedeemableToken {
     function stake(uint256 _value, uint256 _unlockTime) public {
         require(staked[msg.sender].amount == 0);
         require(_value <= balances[msg.sender]);
-        balances[msg.sender] = SafeMath.sub(balances[msg.sender], _value);
+        balances[msg.sender] = balances[msg.sender].sub(_value);
         staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakers, stakedCoins);
-        stakers = SafeMath.add(stakers, 1);
-        stakedCoins = SafeMath.add(stakedCoins, _value);
+        stakers = stakers.add(1);
+        stakedCoins = stakedCoins.add(_value);
     }
 
     function calculateLazyRewards() public view returns (uint256) {
@@ -59,8 +61,8 @@ contract StakeableToken is UTXORedeemableToken {
     function mint() public returns (bool) {
         require(staked[msg.sender].amount > 0);
         require(block.timestamp > staked[msg.sender].unlockTime);
-        stakers = SafeMath.sub(stakers, 1);
-        stakedCoins = SafeMath.sub(stakedCoins, staked[msg.sender].amount);
+        stakers = stakers.sub(1);
+        stakedCoins = stakedCoins.sub(staked[msg.sender].amount);
         uint256 rewards = calculateRewards();
         delete staked[msg.sender];
         emit Mint(msg.sender, rewards);
