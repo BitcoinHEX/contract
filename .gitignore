@@ -1,1 +1,10 @@
-build
+/node_modules
+/.DS_Store
+/coverage
+/coverageEnv
+/coverage.json
+/allFiredEvents
+/scTopics
+.idea
+.node-xmlhttprequest-sync-*
+secrets.js

@@ -1,5 +1,5 @@
 pragma solidity ^0.4.23;
-import "./token/StakeableToken.sol";
+import "./StakeableToken.sol";
 
 contract BitcoinHex is StakeableToken {
     string public name = "BitcoinHex"; 
