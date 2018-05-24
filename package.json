@@ -1,0 +1,23 @@
+{
+  "name": "bitcoinhex",
+  "version": "0.0.1",
+  "description": "Bitcoin fork onto Ethereum",
+  "dependencies": {
+    "truffle": "^4.1.11",
+    "truffle-wallet-provider": "^0.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "compile": "truffle compile",
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BitcoinHEX/contract.git"
+  },
+  "author": "Kieran Mesquita <mesquitakieran@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/BitcoinHEX/contract/issues"
+  },
+  "homepage": "https://bitcoinhex.com"
+}
