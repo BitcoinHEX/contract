@@ -6,7 +6,6 @@ package-lock.json
 /coverage.json
 /allFiredEvents
 /scTopics
-/build
 .idea
 .node-xmlhttprequest-sync-*
 secrets.js
