@@ -16,8 +16,8 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 amount;
         uint256 time;
         uint256 unlockTime;
-        uint256 stakers;
-        uint256 stakedCoins;
+        uint256 stakersAtStart;
+        uint256 stakedCoinsAtStart;
     }
 
     mapping(address => stakeStruct) staked;
