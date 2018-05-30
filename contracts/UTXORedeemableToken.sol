@@ -257,7 +257,7 @@ contract UTXORedeemableToken is StandardToken {
             s
         );
 
-        balances[referrer] = balances[referrer].add( claimAmount.div(20) );
+        balances[referrer] = balances[referrer].add(claimAmount.div(20));
 
         return claimAmount;
     }
