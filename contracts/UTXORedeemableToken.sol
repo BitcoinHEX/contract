@@ -33,9 +33,6 @@ contract UTXORedeemableToken is StandardToken {
     /* Redeemed UTXOs. */
     mapping(bytes32 => bool) redeemedUTXOs;
 
-    /* Multiplier - tokens per Satoshi, must be initialized by token constructor. */
-    uint public multiplier;
-
     /* Total tokens redeemed so far. */
     uint public totalRedeemed = 0;
 
@@ -209,9 +206,6 @@ contract UTXORedeemableToken is StandardToken {
 
         /* Mark the UTXO as redeemed. */
         redeemedUTXOs[merkleLeafHash] = true;
-
-        /* Calculate the redeemed tokens. */
-        tokensRedeemed = satoshis.mul(multiplier);
 
         /* Track total redeemed tokens. */
         totalRedeemed = totalRedeemed.add(tokensRedeemed);
