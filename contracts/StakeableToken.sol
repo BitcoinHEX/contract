@@ -28,7 +28,7 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function stake(uint256 _value, uint256 _unlockTime) public {
-        require(staked[msg.sender].amount == 0);
+        require(staked[msg.sender].amount == 0); // If == 0 then struct either doesn't exist, or struct with no stake exists
         require(_value <= balances[msg.sender]);
         balances[msg.sender] = balances[msg.sender].sub(_value);
         staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakers, stakedCoins);
@@ -36,34 +36,34 @@ contract StakeableToken is UTXORedeemableToken {
         stakedCoins = stakedCoins.add(_value);
     }
 
-    function calculateLazyRewards() public view returns (uint256) {
+    function calculateLazyRewards(stakeStruct stake) internal view returns (uint256) {
 
     }
 
-    function calculateViralRewards() public view returns (uint256) {
+    function calculateViralRewards(stakeStruct stake) internal view returns (uint256) {
 
     }
 
-    function calculateCritMassRewards() public view returns (uint256) {
+    function calculateCritMassRewards(stakeStruct stake) internal view returns (uint256) {
 
     }
 
-    function calculateStakingRewards() public view returns (uint256) {
+    function calculateStakingRewards(stakeStruct stake) internal view returns (uint256) {
         uint256 interestRateTimesHundred = 100;
         
     }
 
-    function calculateRewards() public view returns (uint256) {
+    function calculateRewards(stakeStruct stake) internal view returns (uint256) {
         uint256 rewards = 0;
         return rewards;
     }
 
     function mint() public returns (bool) {
-        require(staked[msg.sender].amount > 0);
+        require(staked[msg.sender].amount > 0); // If > 0 then struct exists here
         require(block.timestamp > staked[msg.sender].unlockTime);
         stakers = stakers.sub(1);
         stakedCoins = stakedCoins.sub(staked[msg.sender].amount);
-        uint256 rewards = calculateRewards();
+        uint256 rewards = calculateRewards(staked[msg.sender]);
         delete staked[msg.sender];
         emit Mint(msg.sender, rewards);
         return true;

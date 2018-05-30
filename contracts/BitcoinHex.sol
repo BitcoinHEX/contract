@@ -13,6 +13,5 @@ contract BitcoinHex is StakeableToken, Ownable {
         owner = msg.sender;
         rootUTXOMerkleTreeHash = 0x0; // Change before launch
         maximumRedeemable = 0; // Change before launch
-        
     }
 }
