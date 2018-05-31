@@ -18,13 +18,15 @@
 
 pragma solidity ^0.4.23;
 
-import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "../node_modules/zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "../node_modules/zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "../node_modules/zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./MerkleProof.sol";
 
 /**
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
 */
-contract UTXORedeemableToken is StandardToken {
+contract UTXORedeemableToken is StandardToken, Ownable {
     using SafeMath for uint256;
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */

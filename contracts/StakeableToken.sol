@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "./UTXORedeemableToken.sol";
+import "../node_modules/zeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract StakeableToken is UTXORedeemableToken {
     using SafeMath for uint256;
@@ -9,14 +10,12 @@ contract StakeableToken is UTXORedeemableToken {
 
     uint256 launchTime;
 
-    uint256 stakers = 0;
     uint256 stakedCoins = 0;
 
     struct stakeStruct {
-        uint256 amount;
-        uint256 time;
+        uint256 stakeAmount;
+        uint256 stakeTime;
         uint256 unlockTime;
-        uint256 stakersAtStart;
         uint256 stakedCoinsAtStart;
     }
 
@@ -28,11 +27,19 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function stake(uint256 _value, uint256 _unlockTime) public {
-        require(staked[msg.sender].amount == 0); // If == 0 then struct either doesn't exist, or struct with no stake exists
+        /* Check if stake already exists */
+        require(staked[msg.sender].stakeAmount == 0); // If == 0 then struct either doesn't exist, or struct with no stake exists
+
+        /* Check if sender has sufficient balance */
         require(_value <= balances[msg.sender]);
+
+        /* Remove balance from sender */
         balances[msg.sender] = balances[msg.sender].sub(_value);
-        staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakers, stakedCoins);
-        stakers = stakers.add(1);
+
+        /* Create Stake */
+        staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakedCoins);
+
+        /* Add staked coins to global stake counter */
         stakedCoins = stakedCoins.add(_value);
     }
 
@@ -49,22 +56,50 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function calculateStakingRewards(stakeStruct stake) internal view returns (uint256) {
+        /* Base interest rate */
         uint256 interestRateTimesHundred = 100;
-        
+
+        /* Adjust based on coins staked */
+        interestRateTimesHundred = interestRateTimesHundred.mul(
+            totalSupply_.sub(stake.stakedCoinsAtStart)
+        ).div(totalSupply_);
+
+        uint256 periods = block.timestamp.sub(stake.stakeTime).div(10 days);
+
+        return compound(stake.stakeAmount, periods, interestRateTimesHundred);
     }
 
     function calculateRewards(stakeStruct stake) internal view returns (uint256) {
         uint256 rewards = 0;
+        rewards = rewards.add(calculateStakingRewards(stake));
         return rewards;
     }
 
     function mint() public returns (bool) {
-        require(staked[msg.sender].amount > 0); // If > 0 then struct exists here
+        /* Check if stake exists */
+        require(staked[msg.sender].stakeAmount > 0); // If > 0 then struct exists here
+        
+        /* Check if stake has matured */
         require(block.timestamp > staked[msg.sender].unlockTime);
-        stakers = stakers.sub(1);
-        stakedCoins = stakedCoins.sub(staked[msg.sender].amount);
+
+        /* Remove StakedCoins from global counter */
+        stakedCoins = stakedCoins.sub(staked[msg.sender].stakeAmount);
+
+        /* Calculate Rewards */
         uint256 rewards = calculateRewards(staked[msg.sender]);
+
+        /* Award staking rewards to staker */
+        balances[msg.sender] = balances[msg.sender].add(rewards);
+
+        /* Award staking rewards to origin contract */
+        balances[owner] = balances[owner].add(rewards);
+
+        /* Increase supply */
+        totalSupply_ = totalSupply_.add(rewards.mul(2));
+
+        /* Remove Stake */
         delete staked[msg.sender];
+
         emit Mint(msg.sender, rewards);
         return true;
     }

@@ -1,8 +1,7 @@
 pragma solidity ^0.4.23;
 import "./StakeableToken.sol";
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
-contract BitcoinHex is StakeableToken, Ownable {
+contract BitcoinHex is StakeableToken {
     string public name = "BitcoinHex"; 
     string public symbol = "BHX";
     uint public decimals = 8;
