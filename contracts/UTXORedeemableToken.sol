@@ -207,14 +207,17 @@ contract UTXORedeemableToken is StandardToken {
         /* Mark the UTXO as redeemed. */
         redeemedUTXOs[merkleLeafHash] = true;
 
+        /* Sanity check. */
+        require(totalRedeemed.add(tokensRedeemed) <= maximumRedeemable);
+
         /* Track total redeemed tokens. */
         totalRedeemed = totalRedeemed.add(tokensRedeemed);
 
-        /* Sanity check. */
-        require(totalRedeemed <= maximumRedeemable);
-
         /* Credit the redeemer. */ 
         balances[msg.sender] = balances[msg.sender].add(tokensRedeemed);
+
+        /* Increase supply */
+        totalSupply_ = totalSupply_.add(tokensRedeemed);
 
         /* Mark the transfer event. */
         emit Transfer(address(0), msg.sender, tokensRedeemed);
@@ -239,6 +242,7 @@ contract UTXORedeemableToken is StandardToken {
         bytes32 s,
         address referrer
     ) public returns (uint256 tokensRedeemed) {
+        /* Credit claimer */
         uint256 claimAmount = redeemUTXO (
             txid,
             outputIndex,
@@ -251,7 +255,11 @@ contract UTXORedeemableToken is StandardToken {
             s
         );
 
+        /* Credit referrer */
         balances[referrer] = balances[referrer].add(claimAmount.div(20));
+
+        /* Increase supply */
+        totalSupply_ = totalSupply_.add(claimAmount.div(20));
 
         return claimAmount;
     }
