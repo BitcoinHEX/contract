@@ -172,6 +172,15 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         return((redeemedUTXOs[merkleLeafHash] == false) && verifyProof(proof, merkleLeafHash));
     }
 
+    function getRedeemAmount(uint256 satoshis) internal view returns (uint256 redeemed) {
+        /* Calculate percent reduction */
+        uint256 hundred = 100;
+        uint256 reduction = hundred.sub(block.timestamp.sub(launchTime).div(7 days).mul(2));
+
+        /* Calculate redeem amount and return */
+        return satoshis.mul(reduction).div(100);
+    }
+
     /**
      * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
      * @param txid Transaction hash
@@ -196,6 +205,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         bytes32 r,
         bytes32 s
     ) public returns (uint256 tokensRedeemed) {
+        require(block.timestamp.sub(launchTime) < 50);
 
         /* Calculate original Bitcoin-style address associated with the provided public key. */
         bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey, isCompressed);
@@ -212,8 +222,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         /* Mark the UTXO as redeemed. */
         redeemedUTXOs[merkleLeafHash] = true;
 
-        /* Calculate redeem amount */
-        uint256 redeemed = satoshis.mul(7 days).div(block.timestamp.sub(launchTime));
+        uint256 redeemed = getRedeemAmount(satoshis);
 
         /* Sanity check. */
         require(totalRedeemed.add(redeemed) <= maximumRedeemable);
