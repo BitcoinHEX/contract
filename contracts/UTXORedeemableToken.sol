@@ -29,6 +29,9 @@ import "./MerkleProof.sol";
 contract UTXORedeemableToken is StandardToken, Ownable {
     using SafeMath for uint256;
 
+    /* Store time of launch for conrtact */
+    uint256 launchTime;
+
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
     bytes32 public rootUTXOMerkleTreeHash;
 
@@ -36,23 +39,23 @@ contract UTXORedeemableToken is StandardToken, Ownable {
     mapping(bytes32 => bool) redeemedUTXOs;
 
     /* Total tokens redeemed so far. */
-    uint public totalRedeemed = 0;
+    uint256 public totalRedeemed = 0;
 
     /* Maximum redeemable tokens, must be initialized by token constructor. */
-    uint public maximumRedeemable;
+    uint256 public maximumRedeemable;
 
     /* Redemption event, containing all relevant data for later analysis if desired. */
     event UTXORedeemed(
         bytes32 txid,
         uint8 outputIndex,
-        uint satoshis,
+        uint256 satoshis,
         bytes32[] proof,
         bytes pubKey,
         uint8 v,
         bytes32 r,
         bytes32 s,
         address indexed redeemer,
-        uint numberOfTokens
+        uint256 numberOfTokens
     );
 
     /**
@@ -61,8 +64,8 @@ contract UTXORedeemableToken is StandardToken, Ownable {
      * @param pos Starting position from which to copy
      * @return Extracted length 32 byte array
      */
-    function extract(bytes data, uint pos) private pure returns (bytes32 result) { 
-        for (uint i = 0; i < 32; i++) {
+    function extract(bytes data, uint256 pos) private pure returns (bytes32 result) { 
+        for (uint256 i = 0; i < 32; i++) {
             result ^= (bytes32(0xff00000000000000000000000000000000000000000000000000000000000000) & data[i + pos]) >> (i * 8);
         }
         return result;
@@ -116,9 +119,9 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         */
 
         /* x coordinate - first 32 bytes of public key */
-        uint x = uint(extract(pubKey, 0));
+        uint256 x = uint(extract(pubKey, 0));
         /* y coordinate - second 32 bytes of public key */
-        uint y = uint(extract(pubKey, 32)); 
+        uint256 y = uint(extract(pubKey, 32)); 
         uint8 startingByte;
         if (isCompressed) {
             /* Hash the compressed public key format. */
@@ -150,7 +153,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
      * @param proof Merkle tree proof
      * @return Whether or not the UTXO can be redeemed
      */
-    function canRedeemUTXO(bytes32 txid, bytes20 originalAddress, uint8 outputIndex, uint satoshis, bytes32[] proof) public view returns (bool) {
+    function canRedeemUTXO(bytes32 txid, bytes20 originalAddress, uint8 outputIndex, uint256 satoshis, bytes32[] proof) public view returns (bool) {
         /* Calculate the hash of the Merkle leaf associated with this UTXO. */
         bytes32 merkleLeafHash = keccak256(abi.encodePacked(txid, originalAddress, outputIndex, satoshis));
     
@@ -185,7 +188,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
     function redeemUTXO (
         bytes32 txid,
         uint8 outputIndex,
-        uint satoshis,
+        uint256 satoshis,
         bytes32[] proof,
         bytes pubKey,
         bool isCompressed,
@@ -209,33 +212,36 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         /* Mark the UTXO as redeemed. */
         redeemedUTXOs[merkleLeafHash] = true;
 
+        /* Calculate redeem amount */
+        uint256 redeemed = satoshis.mul(7 days).div(block.timestamp.sub(launchTime));
+
         /* Sanity check. */
-        require(totalRedeemed.add(tokensRedeemed) <= maximumRedeemable);
+        require(totalRedeemed.add(redeemed) <= maximumRedeemable);
 
         /* Track total redeemed tokens. */
-        totalRedeemed = totalRedeemed.add(tokensRedeemed);
+        totalRedeemed = totalRedeemed.add(redeemed);
 
         /* Credit the redeemer. */ 
-        balances[msg.sender] = balances[msg.sender].add(tokensRedeemed);
+        balances[msg.sender] = balances[msg.sender].add(redeemed);
 
         /* Increase supply */
         totalSupply_ = totalSupply_.add(tokensRedeemed);
 
         /* Mark the transfer event. */
-        emit Transfer(address(0), msg.sender, tokensRedeemed);
+        emit Transfer(address(0), msg.sender, redeemed);
 
         /* Mark the UTXO redemption event. */
-        emit UTXORedeemed(txid, outputIndex, satoshis, proof, pubKey, v, r, s, msg.sender, tokensRedeemed);
+        emit UTXORedeemed(txid, outputIndex, satoshis, proof, pubKey, v, r, s, msg.sender, redeemed);
         
         /* Return the number of tokens redeemed. */
-        return tokensRedeemed;
+        return redeemed;
 
     }
 
     function redeemUTXO (
         bytes32 txid,
         uint8 outputIndex,
-        uint satoshis,
+        uint256 satoshis,
         bytes32[] proof,
         bytes pubKey,
         bool isCompressed,

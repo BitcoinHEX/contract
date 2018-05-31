@@ -8,8 +8,6 @@ contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
 
-    uint256 launchTime;
-
     uint256 stakedCoins = 0;
 
     struct stakeStruct {
@@ -43,7 +41,7 @@ contract StakeableToken is UTXORedeemableToken {
         stakedCoins = stakedCoins.add(_value);
     }
 
-    function calculateLazyRewards(stakeStruct stake) internal view returns (uint256) {
+    function calculateWeAreAllSatoshiRewards(stakeStruct stake) internal view returns (uint256) {
 
     }
 
@@ -59,14 +57,18 @@ contract StakeableToken is UTXORedeemableToken {
         /* Base interest rate */
         uint256 interestRateTimesHundred = 100;
 
-        /* Adjust based on coins staked */
-        interestRateTimesHundred = interestRateTimesHundred.mul(
-            totalSupply_.sub(stake.stakedCoinsAtStart)
-        ).div(totalSupply_);
+        /* Calculate Adoption Percent Scaler */
+        uint256 scaler = stake.stakedCoinsAtStart.mul(100).div(totalSupply_);
+
+        /* Adjust interest rate by scaler */
+        interestRateTimesHundred = interestRateTimesHundred.div(scaler);
 
         uint256 periods = block.timestamp.sub(stake.stakeTime).div(10 days);
 
-        return compound(stake.stakeAmount, periods, interestRateTimesHundred);
+        uint256 compoundRound = compound(stake.stakeAmount, periods, interestRateTimesHundred);
+
+        return compoundRound.mul(periods).div(10);
+        
     }
 
     function calculateRewards(stakeStruct stake) internal view returns (uint256) {
