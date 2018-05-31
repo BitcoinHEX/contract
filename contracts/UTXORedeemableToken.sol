@@ -91,7 +91,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
      * @return Whether or not the signature was valid
      */
     function ecdsaVerify (address addr, bytes pubKey, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
-        return validateSignature(sha256(addr), v, r, s, pubKeyToEthereumAddress(pubKey));
+        return validateSignature(sha256(abi.encodePacked(addr)), v, r, s, pubKeyToEthereumAddress(pubKey));
     }
 
     /**
@@ -123,11 +123,11 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         if (isCompressed) {
             /* Hash the compressed public key format. */
             startingByte = y % 2 == 0 ? 0x02 : 0x03;
-            return ripemd160(sha256(startingByte, x));
+            return ripemd160(abi.encodePacked(sha256(abi.encodePacked(startingByte, x))));
         } else {
             /* Hash the uncompressed public key format. */
             startingByte = 0x04;
-            return ripemd160(sha256(startingByte, x, y));
+            return ripemd160(abi.encodePacked(sha256(abi.encodePacked(startingByte, x, y))));
         }
     }
 
@@ -152,7 +152,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
      */
     function canRedeemUTXO(bytes32 txid, bytes20 originalAddress, uint8 outputIndex, uint satoshis, bytes32[] proof) public view returns (bool) {
         /* Calculate the hash of the Merkle leaf associated with this UTXO. */
-        bytes32 merkleLeafHash = keccak256(txid, originalAddress, outputIndex, satoshis);
+        bytes32 merkleLeafHash = keccak256(abi.encodePacked(txid, originalAddress, outputIndex, satoshis));
     
         /* Verify the proof. */
         return canRedeemUTXOHash(merkleLeafHash, proof);
@@ -198,7 +198,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey, isCompressed);
 
         /* Calculate the UTXO Merkle leaf hash. */
-        bytes32 merkleLeafHash = keccak256(txid, originalAddress, outputIndex, satoshis);
+        bytes32 merkleLeafHash = keccak256(abi.encodePacked(txid, originalAddress, outputIndex, satoshis));
 
         /* Verify that the UTXO can be redeemed. */
         require(canRedeemUTXOHash(merkleLeafHash, proof));

@@ -26,7 +26,7 @@ contract StakeableToken is UTXORedeemableToken {
         return (_principle * (1000 + _interestRateTimesHundred) ** _periods)/(1000 ** _periods);
     }
 
-    function stake(uint256 _value, uint256 _unlockTime) public {
+    function startStake(uint256 _value, uint256 _unlockTime) public {
         /* Check if stake already exists */
         require(staked[msg.sender].stakeAmount == 0); // If == 0 then struct either doesn't exist, or struct with no stake exists
 
