@@ -44,6 +44,9 @@ contract UTXORedeemableToken is StandardToken, Ownable {
     /* Maximum redeemable tokens, must be initialized by token constructor. */
     uint256 public maximumRedeemable;
 
+    /* Store pre-computed speed bonus values */
+    mapping (uint256 => uint256) weekToSpeedBonusTimesHundred;
+
     /* Redemption event, containing all relevant data for later analysis if desired. */
     event UTXORedeemed(
         bytes32 txid,
@@ -153,7 +156,13 @@ contract UTXORedeemableToken is StandardToken, Ownable {
      * @param proof Merkle tree proof
      * @return Whether or not the UTXO can be redeemed
      */
-    function canRedeemUTXO(bytes32 txid, bytes20 originalAddress, uint8 outputIndex, uint256 satoshis, bytes32[] proof) public view returns (bool) {
+    function canRedeemUTXO(
+        bytes32 txid,
+        bytes20 originalAddress,
+        uint8 outputIndex,
+        uint256 satoshis,
+        bytes32[] proof
+    ) public view returns (bool) {
         /* Calculate the hash of the Merkle leaf associated with this UTXO. */
         bytes32 merkleLeafHash = keccak256(abi.encodePacked(txid, originalAddress, outputIndex, satoshis));
     
@@ -173,12 +182,19 @@ contract UTXORedeemableToken is StandardToken, Ownable {
     }
 
     function getRedeemAmount(uint256 satoshis) internal view returns (uint256 redeemed) {
-        /* Calculate percent reduction */
-        uint256 hundred = 100;
-        uint256 reduction = hundred.sub(block.timestamp.sub(launchTime).div(7 days).mul(2));
+        /* Weeks since launch */
+        uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
-        /* Calculate redeem amount and return */
-        return satoshis.mul(reduction).div(100);
+        /* Calculate percent reduction */
+        uint256 reduction = uint256(100).sub(weeksSinceLaunch.mul(2));
+
+        /* Calculate redeem amount */
+        uint256 redeemAmount = satoshis.mul(reduction).div(100);
+
+        /* Apply speed bonus */
+        redeemAmount = redeemAmount.mul(weekToSpeedBonusTimesHundred[weeksSinceLaunch]).div(100);
+
+        return redeemAmount;
     }
 
     /**
@@ -205,7 +221,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         bytes32 r,
         bytes32 s
     ) public returns (uint256 tokensRedeemed) {
-        require(block.timestamp.sub(launchTime) < 50);
+        require(block.timestamp.sub(launchTime).div(7 days) < 50);
 
         /* Calculate original Bitcoin-style address associated with the provided public key. */
         bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey, isCompressed);
