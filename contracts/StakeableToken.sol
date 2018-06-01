@@ -63,11 +63,14 @@ contract StakeableToken is UTXORedeemableToken {
         /* Adjust interest rate by scaler */
         interestRateTimesHundred = interestRateTimesHundred.div(scaler);
 
+        /* Calculate Periods */
         uint256 periods = block.timestamp.sub(stake.stakeTime).div(10 days);
 
+        /* Compound */
         uint256 compoundRound = compound(stake.stakeAmount, periods, interestRateTimesHundred);
 
-        return compoundRound.mul(periods).div(10);
+        /* Calculate final staking rewards with time bonus */
+        return compoundRound.mul(periods).div(1000).add(compoundRound);
         
     }
 
