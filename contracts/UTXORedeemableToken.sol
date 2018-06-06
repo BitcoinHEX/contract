@@ -20,7 +20,6 @@ pragma solidity ^0.4.23;
 
 import "../node_modules/zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "../node_modules/zeppelin-solidity/contracts/ownership/Ownable.sol";
-import "../node_modules/zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./MerkleProof.sol";
 
 /* solium-disable security/no-block-members */
@@ -30,7 +29,6 @@ import "./MerkleProof.sol";
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
 */
 contract UTXORedeemableToken is StandardToken, Ownable {
-    using SafeMath for uint256;
 
     /* Store time of launch for contract */
     uint256 launchTime;

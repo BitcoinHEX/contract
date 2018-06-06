@@ -1,13 +1,11 @@
 pragma solidity ^0.4.23;
 
 import "./UTXORedeemableToken.sol";
-import "../node_modules/zeppelin-solidity/contracts/math/SafeMath.sol";
 
 /* solium-disable security/no-block-members */
 
 
 contract StakeableToken is UTXORedeemableToken {
-    using SafeMath for uint256;
 
     event Mint(address indexed _address, uint _reward);
 
