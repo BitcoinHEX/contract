@@ -29,8 +29,18 @@ import "./MerkleProof.sol";
 contract UTXORedeemableToken is StandardToken, Ownable {
     using SafeMath for uint256;
 
-    /* Store time of launch for conrtact */
+    /* Store time of launch for contract */
     uint256 launchTime;
+
+    /* Store last updated week */
+    uint256 lastUpdatedWeek = 0;
+
+    struct weekDataStruct {
+        uint256 unclaimedCoins;
+    }
+
+    /* Weekly update data */
+    mapping(uint256 => weekDataStruct) weekData;
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
     bytes32 public rootUTXOMerkleTreeHash;
@@ -60,6 +70,17 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         address indexed redeemer,
         uint256 numberOfTokens
     );
+
+    /* Claim, stake, and minting events need to happen atleast once every week for this function to
+       run automatically, otherwise function can be manually called for that week */
+    function storeWeekUnclaimed() public  {
+        uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
+        if(weeksSinceLaunch < 51 && weeksSinceLaunch > lastUpdatedWeek){
+            uint256 unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
+            weekData[weeksSinceLaunch] = weekDataStruct(unclaimedCoins);
+            lastUpdatedWeek = weeksSinceLaunch;
+        }
+    }
 
     /**
      * @dev Extract a bytes32 subarray from an arbitrary length bytes array.
@@ -221,6 +242,10 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         bytes32 r,
         bytes32 s
     ) public returns (uint256 tokensRedeemed) {
+        /* Check if weekly data needs to be updated */
+        storeWeekUnclaimed();
+
+        /* Disable claims after 50 weeks */
         require(block.timestamp.sub(launchTime).div(7 days) < 50);
 
         /* Calculate original Bitcoin-style address associated with the provided public key. */
@@ -238,28 +263,28 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         /* Mark the UTXO as redeemed. */
         redeemedUTXOs[merkleLeafHash] = true;
 
-        uint256 redeemed = getRedeemAmount(satoshis);
+        tokensRedeemed = getRedeemAmount(satoshis);
 
         /* Sanity check. */
-        require(totalRedeemed.add(redeemed) <= maximumRedeemable);
+        require(totalRedeemed.add(tokensRedeemed) <= maximumRedeemable);
 
         /* Track total redeemed tokens. */
-        totalRedeemed = totalRedeemed.add(redeemed);
+        totalRedeemed = totalRedeemed.add(tokensRedeemed);
 
         /* Credit the redeemer. */ 
-        balances[msg.sender] = balances[msg.sender].add(redeemed);
+        balances[msg.sender] = balances[msg.sender].add(tokensRedeemed);
 
         /* Increase supply */
         totalSupply_ = totalSupply_.add(tokensRedeemed);
 
         /* Mark the transfer event. */
-        emit Transfer(address(0), msg.sender, redeemed);
+        emit Transfer(address(0), msg.sender, tokensRedeemed);
 
         /* Mark the UTXO redemption event. */
-        emit UTXORedeemed(txid, outputIndex, satoshis, proof, pubKey, v, r, s, msg.sender, redeemed);
+        emit UTXORedeemed(txid, outputIndex, satoshis, proof, pubKey, v, r, s, msg.sender, tokensRedeemed);
         
         /* Return the number of tokens redeemed. */
-        return redeemed;
+        return tokensRedeemed;
 
     }
 
@@ -276,7 +301,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         address referrer
     ) public returns (uint256 tokensRedeemed) {
         /* Credit claimer */
-        uint256 claimAmount = redeemUTXO (
+        tokensRedeemed = redeemUTXO (
             txid,
             outputIndex,
             satoshis,
@@ -289,12 +314,12 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         );
 
         /* Credit referrer */
-        balances[referrer] = balances[referrer].add(claimAmount.div(20));
+        balances[referrer] = balances[referrer].add(tokensRedeemed.div(20));
 
         /* Increase supply */
-        totalSupply_ = totalSupply_.add(claimAmount.div(20));
+        totalSupply_ = totalSupply_.add(tokensRedeemed.div(20));
 
-        return claimAmount;
+        return tokensRedeemed;
     }
 
 }

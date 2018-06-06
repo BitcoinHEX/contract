@@ -25,6 +25,9 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function startStake(uint256 _value, uint256 _unlockTime) public {
+        /* Check if weekly data needs to be updated */
+        storeWeekUnclaimed();
+
         /* Check if stake already exists */
         require(staked[msg.sender].stakeAmount == 0); // If == 0 then struct either doesn't exist, or struct with no stake exists
 
@@ -42,7 +45,14 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function calculateWeAreAllSatoshiRewards(stakeStruct stake) internal view returns (uint256) {
+        uint256 startWeek = stake.stakeTime.sub(launchTime).div(7 days);
+        uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
+        uint256 rewards;
+
+        for (uint256 i = startWeek; i < weeksSinceLaunch; i++){
+            rewards = rewards.add(weekData[i].unclaimedCoins.mul(stake.stakeAmount).div(50));
+        }
     }
 
     function calculateViralRewards(stakeStruct stake) internal view returns (uint256) {
@@ -81,6 +91,9 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function mint() public returns (bool) {
+        /* Check if weekly data needs to be updated */
+        storeWeekUnclaimed();
+
         /* Check if stake exists */
         require(staked[msg.sender].stakeAmount > 0); // If > 0 then struct exists here
         
