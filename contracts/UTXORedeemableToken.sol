@@ -202,12 +202,30 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         return((redeemedUTXOs[merkleLeafHash] == false) && verifyProof(proof, merkleLeafHash));
     }
 
-    function getRedeemAmount(uint256 satoshis) internal view returns (uint256 redeemed) {
+    function getRedeemAmount(uint256 amount) internal view returns (uint256 redeemed) {
+        uint256 satoshis = amount;
+
         /* Weeks since launch */
         uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
         /* Calculate percent reduction */
         uint256 reduction = uint256(100).sub(weeksSinceLaunch.mul(2));
+
+        /* Silly whale reduction
+           If claim amount is above 1000 BHX */
+        if(satoshis > 1000*(10**8)){
+            if(satoshis < 10000*(10**8)){
+                /* If between 1000 and 10000, penalise by 50% to 75% linearly
+                   The following is a range convert from 1000-10000 to 500-2500
+                   satoshis = ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow
+                   satoshis = ((x - 1000) / (10000 - 1000)) * (2500 - 500) + 500
+                   satoshis = (2 (x - 1000))/9 + 500 */
+                satoshis = satoshis.sub(1000*(10**8)).mul(2).div(9).add(500*(10**8));
+            } else {
+                /* If greater than 10000 BHX penalise by 75% */
+                satoshis = satoshis.div(4);
+            }
+        }
 
         /* Calculate redeem amount */
         uint256 redeemAmount = satoshis.mul(reduction).div(100);
