@@ -1,5 +1,6 @@
 package-lock.json
 /node_modules
+/build
 /.DS_Store
 /coverage
 /coverageEnv
@@ -9,3 +10,4 @@ package-lock.json
 .idea
 .node-xmlhttprequest-sync-*
 secrets.js
+.vscode

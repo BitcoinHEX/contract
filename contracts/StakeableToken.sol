@@ -3,6 +3,9 @@ pragma solidity ^0.4.23;
 import "./UTXORedeemableToken.sol";
 import "../node_modules/zeppelin-solidity/contracts/math/SafeMath.sol";
 
+/* solium-disable security/no-block-members */
+
+
 contract StakeableToken is UTXORedeemableToken {
     using SafeMath for uint256;
 
@@ -12,14 +15,14 @@ contract StakeableToken is UTXORedeemableToken {
 
     uint256 stakedCoins;
 
-    struct stakeStruct {
+    struct StakeStruct {
         uint256 stakeAmount;
         uint256 stakeTime;
         uint256 unlockTime;
         uint256 stakedCoinsAtStart;
     }
 
-    mapping(address => stakeStruct[]) staked;
+    mapping(address => StakeStruct[]) staked;
 
     function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
         // Needs Sanity Check
@@ -37,13 +40,20 @@ contract StakeableToken is UTXORedeemableToken {
         balances[msg.sender] = balances[msg.sender].sub(_value);
 
         /* Create Stake */
-        staked[msg.sender].push(stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakedCoins));
+        staked[msg.sender].push(
+          StakeStruct(
+            uint128(_value), 
+            block.timestamp, 
+            _unlockTime, 
+            stakedCoins
+          )
+        );
 
         /* Add staked coins to global stake counter */
         stakedCoins = stakedCoins.add(_value);
     }
 
-    function calculateWeAreAllSatoshiRewards(stakeStruct stake) internal view returns (uint256 rewards) {
+    function calculateWeAreAllSatoshiRewards(StakeStruct stake) internal view returns (uint256 rewards) {
         /* Calculate what week stake was opened */
         uint256 startWeek = stake.stakeTime.sub(launchTime).div(7 days);
 
@@ -51,7 +61,7 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
         /* Award 2% of unclaimed coins at end of every week */
-        for (uint256 i = startWeek; i < weeksSinceLaunch; i++){
+        for (uint256 i = startWeek; i < weeksSinceLaunch; i++) {
             rewards = rewards.add(weekData[i].unclaimedCoins.mul(stake.stakeAmount).div(50));
         }
     }
@@ -66,7 +76,7 @@ contract StakeableToken is UTXORedeemableToken {
         return rewards.mul(totalRedeemed).div(maximumRedeemable).div(10);
     }
 
-    function calculateStakingRewards(stakeStruct stake) internal view returns (uint256) {
+    function calculateStakingRewards(StakeStruct stake) internal view returns (uint256) {
         /* Base interest rate */
         uint256 interestRateTimesHundred = 100;
 
@@ -87,7 +97,7 @@ contract StakeableToken is UTXORedeemableToken {
         
     }
 
-    function calculateRewards(stakeStruct stake) internal view returns (uint256) {
+    function calculateRewards(StakeStruct stake) internal view returns (uint256) {
         uint256 rewards = 0;
         rewards = rewards
         .add(calculateStakingRewards(stake))
@@ -102,9 +112,9 @@ contract StakeableToken is UTXORedeemableToken {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
-        for(uint256 i; i < staked[msg.sender].length; i++){
+        for (uint256 i; i < staked[msg.sender].length; i++) {
             /* Check if stake has matured */
-            if(block.timestamp > staked[msg.sender][i].unlockTime){
+            if (block.timestamp > staked[msg.sender][i].unlockTime) {
                 /* Remove StakedCoins from global counter */
                 stakedCoins = stakedCoins.sub(staked[msg.sender][i].stakeAmount);
 

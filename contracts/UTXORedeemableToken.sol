@@ -23,6 +23,9 @@ import "../node_modules/zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../node_modules/zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./MerkleProof.sol";
 
+/* solium-disable security/no-block-members */
+
+
 /**
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
 */
@@ -35,12 +38,12 @@ contract UTXORedeemableToken is StandardToken, Ownable {
     /* Store last updated week */
     uint256 lastUpdatedWeek = 0;
 
-    struct weekDataStruct {
+    struct WeekDataStruct {
         uint256 unclaimedCoins;
     }
 
     /* Weekly update data */
-    mapping(uint256 => weekDataStruct) weekData;
+    mapping(uint256 => WeekDataStruct) weekData;
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
     bytes32 public rootUTXOMerkleTreeHash;
@@ -73,11 +76,11 @@ contract UTXORedeemableToken is StandardToken, Ownable {
 
     /* Claim, stake, and minting events need to happen atleast once every week for this function to
        run automatically, otherwise function can be manually called for that week */
-    function storeWeekUnclaimed() public  {
+    function storeWeekUnclaimed() public {
         uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
-        if(weeksSinceLaunch < 51 && weeksSinceLaunch > lastUpdatedWeek){
+        if (weeksSinceLaunch < 51 && weeksSinceLaunch > lastUpdatedWeek) {
             uint256 unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-            weekData[weeksSinceLaunch] = weekDataStruct(unclaimedCoins);
+            weekData[weeksSinceLaunch] = WeekDataStruct(unclaimedCoins);
             lastUpdatedWeek = weeksSinceLaunch;
         }
     }
@@ -104,8 +107,23 @@ contract UTXORedeemableToken is StandardToken, Ownable {
      * @param expected Address claiming to have created this signature
      * @return Whether or not the signature was valid
      */
-    function validateSignature (bytes32 hash, uint8 v, bytes32 r, bytes32 s, address expected) public pure returns (bool) {
-        return ecrecover(hash, v, r, s) == expected;
+    function validateSignature (
+        bytes32 hash, 
+        uint8 v, 
+        bytes32 r, 
+        bytes32 s, 
+        address expected
+    ) 
+      public 
+      pure 
+      returns (bool) 
+    {
+        return ecrecover(
+            hash, 
+            v, 
+            r, 
+            s
+        ) == expected;
     }
 
     /**
@@ -117,8 +135,24 @@ contract UTXORedeemableToken is StandardToken, Ownable {
      * @param s s parameter of ECDSA signature
      * @return Whether or not the signature was valid
      */
-    function ecdsaVerify (address addr, bytes pubKey, uint8 v, bytes32 r, bytes32 s) public pure returns (bool) {
-        return validateSignature(sha256(abi.encodePacked(addr)), v, r, s, pubKeyToEthereumAddress(pubKey));
+    function ecdsaVerify (
+        address addr, 
+        bytes pubKey, 
+        uint8 v, 
+        bytes32 r, 
+        bytes32 s
+    ) 
+      public 
+      pure 
+      returns (bool)
+    {
+        return validateSignature(
+            sha256(abi.encodePacked(addr)), 
+            v, 
+            r, 
+            s, 
+            pubKeyToEthereumAddress(pubKey)
+        );
     }
 
     /**
@@ -183,9 +217,20 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         uint8 outputIndex,
         uint256 satoshis,
         bytes32[] proof
-    ) public view returns (bool) {
+    ) 
+        public 
+        view 
+        returns (bool)
+    {
         /* Calculate the hash of the Merkle leaf associated with this UTXO. */
-        bytes32 merkleLeafHash = keccak256(abi.encodePacked(txid, originalAddress, outputIndex, satoshis));
+        bytes32 merkleLeafHash = keccak256(
+            abi.encodePacked(
+                txid, 
+                originalAddress, 
+                outputIndex, 
+                satoshis
+            )
+        );
     
         /* Verify the proof. */
         return canRedeemUTXOHash(merkleLeafHash, proof);
@@ -213,8 +258,8 @@ contract UTXORedeemableToken is StandardToken, Ownable {
 
         /* Silly whale reduction
            If claim amount is above 1000 BHX */
-        if(satoshis > 1000*(10**8)){
-            if(satoshis < 10000*(10**8)){
+        if (satoshis > 1000*(10**8)) {
+            if (satoshis < 10000*(10**8)) {
                 /* If between 1000 and 10000, penalise by 50% to 75% linearly
                    The following is a range convert from 1000-10000 to 500-2500
                    satoshis = ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow
@@ -259,7 +304,10 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public returns (uint256 tokensRedeemed) {
+    ) 
+        public 
+        returns (uint256 tokensRedeemed)
+    {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
@@ -270,13 +318,28 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey, isCompressed);
 
         /* Calculate the UTXO Merkle leaf hash. */
-        bytes32 merkleLeafHash = keccak256(abi.encodePacked(txid, originalAddress, outputIndex, satoshis));
+        bytes32 merkleLeafHash = keccak256(
+            abi.encodePacked(
+                txid, 
+                originalAddress, 
+                outputIndex, 
+                satoshis
+            )
+        );
 
         /* Verify that the UTXO can be redeemed. */
         require(canRedeemUTXOHash(merkleLeafHash, proof));
 
         /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
-        require(ecdsaVerify(msg.sender, pubKey, v, r, s));
+        require(
+            ecdsaVerify(
+                msg.sender, 
+                pubKey, 
+                v, 
+                r, 
+                s
+            )
+        );
 
         /* Mark the UTXO as redeemed. */
         redeemedUTXOs[merkleLeafHash] = true;
@@ -299,7 +362,18 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         emit Transfer(address(0), msg.sender, tokensRedeemed);
 
         /* Mark the UTXO redemption event. */
-        emit UTXORedeemed(txid, outputIndex, satoshis, proof, pubKey, v, r, s, msg.sender, tokensRedeemed);
+        emit UTXORedeemed(
+            txid, 
+            outputIndex, 
+            satoshis, 
+            proof, 
+            pubKey, 
+            v, 
+            r, 
+            s, 
+            msg.sender, 
+            tokensRedeemed
+        );
         
         /* Return the number of tokens redeemed. */
         return tokensRedeemed;
@@ -317,7 +391,10 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         bytes32 r,
         bytes32 s,
         address referrer
-    ) public returns (uint256 tokensRedeemed) {
+    ) 
+        public 
+        returns (uint256 tokensRedeemed) 
+    {
         /* Credit claimer */
         tokensRedeemed = redeemUTXO (
             txid,
