@@ -11,3 +11,4 @@ package-lock.json
 .node-xmlhttprequest-sync-*
 secrets.js
 .vscode
+yarn-error.log

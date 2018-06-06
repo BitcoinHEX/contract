@@ -2,10 +2,8 @@
   "name": "bitcoinhex",
   "version": "0.0.1",
   "description": "Bitcoin fork onto Ethereum",
-  "dependencies": {
-    "zeppelin-solidity": "^1.9.0"
-  },
   "devDependencies": {
+    "babel-eslint": "^8.2.3",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "babel-register": "^6.26.0",
@@ -15,10 +13,12 @@
     "eslint-plugin-import": "^2.12.0",
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-promise": "^3.8.0",
+    "prettier": "^1.13.4",
     "rimraf": "^2.6.2",
     "solium": "^1.1.7",
     "truffle": "^4.1.11",
-    "truffle-wallet-provider": "^0.0.5"
+    "truffle-wallet-provider": "^0.0.5",
+    "zeppelin-solidity": "^1.9.0"
   },
   "scripts": {
     "clean:install": "rimraf node_modules && yarn install",
@@ -26,7 +26,7 @@
     "lint": "yarn run lint:sol && yarn run lint:js",
     "test": "yarn run clean:contracts && truffle test",
     "lint:sol": "solium --dir ./contracts",
-    "lint:js": "prettier migrations/* tests/* --write"
+    "lint:js": "prettier migrations/* test/* --write"
   },
   "repository": {
     "type": "git",
