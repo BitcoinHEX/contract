@@ -12,6 +12,7 @@ contract BitcoinHex is StakeableToken {
         owner = msg.sender;
         rootUTXOMerkleTreeHash = 0x0; // Change before launch
         maximumRedeemable = 0; // Change before launch
+        totalBTCCirculationAtFork = 17078787*(10**8); // Change before launch
 
         /* Precomputed Speed Bonus Values weekToSpeedBonusTimesHundred = 10*0.95^week+100 */
         weekToSpeedBonusTimesHundred[0] = 110;

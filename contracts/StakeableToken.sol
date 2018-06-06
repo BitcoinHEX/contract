@@ -8,6 +8,8 @@ contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
 
+    uint256 totalBTCCirculationAtFork;
+
     uint256 stakedCoins;
 
     struct stakeStruct {
@@ -54,13 +56,14 @@ contract StakeableToken is UTXORedeemableToken {
         }
     }
 
-    function calculateViralRewards(stakeStruct stake, uint256 rewards) internal view returns (uint256) {
+    function calculateViralRewards(uint256 rewards) internal view returns (uint256) {
         /* Add bonus percentage to rewards from 0-10% based on adoption */
-        return rewards.mul(totalRedeemed).div(maximumRedeemable).div(10);
+        return rewards.mul(totalRedeemed).div(totalBTCCirculationAtFork).div(10);
     }
 
-    function calculateCritMassRewards(stakeStruct stake) internal view returns (uint256) {
-
+    function calculateCritMassRewards(uint256 rewards) internal view returns (uint256) {
+        /* Add bonus percentage to rewards from 0-10% based on adoption */
+        return rewards.mul(totalRedeemed).div(maximumRedeemable).div(10);
     }
 
     function calculateStakingRewards(stakeStruct stake) internal view returns (uint256) {
@@ -88,9 +91,10 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 rewards = 0;
         rewards = rewards
         .add(calculateStakingRewards(stake))
-        .add(calculateWeAreAllSatoshiRewards(stake))
-        .add(calculateCritMassRewards(stake));
-        rewards = rewards.add(calculateViralRewards(stake, rewards));
+        .add(calculateWeAreAllSatoshiRewards(stake));
+        rewards = rewards
+        .add(calculateViralRewards(rewards))
+        .add(calculateCritMassRewards(rewards));
         return rewards;
     }
 
