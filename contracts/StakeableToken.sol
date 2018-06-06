@@ -44,19 +44,17 @@ contract StakeableToken is UTXORedeemableToken {
         stakedCoins = stakedCoins.add(_value);
     }
 
-    function calculateWeAreAllSatoshiRewards(stakeStruct stake) internal view returns (uint256) {
+    function calculateWeAreAllSatoshiRewards(stakeStruct stake) internal view returns (uint256 rewards) {
         uint256 startWeek = stake.stakeTime.sub(launchTime).div(7 days);
         uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
-
-        uint256 rewards;
 
         for (uint256 i = startWeek; i < weeksSinceLaunch; i++){
             rewards = rewards.add(weekData[i].unclaimedCoins.mul(stake.stakeAmount).div(50));
         }
     }
 
-    function calculateViralRewards(stakeStruct stake) internal view returns (uint256) {
-
+    function calculateViralRewards(stakeStruct stake, uint256 rewards) internal view returns (uint256) {
+        return rewards.mul(totalRedeemed).div(maximumRedeemable).div(10);
     }
 
     function calculateCritMassRewards(stakeStruct stake) internal view returns (uint256) {
@@ -80,13 +78,16 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 compoundRound = compound(stake.stakeAmount, periods, interestRateTimesHundred);
 
         /* Calculate final staking rewards with time bonus */
-        return compoundRound.mul(periods).div(1000).add(compoundRound);
+        return compoundRound.mul(periods).div(1000).add(compoundRound).sub(stake.stakeAmount);
         
     }
 
     function calculateRewards(stakeStruct stake) internal view returns (uint256) {
         uint256 rewards = 0;
         rewards = rewards.add(calculateStakingRewards(stake));
+        rewards = rewards.add(calculateWeAreAllSatoshiRewards(stake));
+        rewards = rewards.add(calculateCritMassRewards(stake));
+        rewards = rewards.add(calculateViralRewards(stake, rewards));
         return rewards;
     }
 
@@ -102,6 +103,9 @@ contract StakeableToken is UTXORedeemableToken {
 
         /* Remove StakedCoins from global counter */
         stakedCoins = stakedCoins.sub(staked[msg.sender].stakeAmount);
+
+        /* Add staked coins to staker */
+        balances[msg.sender] = balances[msg.sender].add(staked[msg.sender].stakeAmount);
 
         /* Calculate Rewards */
         uint256 rewards = calculateRewards(staked[msg.sender]);

@@ -49,7 +49,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
     mapping(bytes32 => bool) redeemedUTXOs;
 
     /* Total tokens redeemed so far. */
-    uint256 public totalRedeemed = 0;
+    uint256 public totalRedeemed;
 
     /* Maximum redeemable tokens, must be initialized by token constructor. */
     uint256 public maximumRedeemable;
