@@ -8,7 +8,7 @@ contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
 
-    uint256 stakedCoins = 0;
+    uint256 stakedCoins;
 
     struct stakeStruct {
         uint256 stakeAmount;
@@ -17,7 +17,7 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 stakedCoinsAtStart;
     }
 
-    mapping(address => stakeStruct) staked;
+    mapping(address => stakeStruct[]) staked;
 
     function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
         // Needs Sanity Check
@@ -28,9 +28,6 @@ contract StakeableToken is UTXORedeemableToken {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
-        /* Check if stake already exists */
-        require(staked[msg.sender].stakeAmount == 0); // If == 0 then struct either doesn't exist, or struct with no stake exists
-
         /* Check if sender has sufficient balance */
         require(_value <= balances[msg.sender]);
 
@@ -38,22 +35,27 @@ contract StakeableToken is UTXORedeemableToken {
         balances[msg.sender] = balances[msg.sender].sub(_value);
 
         /* Create Stake */
-        staked[msg.sender] = stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakedCoins);
+        staked[msg.sender].push(stakeStruct(uint128(_value), block.timestamp, _unlockTime, stakedCoins));
 
         /* Add staked coins to global stake counter */
         stakedCoins = stakedCoins.add(_value);
     }
 
     function calculateWeAreAllSatoshiRewards(stakeStruct stake) internal view returns (uint256 rewards) {
+        /* Calculate what week stake was opened */
         uint256 startWeek = stake.stakeTime.sub(launchTime).div(7 days);
+
+        /* Calculate current week */
         uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
+        /* Award 2% of unclaimed coins at end of every week */
         for (uint256 i = startWeek; i < weeksSinceLaunch; i++){
             rewards = rewards.add(weekData[i].unclaimedCoins.mul(stake.stakeAmount).div(50));
         }
     }
 
     function calculateViralRewards(stakeStruct stake, uint256 rewards) internal view returns (uint256) {
+        /* Add bonus percentage to rewards from 0-10% based on adoption */
         return rewards.mul(totalRedeemed).div(maximumRedeemable).div(10);
     }
 
@@ -84,9 +86,10 @@ contract StakeableToken is UTXORedeemableToken {
 
     function calculateRewards(stakeStruct stake) internal view returns (uint256) {
         uint256 rewards = 0;
-        rewards = rewards.add(calculateStakingRewards(stake));
-        rewards = rewards.add(calculateWeAreAllSatoshiRewards(stake));
-        rewards = rewards.add(calculateCritMassRewards(stake));
+        rewards = rewards
+        .add(calculateStakingRewards(stake))
+        .add(calculateWeAreAllSatoshiRewards(stake))
+        .add(calculateCritMassRewards(stake));
         rewards = rewards.add(calculateViralRewards(stake, rewards));
         return rewards;
     }
@@ -95,34 +98,32 @@ contract StakeableToken is UTXORedeemableToken {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
-        /* Check if stake exists */
-        require(staked[msg.sender].stakeAmount > 0); // If > 0 then struct exists here
-        
-        /* Check if stake has matured */
-        require(block.timestamp > staked[msg.sender].unlockTime);
+        for(uint256 i; i < staked[msg.sender].length; i++){
+            /* Check if stake has matured */
+            if(block.timestamp > staked[msg.sender][i].unlockTime){
+                /* Remove StakedCoins from global counter */
+                stakedCoins = stakedCoins.sub(staked[msg.sender][i].stakeAmount);
 
-        /* Remove StakedCoins from global counter */
-        stakedCoins = stakedCoins.sub(staked[msg.sender].stakeAmount);
+                /* Add staked coins to staker */
+                balances[msg.sender] = balances[msg.sender].add(staked[msg.sender][i].stakeAmount);
 
-        /* Add staked coins to staker */
-        balances[msg.sender] = balances[msg.sender].add(staked[msg.sender].stakeAmount);
+                /* Calculate Rewards */
+                uint256 rewards = calculateRewards(staked[msg.sender][i]);
 
-        /* Calculate Rewards */
-        uint256 rewards = calculateRewards(staked[msg.sender]);
+                /* Award staking rewards to staker */
+                balances[msg.sender] = balances[msg.sender].add(rewards);
 
-        /* Award staking rewards to staker */
-        balances[msg.sender] = balances[msg.sender].add(rewards);
+                /* Award staking rewards to origin contract */
+                balances[owner] = balances[owner].add(rewards);
 
-        /* Award staking rewards to origin contract */
-        balances[owner] = balances[owner].add(rewards);
+                /* Increase supply */
+                totalSupply_ = totalSupply_.add(rewards.mul(2));
 
-        /* Increase supply */
-        totalSupply_ = totalSupply_.add(rewards.mul(2));
+                /* Remove Stake */
+                delete staked[msg.sender][i];
 
-        /* Remove Stake */
-        delete staked[msg.sender];
-
-        emit Mint(msg.sender, rewards);
-        return true;
+                emit Mint(msg.sender, rewards);
+            }
+        }
     }
 }
