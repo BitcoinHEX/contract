@@ -20,7 +20,7 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 stakedCoinsAtStart;
     }
 
-    mapping(address => StakeStruct[]) staked;
+    mapping(address => StakeStruct[]) public staked;
 
     function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
         // Needs Sanity Check
@@ -106,7 +106,7 @@ contract StakeableToken is UTXORedeemableToken {
         return rewards;
     }
 
-    function mint() public returns (bool) {
+    function mint() public {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
