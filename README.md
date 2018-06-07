@@ -32,8 +32,8 @@ $ npm run test
 [See here](ABI.md) for description of each public function.
 
 ### External Documentation
-[ethereum](https://www.ethereum.org/)
-[openzeppelin](https://openzeppelin.org/)
-[solidity](https://solidity.readthedocs.io/)
-[truffle](http://truffleframework.com/)
-[testrpc](https://github.com/ethereumjs/testrpc)
+- [ethereum](https://www.ethereum.org/)
+- [openzeppelin](https://openzeppelin.org/)
+- [solidity](https://solidity.readthedocs.io/)
+- [truffle](http://truffleframework.com/)
+- [testrpc](https://github.com/ethereumjs/testrpc)
