@@ -28,6 +28,9 @@ $ npm run compile
 $ npm run test
 ```
 
+### Docs for wallet/app developers
+[See here](ABI.md) for description of each public function.
+
 [ethereum]: https://www.ethereum.org/
 [openzeppelin]: https://openzeppelin.org/
 [solidity]: https://solidity.readthedocs.io/
