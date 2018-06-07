@@ -31,8 +31,9 @@ $ npm run test
 ### Docs for wallet/app developers
 [See here](ABI.md) for description of each public function.
 
-[ethereum]: https://www.ethereum.org/
-[openzeppelin]: https://openzeppelin.org/
-[solidity]: https://solidity.readthedocs.io/
-[truffle]: http://truffleframework.com/
-[testrpc]: https://github.com/ethereumjs/testrpc
+### External Documentation
+[ethereum](https://www.ethereum.org/)
+[openzeppelin](https://openzeppelin.org/)
+[solidity](https://solidity.readthedocs.io/)
+[truffle](http://truffleframework.com/)
+[testrpc](https://github.com/ethereumjs/testrpc)
