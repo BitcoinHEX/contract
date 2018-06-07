@@ -17,7 +17,7 @@ contract BitcoinHex is StakeableToken {
         totalBTCCirculationAtFork = 17078787*(10**8); // Change before launch
 
         /* Precomputed Speed Bonus Values weekToSpeedBonusTimesHundred = 10*0.95^week+100 */
-        weekToSpeedBonusTimesHundred[0] = 110;
+        /* weekToSpeedBonusTimesHundred[0] = 110;
         weekToSpeedBonusTimesHundred[1] = 109;
         weekToSpeedBonusTimesHundred[2] = 109;
         weekToSpeedBonusTimesHundred[3] = 108;
@@ -66,6 +66,6 @@ contract BitcoinHex is StakeableToken {
         weekToSpeedBonusTimesHundred[46] = 100;
         weekToSpeedBonusTimesHundred[47] = 100;
         weekToSpeedBonusTimesHundred[48] = 100;
-        weekToSpeedBonusTimesHundred[49] = 100;
+        weekToSpeedBonusTimesHundred[49] = 100; */
     }
 }

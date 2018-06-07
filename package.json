@@ -21,10 +21,11 @@
     "zeppelin-solidity": "^1.9.0"
   },
   "scripts": {
-    "clean:install": "rimraf node_modules && yarn install",
-    "clean:contracts": "rimraf build && yarn compile",
-    "lint": "yarn run lint:sol && yarn run lint:js",
-    "test": "yarn run clean:contracts && truffle test",
+    "compile": "truffle compile",
+    "clean:install": "rimraf node_modules && npm install",
+    "clean:contracts": "rimraf build && npm run compile",
+    "lint": "npm run lint:sol && npm run lint:js",
+    "test": "npm run clean:contracts && truffle test",
     "lint:sol": "solium --dir ./contracts",
     "lint:js": "prettier migrations/* test/* --write"
   },
