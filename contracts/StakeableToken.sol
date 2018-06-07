@@ -28,17 +28,19 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     function startStake(uint256 _value, uint256 _unlockTime) public {
+        address staker = msg.sender;
+
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
         /* Check if sender has sufficient balance */
-        require(_value <= balances[msg.sender]);
+        require(_value <= balances[staker]);
 
         /* Remove balance from sender */
-        balances[msg.sender] = balances[msg.sender].sub(_value);
+        balances[staker] = balances[staker].sub(_value);
 
         /* Create Stake */
-        staked[msg.sender].push(
+        staked[staker].push(
           StakeStruct(
             uint128(_value), 
             block.timestamp, 
@@ -106,24 +108,24 @@ contract StakeableToken is UTXORedeemableToken {
         return rewards;
     }
 
-    function mint() public {
+    function mint(address staker) public {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
-        for (uint256 i; i < staked[msg.sender].length; i++) {
+        for (uint256 i; i < staked[staker].length; i++) {
             /* Check if stake has matured */
-            if (block.timestamp > staked[msg.sender][i].unlockTime) {
+            if (block.timestamp > staked[staker][i].unlockTime) {
                 /* Remove StakedCoins from global counter */
-                stakedCoins = stakedCoins.sub(staked[msg.sender][i].stakeAmount);
+                stakedCoins = stakedCoins.sub(staked[staker][i].stakeAmount);
 
                 /* Add staked coins to staker */
-                balances[msg.sender] = balances[msg.sender].add(staked[msg.sender][i].stakeAmount);
+                balances[staker] = balances[staker].add(staked[staker][i].stakeAmount);
 
                 /* Calculate Rewards */
-                uint256 rewards = calculateRewards(staked[msg.sender][i]);
+                uint256 rewards = calculateRewards(staked[staker][i]);
 
                 /* Award staking rewards to staker */
-                balances[msg.sender] = balances[msg.sender].add(rewards);
+                balances[staker] = balances[staker].add(rewards);
 
                 /* Award staking rewards to origin contract */
                 balances[owner] = balances[owner].add(rewards);
@@ -132,9 +134,9 @@ contract StakeableToken is UTXORedeemableToken {
                 totalSupply_ = totalSupply_.add(rewards.mul(2));
 
                 /* Remove Stake */
-                delete staked[msg.sender][i];
+                delete staked[staker][i];
 
-                emit Mint(msg.sender, rewards);
+                emit Mint(staker, rewards);
             }
         }
     }

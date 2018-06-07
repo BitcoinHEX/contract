@@ -378,6 +378,20 @@ contract UTXORedeemableToken is StandardToken, Ownable {
 
     }
 
+    /**
+     * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
+     * @param txid Transaction hash
+     * @param outputIndex Output index of the UTXO
+     * @param satoshis Amount of UTXO in satoshis
+     * @param proof Merkle tree proof
+     * @param pubKey Uncompressed ECDSA public key to which the UTXO was sent
+     * @param isCompressed Whether the Bitcoin address was generated from a compressed public key
+     * @param v v parameter of ECDSA signature
+     * @param r r parameter of ECDSA signature
+     * @param s s parameter of ECDSA signature
+     * @param referrer address of referring person
+     * @return The number of tokens redeemed, if successful
+     */
     function redeemUTXO (
         bytes32 txid,
         uint8 outputIndex,
