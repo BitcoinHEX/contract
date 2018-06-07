@@ -12,3 +12,4 @@ package-lock.json
 secrets.js
 .vscode
 yarn-error.log
+yark.lock
