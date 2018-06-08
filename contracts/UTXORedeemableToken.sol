@@ -18,8 +18,8 @@
 
 pragma solidity ^0.4.23;
 
-import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "openzeppelin-solidity/contracts/MerkleProof.sol";
+import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 
 /* solium-disable security/no-block-members */
 
