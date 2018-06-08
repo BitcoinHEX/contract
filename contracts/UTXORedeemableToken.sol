@@ -274,8 +274,11 @@ contract UTXORedeemableToken is StandardToken {
             }
         }
 
-        /* Calculate redeem amount */
-        uint256 redeemAmount = satoshis.mul(reduction).mul(1e18).div(100);
+        /* 
+          Calculate redeem amount in standard token decimals (1e18): 
+          already has 8 decimals (1e8 * 1e10 = 1e18) 
+        */
+        uint256 redeemAmount = satoshis.mul(reduction).mul(1e10).div(100);
 
         /* Apply speed bonus */
         redeemAmount = redeemAmount.mul(weekToSpeedBonusTimesHundred[weeksSinceLaunch]).div(100);
