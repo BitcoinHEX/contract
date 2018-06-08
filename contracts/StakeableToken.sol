@@ -24,12 +24,6 @@ contract StakeableToken is UTXORedeemableToken {
 
     mapping(address => StakeStruct[]) public staked;
 
-    constructor(address _originAddress)
-        public
-    {
-        originAddress = _originAddress;
-    }
-
     function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
         /* Calculate compound interest */
         return (_principle * (100 + _interestRateTimesHundred) ** _periods)/(100 ** _periods);
