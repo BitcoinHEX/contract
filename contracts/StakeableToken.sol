@@ -9,7 +9,7 @@ contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
 
-    address public originContract;
+    address public originAddress;
 
     uint256 totalBTCCirculationAtFork;
 
@@ -24,13 +24,10 @@ contract StakeableToken is UTXORedeemableToken {
 
     mapping(address => StakeStruct[]) public staked;
 
-    constructor(address _originContract)
+    constructor(address _originAddress)
         public
     {
-        uint256 _size;
-        assembly { _size := extcodesize(_originContract) }
-        require(_size > 0);
-        originContract = _originContract;
+        originAddress = _originAddress;
     }
 
     function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
@@ -44,11 +41,10 @@ contract StakeableToken is UTXORedeemableToken {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
-        /* Check if sender has sufficient balance */
-        require(_value <= balances[staker]);
-
         /* Remove balance from sender */
         balances[staker] = balances[staker].sub(_value);
+        balances[address(this)] = balances[address(this)].add(_value);
+        emit Transfer(staker, address(this), _value);
 
         /* Create Stake */
         staked[staker].push(
@@ -111,15 +107,16 @@ contract StakeableToken is UTXORedeemableToken {
     function calculateRewards(StakeStruct stake) internal view returns (uint256) {
         uint256 rewards = 0;
         rewards = rewards
-        .add(calculateStakingRewards(stake))
-        .add(calculateWeAreAllSatoshiRewards(stake));
+            .add(calculateStakingRewards(stake))
+            .add(calculateWeAreAllSatoshiRewards(stake));
         rewards = rewards
-        .add(calculateViralRewards(rewards))
-        .add(calculateCritMassRewards(rewards));
+            .add(calculateViralRewards(rewards))
+            .add(calculateCritMassRewards(rewards));
+
         return rewards;
     }
 
-    function mint(address staker) public {
+    function claimStakingRewards(address staker) public {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
@@ -129,8 +126,13 @@ contract StakeableToken is UTXORedeemableToken {
                 /* Remove StakedCoins from global counter */
                 stakedCoins = stakedCoins.sub(staked[staker][i].stakeAmount);
 
+                /* Sub staked coins from contract */
+                balances[address(this)] = balances[address(this)].sub(staked[staker][i].stakeAmount);
+                
                 /* Add staked coins to staker */
                 balances[staker] = balances[staker].add(staked[staker][i].stakeAmount);
+
+                emit Transfer(address(this), staker, staked[staker][i].stakeAmount);
 
                 /* Calculate Rewards */
                 uint256 rewards = calculateRewards(staked[staker][i]);
@@ -139,7 +141,7 @@ contract StakeableToken is UTXORedeemableToken {
                 balances[staker] = balances[staker].add(rewards);
 
                 /* Award staking rewards to origin contract */
-                balances[originContract] = balances[originContract].add(rewards);
+                balances[originAddress] = balances[originAddress].add(rewards);
 
                 /* Increase supply */
                 totalSupply_ = totalSupply_.add(rewards.mul(2));

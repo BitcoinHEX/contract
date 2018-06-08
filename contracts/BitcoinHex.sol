@@ -5,7 +5,7 @@ import "./StakeableToken.sol";
 contract BitcoinHex is StakeableToken {
     string public name = "BitcoinHex"; 
     string public symbol = "BHX";
-    uint public decimals = 8;
+    uint public decimals = 18;
 
     constructor (address _originContract) 
         public
