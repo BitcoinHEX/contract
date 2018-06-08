@@ -23,4 +23,4 @@ const expectRevert = async promise => {
   assert(false, "Expected throw wasn't received")
 }
 
-export default expectRevert
+module.exports = expectRevert

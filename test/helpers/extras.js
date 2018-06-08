@@ -90,4 +90,10 @@ const verifyEvent = (txHash, eventSig) => {
   return false
 }
 
-export { increaseTime, takeSnapshot, revertToSnapshot, evm_mine, verifyEvent }
+module.exports = {
+  increaseTime,
+  takeSnapshot,
+  revertToSnapshot,
+  evm_mine,
+  verifyEvent
+}

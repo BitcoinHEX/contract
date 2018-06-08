@@ -8,4 +8,4 @@ const expectError = async promise => {
   assert(false, 'Expected error')
 }
 
-export default expectError
+module.exports = expectError

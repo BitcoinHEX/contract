@@ -1,4 +1,4 @@
-import expectRevert from './helpers/expectRevert'
+const expectRevert = require('./helpers/expectRevert')
 
 const BitcoinHexStub = artifacts.require('./stubs/BitcoinHexStub.sol')
 
