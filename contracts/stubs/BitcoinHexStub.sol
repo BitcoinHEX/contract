@@ -1,0 +1,12 @@
+pragma solidity >=0.4.23;
+
+import "../BitcoinHex.sol";
+
+
+// this will allow us to initialize block timestamp or wrap any internal functions and make them assessible to white box testing
+contract BitcoinHexStub is BitcoinHex {
+    constructor(address _originContract) 
+      public 
+      BitcoinHex(_originContract)
+    {}    
+}

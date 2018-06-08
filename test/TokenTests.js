@@ -1,7 +1,7 @@
 import expectRevert from './helpers/expectRevert'
 import { verifyEvent } from './helpers/extras'
 
-const Token = artifacts.require('./helpers/MockToken.sol')
+const Token = artifacts.require('./stubs/BitcoinHexStub.sol')
 
 // Note from @Emmonspired - we will add token transferrence tests here
 contract('Token Tests', accounts => {

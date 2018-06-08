@@ -9,6 +9,8 @@ contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
 
+    address public originContract;
+
     uint256 totalBTCCirculationAtFork;
 
     uint256 stakedCoins;
@@ -21,6 +23,15 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     mapping(address => StakeStruct[]) public staked;
+
+    constructor(address _originContract)
+        public
+    {
+        uint256 _size;
+        assembly { _size := extcodesize(_originContract) }
+        require(_size > 0);
+        originContract = _originContract;
+    }
 
     function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
         /* Calculate compound interest */
@@ -128,7 +139,7 @@ contract StakeableToken is UTXORedeemableToken {
                 balances[staker] = balances[staker].add(rewards);
 
                 /* Award staking rewards to origin contract */
-                balances[owner] = balances[owner].add(rewards);
+                balances[originContract] = balances[originContract].add(rewards);
 
                 /* Increase supply */
                 totalSupply_ = totalSupply_.add(rewards.mul(2));
