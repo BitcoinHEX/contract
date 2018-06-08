@@ -18,7 +18,7 @@
     "solium": "^1.1.7",
     "truffle": "^4.1.11",
     "truffle-wallet-provider": "^0.0.5",
-    "zeppelin-solidity": "^1.9.0"
+    "openzeppelin-solidity": "^1.10.0"
   },
   "scripts": {
     "compile": "truffle compile",

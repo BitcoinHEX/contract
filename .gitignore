@@ -1,6 +1,5 @@
 package-lock.json
 /node_modules
-/build
 /.DS_Store
 /coverage
 /coverageEnv
