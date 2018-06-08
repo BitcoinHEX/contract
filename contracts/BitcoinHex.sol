@@ -7,7 +7,7 @@ contract BitcoinHex is StakeableToken {
     string public symbol = "BHX";
     uint public decimals = 18;
 
-    constructor (address _originContract) 
+    constructor (address _originAddress) 
         public
     {
         totalSupply_ = 0;
@@ -16,7 +16,7 @@ contract BitcoinHex is StakeableToken {
         rootUTXOMerkleTreeHash = 0x0; // Change before launch
         maximumRedeemable = 0; // Change before launch
         totalBTCCirculationAtFork = 17078787*(10**8); // Change before launch
-        originContract = _originContract;
+        originAddress = _originAddress;
 
         /* Precomputed Speed Bonus Values weekToSpeedBonusTimesHundred = 10*0.95^week+100 */
         /* weekToSpeedBonusTimesHundred[0] = 110;
