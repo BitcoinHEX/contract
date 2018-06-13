@@ -2,15 +2,15 @@ pragma solidity ^0.4.23;
 
 
 contract Migrations {
-    address public origin;
+    address public _originAddress;
     uint public lastCompletedMigration;
 
     constructor() public {
-        origin = msg.sender;
+        _originAddress = msg.sender;
     }
 
     modifier restricted() {
-        require(msg.sender == origin);
+        require(msg.sender == _originAddress);
 
         _;
     }
