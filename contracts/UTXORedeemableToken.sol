@@ -449,7 +449,7 @@ contract UTXORedeemableToken is StandardToken {
         bytes32 s,
         address referrer
     ) 
-        public 
+        external 
         returns (uint256 tokensRedeemed) 
     {
         /* Credit claimer */

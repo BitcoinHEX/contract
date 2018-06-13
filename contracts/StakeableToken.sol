@@ -29,7 +29,7 @@ contract StakeableToken is UTXORedeemableToken {
         return (_principle * (100 + _interestRateTimesHundred) ** _periods)/(100 ** _periods);
     }
 
-    function startStake(uint256 _value, uint256 _unlockTime) public {
+    function startStake(uint256 _value, uint256 _unlockTime) external {
         address staker = msg.sender;
 
         /* Check if weekly data needs to be updated */
@@ -107,7 +107,7 @@ contract StakeableToken is UTXORedeemableToken {
         return rewards;
     }
 
-    function getCurrentStaked(address staker) public view returns(uint256 stakes){
+    function getCurrentStaked(address staker) external view returns(uint256 stakes){
         for (uint256 i; i < staked[staker].length; i++) {
             /* Add Stake Amount */
             stakes = stakes.add(staked[staker][i].stakeAmount);
@@ -122,7 +122,7 @@ contract StakeableToken is UTXORedeemableToken {
         return stakes;
     }
 
-    function claimStakingRewards(address staker) public {
+    function claimStakingRewards(address staker) external {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
