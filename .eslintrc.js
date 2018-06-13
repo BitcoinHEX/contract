@@ -14,7 +14,10 @@ module.exports = {
         'plugin:import/warnings',
         'plugin:promise/recommended'
     ],
-    plugins: ['compat', 'prettier', 'promise', 'security'],
+    plugins: ['compat', 'prettier', 'promise'],
+    settings: {
+      polyfills: ['fetch', 'promises']
+    },
     env: {
         node: true
     },
@@ -25,6 +28,7 @@ module.exports = {
         afterAll: true,
         afterEach: true,
         artifacts: true,
+        assert: true,
         before: true,
         beforeAll: true,
         beforeEach: true,

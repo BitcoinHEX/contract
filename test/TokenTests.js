@@ -1,39 +1,32 @@
-import expectRevert from './helpers/expectRevert'
-import { verifyEvent } from './helpers/extras'
+const expectRevert = require('./helpers/expectRevert')
 
-const Token = artifacts.require('./helpers/MockToken.sol')
+const BitcoinHexStub = artifacts.require('./stubs/BitcoinHexStub.sol')
 
-// Note from @Emmonspired - we will add token transferrence tests here
-contract('Token Tests', accounts => {
-  const eventSigApproval = web3.sha3('Approval(address,address,uint256)')
-  const eventSigTransfer = web3.sha3('Transfer(address,address,uint256)')
+describe('when deploying BitcoinHex', () => {
+  contract('BitcoinHex', accounts => {
+    let bhx
+    const originContract = accounts[0]
 
-  const origin = accounts[0]
-  const account_two = accounts[1]
-  const account_three = accounts[2]
+    before('setup BitcoinHex', async () => {
+      bhx = await BitcoinHexStub.new(originContract)
+    })
 
-  let token,
-    origin_starting_balance,
-    account_two_starting_balance,
-    account_three_starting_balance
+    it('should have correct name and symbol', async () => {
+      assert.equal(
+        await bhx.name.call(),
+        'BitcoinHex',
+        'BitcoinHexStub name incorrect'
+      )
+      assert.equal(
+        await bhx.symbol.call(),
+        'BHX',
+        'BitcoinHexStub symbol incorrect'
+      )
+    })
 
-  before(async () => {
-    token = await Token.new({ from: origin })
-  })
-
-  beforeEach(async () => {
-    origin_starting_balance = await token.balanceOf.call(origin)
-    account_two_starting_balance = await token.balanceOf.call(account_two)
-    account_three_starting_balance = await token.balanceOf.call(account_three)
-  })
-
-  it('should have correct name and symbol', async () => {
-    assert.equal(await token.name.call(), 'BitcoinHex', 'Token name incorrect')
-    assert.equal(await token.symbol.call(), 'BHX', 'Token symbol incorrect')
-  })
-
-  it("should fail to transfer tokens to 0x0 or the token's address", async () => {
-    await expectRevert(token.transfer(0, 1, { from: origin }))
-    await expectRevert(token.transfer(token.address, 1, { from: origin }))
+    it("should fail to transfer bhxs to address(0) or the bhx's address", async () => {
+      await expectRevert(bhx.transfer(0, 1))
+      await expectRevert(bhx.transfer(bhx.address, 1))
+    })
   })
 })

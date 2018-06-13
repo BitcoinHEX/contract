@@ -28,9 +28,12 @@ import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
 */
 contract UTXORedeemableToken is StandardToken {
+<<<<<<< HEAD
 
     /* Origin Address */
     address origin;
+=======
+>>>>>>> a05ef61a9beed0d06f024aee24381035e512df9e
 
     /* Store time of launch for contract */
     uint256 launchTime;

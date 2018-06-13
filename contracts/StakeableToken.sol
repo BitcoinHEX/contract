@@ -9,6 +9,8 @@ contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
 
+    address public originAddress;
+
     uint256 totalBTCCirculationAtFork;
 
     uint256 stakedCoins;
@@ -33,11 +35,10 @@ contract StakeableToken is UTXORedeemableToken {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
-        /* Check if sender has sufficient balance */
-        require(_value <= balances[staker]);
-
         /* Remove balance from sender */
         balances[staker] = balances[staker].sub(_value);
+        balances[address(this)] = balances[address(this)].add(_value);
+        emit Transfer(staker, address(this), _value);
 
         /* Create Stake */
         staked[staker].push(
@@ -97,15 +98,24 @@ contract StakeableToken is UTXORedeemableToken {
         
     }
 
+<<<<<<< HEAD
     function calculateAdditionalRewards(StakeStruct stake, uint256 initRewards) internal view returns (uint256 rewards) {
         rewards = initRewards.add(calculateWeAreAllSatoshiRewards(stake));
+=======
+    function calculateRewards(StakeStruct stake) internal view returns (uint256) {
+        uint256 rewards = 0;
         rewards = rewards
-        .add(calculateViralRewards(rewards))
-        .add(calculateCritMassRewards(rewards));
+            .add(calculateStakingRewards(stake))
+            .add(calculateWeAreAllSatoshiRewards(stake));
+>>>>>>> a05ef61a9beed0d06f024aee24381035e512df9e
+        rewards = rewards
+            .add(calculateViralRewards(rewards))
+            .add(calculateCritMassRewards(rewards));
+
         return rewards;
     }
 
-    function mint(address staker) public {
+    function claimStakingRewards(address staker) public {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
@@ -115,8 +125,13 @@ contract StakeableToken is UTXORedeemableToken {
                 /* Remove StakedCoins from global counter */
                 stakedCoins = stakedCoins.sub(staked[staker][i].stakeAmount);
 
+                /* Sub staked coins from contract */
+                balances[address(this)] = balances[address(this)].sub(staked[staker][i].stakeAmount);
+                
                 /* Add staked coins to staker */
                 balances[staker] = balances[staker].add(staked[staker][i].stakeAmount);
+
+                emit Transfer(address(this), staker, staked[staker][i].stakeAmount);
 
                 /* Calculate Rewards */
                 uint256 stakingRewards = calculateStakingRewards(staked[staker][i]);
@@ -125,8 +140,13 @@ contract StakeableToken is UTXORedeemableToken {
                 /* Award staking rewards to staker */
                 balances[staker] = balances[staker].add(rewards);
 
+<<<<<<< HEAD
                 /* Award rewards to origin contract */
                 balances[origin] = balances[origin].add(rewards.sub(stakingRewards));
+=======
+                /* Award staking rewards to origin contract */
+                balances[originAddress] = balances[originAddress].add(rewards);
+>>>>>>> a05ef61a9beed0d06f024aee24381035e512df9e
 
                 /* Increase supply */
                 totalSupply_ = totalSupply_.add(rewards.mul(2));
