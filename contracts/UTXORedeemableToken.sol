@@ -18,9 +18,8 @@
 
 pragma solidity ^0.4.23;
 
-import "../node_modules/zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "../node_modules/zeppelin-solidity/contracts/ownership/Ownable.sol";
-import "./MerkleProof.sol";
+import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 
 /* solium-disable security/no-block-members */
 
@@ -28,7 +27,10 @@ import "./MerkleProof.sol";
 /**
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
 */
-contract UTXORedeemableToken is StandardToken, Ownable {
+contract UTXORedeemableToken is StandardToken {
+
+    /* Origin Address */
+    address origin;
 
     /* Store time of launch for contract */
     uint256 launchTime;
@@ -54,9 +56,6 @@ contract UTXORedeemableToken is StandardToken, Ownable {
 
     /* Maximum redeemable tokens, must be initialized by token constructor. */
     uint256 public maximumRedeemable;
-
-    /* Store pre-computed speed bonus values */
-    mapping (uint256 => uint256) weekToSpeedBonusTimesHundred;
 
     /* Redemption event, containing all relevant data for later analysis if desired. */
     event UTXORedeemed(
@@ -255,28 +254,74 @@ contract UTXORedeemableToken is StandardToken, Ownable {
         uint256 reduction = uint256(100).sub(weeksSinceLaunch.mul(2));
 
         /* Silly whale reduction
-           If claim amount is above 1000 BHX */
-        if (satoshis > 1000*(10**8)) {
-            if (satoshis < 10000*(10**8)) {
+           If claim amount is above 1000 BHX with 18 decimals ( 1e3 * 1e18 = 1e20) */
+        if (satoshis > 1e21) {
+            /* If claim amount is below 100000 BHX with 18 decimals (1e5 * 1e18 = 1e23) */
+            if (satoshis < 1e23) {
                 /* If between 1000 and 10000, penalise by 50% to 75% linearly
                    The following is a range convert from 1000-10000 to 500-2500
                    satoshis = ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow
                    satoshis = ((x - 1000) / (10000 - 1000)) * (2500 - 500) + 500
                    satoshis = (2 (x - 1000))/9 + 500 */
-                satoshis = satoshis.sub(1000*(10**8)).mul(2).div(9).add(500*(10**8));
+                satoshis = satoshis
+                    .sub(1e11)
+                    .mul(2)
+                    .div(9)
+                    .add(5e10);
             } else {
                 /* If greater than 10000 BHX penalise by 75% */
                 satoshis = satoshis.div(4);
             }
         }
 
-        /* Calculate redeem amount */
-        uint256 redeemAmount = satoshis.mul(reduction).div(100);
+        /* 
+          Calculate redeem amount in standard token decimals (1e18): 
+          already has 8 decimals (1e8 * 1e10 = 1e18) 
+        */
+        uint256 redeemAmount = satoshis.mul(reduction).mul(1e10).div(100);
 
         /* Apply speed bonus */
-        redeemAmount = redeemAmount.mul(weekToSpeedBonusTimesHundred[weeksSinceLaunch]).div(100);
+        if(weeksSinceLaunch > 45){
+            return redeemAmount;
+        }
 
-        return redeemAmount;
+        if(weeksSinceLaunch > 32){
+            return redeemAmount.mul(101).div(100);
+        }
+
+        if(weeksSinceLaunch > 24){
+            return redeemAmount.mul(102).div(100);
+        }
+
+        if(weeksSinceLaunch > 18){
+            return redeemAmount.mul(103).div(100);
+        }
+
+        if(weeksSinceLaunch > 14){
+            return redeemAmount.mul(104).div(100);
+        }
+
+        if(weeksSinceLaunch > 10){
+            return redeemAmount.mul(105).div(100);
+        }
+
+        if(weeksSinceLaunch > 7){
+            return redeemAmount.mul(106).div(100);
+        }
+
+        if(weeksSinceLaunch > 5){
+            return redeemAmount.mul(107).div(100);
+        }
+
+        if(weeksSinceLaunch > 3){
+            return redeemAmount.mul(108).div(100);
+        }
+
+        if(weeksSinceLaunch > 1){
+            return redeemAmount.mul(109).div(100);
+        }
+
+        return redeemAmount.mul(110).div(100);
     }
 
     /**
@@ -367,7 +412,7 @@ contract UTXORedeemableToken is StandardToken, Ownable {
             proof, 
             pubKey, 
             v, 
-            r, 
+            r,
             s, 
             msg.sender, 
             tokensRedeemed

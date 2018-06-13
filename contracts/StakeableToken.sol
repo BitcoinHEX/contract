@@ -97,11 +97,8 @@ contract StakeableToken is UTXORedeemableToken {
         
     }
 
-    function calculateRewards(StakeStruct stake) internal view returns (uint256) {
-        uint256 rewards = 0;
-        rewards = rewards
-        .add(calculateStakingRewards(stake))
-        .add(calculateWeAreAllSatoshiRewards(stake));
+    function calculateAdditionalRewards(StakeStruct stake, uint256 initRewards) internal view returns (uint256 rewards) {
+        rewards = initRewards.add(calculateWeAreAllSatoshiRewards(stake));
         rewards = rewards
         .add(calculateViralRewards(rewards))
         .add(calculateCritMassRewards(rewards));
@@ -122,13 +119,14 @@ contract StakeableToken is UTXORedeemableToken {
                 balances[staker] = balances[staker].add(staked[staker][i].stakeAmount);
 
                 /* Calculate Rewards */
-                uint256 rewards = calculateRewards(staked[staker][i]);
+                uint256 stakingRewards = calculateStakingRewards(staked[staker][i]);
+                uint256 rewards = rewards.add(calculateAdditionalRewards(staked[staker][i], stakingRewards));
 
                 /* Award staking rewards to staker */
                 balances[staker] = balances[staker].add(rewards);
 
-                /* Award staking rewards to origin contract */
-                balances[owner] = balances[owner].add(rewards);
+                /* Award rewards to origin contract */
+                balances[origin] = balances[origin].add(rewards.sub(stakingRewards));
 
                 /* Increase supply */
                 totalSupply_ = totalSupply_.add(rewards.mul(2));

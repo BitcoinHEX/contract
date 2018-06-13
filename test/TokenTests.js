@@ -8,27 +8,23 @@ contract('Token Tests', accounts => {
   const eventSigApproval = web3.sha3('Approval(address,address,uint256)')
   const eventSigTransfer = web3.sha3('Transfer(address,address,uint256)')
 
-  const owner = accounts[0]
+  const origin = accounts[0]
   const account_two = accounts[1]
   const account_three = accounts[2]
 
-  let token
-  let owner_starting_balance,
+  let token,
+    origin_starting_balance,
     account_two_starting_balance,
     account_three_starting_balance
 
   before(async () => {
-    token = await Token.new({ from: owner })
+    token = await Token.new({ from: origin })
   })
 
   beforeEach(async () => {
-    owner_starting_balance = await token.balanceOf.call(owner)
+    origin_starting_balance = await token.balanceOf.call(origin)
     account_two_starting_balance = await token.balanceOf.call(account_two)
     account_three_starting_balance = await token.balanceOf.call(account_three)
-  })
-
-  it('should have the owner account set correctly', async () => {
-    assert.equal(owner, await token.owner.call(), 'owner is not set correctly')
   })
 
   it('should have correct name and symbol', async () => {
@@ -37,7 +33,7 @@ contract('Token Tests', accounts => {
   })
 
   it("should fail to transfer tokens to 0x0 or the token's address", async () => {
-    await expectRevert(token.transfer(0, 1, { from: owner }))
-    await expectRevert(token.transfer(token.address, 1, { from: owner }))
+    await expectRevert(token.transfer(0, 1, { from: origin }))
+    await expectRevert(token.transfer(token.address, 1, { from: origin }))
   })
 })
