@@ -107,6 +107,21 @@ contract StakeableToken is UTXORedeemableToken {
         return rewards;
     }
 
+    function getCurrentStaked(address staker) public view returns(uint256 stakes){
+        for (uint256 i; i < staked[staker].length; i++) {
+            /* Add Stake Amount */
+            stakes = stakes.add(staked[staker][i].stakeAmount);
+            /* Check if stake has matured */
+            if (block.timestamp > staked[staker][i].unlockTime) {
+                /* Calculate Rewards */
+                uint256 stakingRewards = calculateStakingRewards(staked[staker][i]);
+                stakes = stakes.add(calculateAdditionalRewards(staked[staker][i], stakingRewards));
+            }
+        }
+
+        return stakes;
+    }
+
     function claimStakingRewards(address staker) public {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
