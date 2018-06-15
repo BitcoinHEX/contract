@@ -32,6 +32,9 @@ contract StakeableToken is UTXORedeemableToken {
     function startStake(uint256 _value, uint256 _unlockTime) external {
         address staker = msg.sender;
 
+        /* Make sure staker has enough funds */
+        require(balances[staker] >= _value);
+
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
