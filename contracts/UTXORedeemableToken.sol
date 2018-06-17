@@ -99,8 +99,10 @@ contract UTXORedeemableToken is StandardToken {
       pure 
       returns (bool) 
     {
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
         return ecrecover(
-            hash, 
+            prefixedHash, 
             v, 
             r, 
             s
