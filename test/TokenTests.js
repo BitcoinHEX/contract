@@ -1,14 +1,25 @@
-const expectRevert = require('./helpers/expectRevert')
+const {
+  defaultLaunchTime,
+  defaultRootUtxoMerkleHash,
+  defaultMaximumRedeemable,
+  defaultTotalBTCCirculationAtFork
+} = require('./helpers/bhx')
+const { origin, expectRevert } = require('./helpers/general')
 
 const BitcoinHexStub = artifacts.require('./stubs/BitcoinHexStub.sol')
 
 describe('when deploying BitcoinHex', () => {
-  contract('BitcoinHex', accounts => {
+  contract('BitcoinHex', () => {
     let bhx
-    const originContract = accounts[0]
 
     before('setup BitcoinHex', async () => {
-      bhx = await BitcoinHexStub.new(originContract)
+      bhx = await BitcoinHexStub.new(
+        origin,
+        defaultLaunchTime,
+        defaultRootUtxoMerkleHash,
+        defaultMaximumRedeemable,
+        defaultTotalBTCCirculationAtFork
+      )
     })
 
     it('should have correct name and symbol', async () => {

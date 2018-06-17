@@ -9,11 +9,9 @@ contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
 
-    address public originAddress;
+    uint256 public totalBTCCirculationAtFork;
 
-    uint256 totalBTCCirculationAtFork;
-
-    uint256 stakedCoins;
+    uint256 public stakedCoins;
 
     struct StakeStruct {
         uint256 stakeAmount;
@@ -110,7 +108,7 @@ contract StakeableToken is UTXORedeemableToken {
         return rewards;
     }
 
-    function getCurrentStaked(address staker) external view returns(uint256 stakes){
+    function getCurrentStaked(address staker) external view returns(uint256 stakes) {
         for (uint256 i; i < staked[staker].length; i++) {
             /* Add Stake Amount */
             stakes = stakes.add(staked[staker][i].stakeAmount);
