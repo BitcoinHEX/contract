@@ -6,7 +6,10 @@ const {
   defaultLeaf,
   invalidProof,
   invalidRootHash,
-  invalidLeaf
+  invalidLeaf,
+  bitcoinProof,
+  bitcoinRootHash,
+  bitcoinLeaf
 } = require('./helpers/mkl')
 
 describe('when verifying a merkle proof', () => {
@@ -17,7 +20,7 @@ describe('when verifying a merkle proof', () => {
       mkl = await setupContract()
     })
 
-    it('should verify correct proof', async () => {
+    it('should verify correct proof using simple merkle tree', async () => {
       await testVerifyProof(
         mkl,
         defaultProof,
@@ -27,7 +30,7 @@ describe('when verifying a merkle proof', () => {
       )
     })
 
-    it('should NOT verify incorrect proof', async () => {
+    it('should NOT verify incorrect proof using simple merkle tree', async () => {
       await testVerifyProof(
         mkl,
         invalidProof,
@@ -37,7 +40,7 @@ describe('when verifying a merkle proof', () => {
       )
     })
 
-    it('should NOT verify incorrect rootHash', async () => {
+    it('should NOT verify incorrect rootHash using simple merkle tree', async () => {
       await testVerifyProof(
         mkl,
         defaultProof,
@@ -47,11 +50,51 @@ describe('when verifying a merkle proof', () => {
       )
     })
 
-    it('should NOT verify incorrect rootHash', async () => {
+    it('should NOT verify incorrect rootHash using simple merkle tree', async () => {
       await testVerifyProof(
         mkl,
         defaultProof,
         defaultRootHash,
+        invalidLeaf,
+        false
+      )
+    })
+
+    it('should verify correct proof using bitcoin merkle tree', async () => {
+      await testVerifyProof(
+        mkl,
+        bitcoinProof,
+        bitcoinRootHash,
+        bitcoinLeaf,
+        true
+      )
+    })
+
+    it('should NOT verify incorrect proof using bitcoin merkle tree', async () => {
+      await testVerifyProof(
+        mkl,
+        invalidProof,
+        bitcoinRootHash,
+        bitcoinLeaf,
+        false
+      )
+    })
+
+    it('should NOT verify incorrect rootHash using bitcoin merkle tree', async () => {
+      await testVerifyProof(
+        mkl,
+        bitcoinProof,
+        invalidRootHash,
+        bitcoinLeaf,
+        false
+      )
+    })
+
+    it('should NOT verify incorrect rootHash using bitcoin merkle tree', async () => {
+      await testVerifyProof(
+        mkl,
+        bitcoinProof,
+        bitcoinRootHash,
         invalidLeaf,
         false
       )

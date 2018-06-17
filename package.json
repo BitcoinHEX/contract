@@ -14,6 +14,7 @@
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-promise": "^3.8.0",
     "ethereumjs-util": "^5.2.0",
+    "merkle-tree-solidity": "^1.0.8",
     "openzeppelin-solidity": "^1.10.0",
     "prettier": "^1.13.4",
     "rimraf": "^2.6.2",
