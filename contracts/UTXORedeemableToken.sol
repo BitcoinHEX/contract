@@ -41,16 +41,16 @@ contract UTXORedeemableToken is StandardToken {
     }
 
     /* Weekly update data */
-    mapping(uint256 => WeekDataStruct) weekData;
+    mapping(uint256 => WeekDataStruct) internal weekData;
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
     bytes32 public rootUTXOMerkleTreeHash;
 
     /* Redeemed UTXOs. */
-    mapping(bytes32 => bool) redeemedUTXOs;
+    mapping(bytes32 => bool) internal redeemedUTXOs;
 
     /* Total tokens redeemed so far. */
-    uint256 public totalRedeemed;
+    uint256 public totalRedeemed = 0;
 
     /* Maximum redeemable tokens, must be initialized by token constructor. */
     uint256 public maximumRedeemable;

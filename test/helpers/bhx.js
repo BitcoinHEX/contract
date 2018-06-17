@@ -1,5 +1,5 @@
 const { origin } = require('./general')
-const merkleTree = require('../data/merkleTree')
+const { bitcoinRootHash: defaultRootUtxoMerkleHash } = require('./mkl')
 const utxos = require('../data/utxos')
 const BigNumber = require('bignumber.js')
 const BitcoinHex = artifacts.require('BitcoinHex')
@@ -7,7 +7,10 @@ const BitcoinHex = artifacts.require('BitcoinHex')
 const defaultName = 'BitcoinHex'
 const defaultSymbol = 'BHX'
 const defaultDecimals = new BigNumber(18)
-const defaultRootUtxoMerkleHash = '0x' + merkleTree.elements[0]
+// 1 day from now as unix timestamp
+const defaultLaunchTime = new BigNumber(
+  Math.round(new Date().getTime() / 1000)
+).add(60 * 60 * 24)
 const defaultMaximumRedeemable = utxos.reduce(
   (total, tx) => total.add(tx.satoshis),
   new BigNumber(0)
@@ -60,5 +63,10 @@ const testInitialization = async bhx => {
 
 module.exports = {
   setupContract,
-  testInitialization
+  testInitialization,
+  defaultName,
+  defaultSymbol,
+  defaultDecimals,
+  defaultLaunchTime,
+  defaultMaximumRedeemable
 }
