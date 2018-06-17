@@ -1,11 +1,10 @@
-const expectRevert = require('./helpers/expectRevert')
 const {
   defaultLaunchTime,
   defaultRootUtxoMerkleHash,
   defaultMaximumRedeemable,
   defaultTotalBTCCirculationAtFork
 } = require('./helpers/bhx')
-const { origin } = require('./helpers/general')
+const { origin, expectRevert } = require('./helpers/general')
 
 const BitcoinHexStub = artifacts.require('./stubs/BitcoinHexStub.sol')
 

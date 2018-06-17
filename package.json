@@ -13,12 +13,13 @@
     "eslint-plugin-import": "^2.12.0",
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-promise": "^3.8.0",
+    "ethereumjs-util": "^5.2.0",
+    "openzeppelin-solidity": "^1.10.0",
     "prettier": "^1.13.4",
     "rimraf": "^2.6.2",
     "solium": "^1.1.7",
     "truffle": "^4.1.11",
-    "truffle-wallet-provider": "^0.0.5",
-    "openzeppelin-solidity": "^1.10.0"
+    "truffle-wallet-provider": "^0.0.5"
   },
   "scripts": {
     "compile": "truffle compile",

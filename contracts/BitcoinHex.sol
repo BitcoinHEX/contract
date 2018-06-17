@@ -8,11 +8,11 @@ contract BitcoinHex is StakeableToken {
     uint public decimals = 18;
 
     constructor (
-      address _originAddress,
-      uint256 _launchTime,
-      bytes32 _rootUTXOMerkleTreeHash,
-      uint256 _maximumRedeemable,
-      uint256 _totalBTCCirculationAtFork
+        address _originAddress,
+        uint256 _launchTime,
+        bytes32 _rootUTXOMerkleTreeHash,
+        uint256 _maximumRedeemable,
+        uint256 _totalBTCCirculationAtFork
     ) 
         public
     {
