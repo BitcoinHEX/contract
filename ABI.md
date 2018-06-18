@@ -10,11 +10,9 @@ BitcoinHEX conforms to the [ERC20](https://github.com/ethereum/EIPs/issues/20) s
 * @param proof Merkle tree proof
 * @return Whether or not the UTXO with the specified hash can be redeemed
 
-### redeemUTXO(bytes32 txid, uint8 outputIndex, uint256 satoshis, bytes32[] proof, bytes pubKey, bool isCompressed, uint8 v, bytes32 r, bytes32 s)
+### redeemUTXO(uint256 satoshis, bytes32[] proof, bytes pubKey, bool isCompressed, uint8 v, bytes32 r, bytes32 s)
 #### Active
 * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
-* @param txid Transaction hash
-* @param outputIndex Output index of the UTXO
 * @param satoshis Amount of UTXO in satoshis
 * @param proof Merkle tree proof
 * @param pubKey Uncompressed ECDSA public key to which the UTXO was sent
@@ -24,11 +22,9 @@ BitcoinHEX conforms to the [ERC20](https://github.com/ethereum/EIPs/issues/20) s
 * @param s s parameter of ECDSA signature
 * @return The number of tokens redeemed, if successful
 
-### redeemUTXO(bytes32 txid, uint8 outputIndex, uint256 satoshis, bytes32[] proof, bytes pubKey, bool isCompressed, uint8 v, bytes32 r, bytes32 s, address referrer)
+### redeemUTXO(uint256 satoshis, bytes32[] proof, bytes pubKey, bool isCompressed, uint8 v, bytes32 r, bytes32 s, address referrer)
 #### Active
 * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address, and credit a bonus to a referrer
-* @param txid Transaction hash
-* @param outputIndex Output index of the UTXO
 * @param satoshis Amount of UTXO in satoshis
 * @param proof Merkle tree proof
 * @param pubKey Uncompressed ECDSA public key to which the UTXO was sent

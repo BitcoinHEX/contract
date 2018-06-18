@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "openzeppelin-solidity/contracts/MerkleProof.sol";
+import "../../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 
 
 contract MerkleProofStub {

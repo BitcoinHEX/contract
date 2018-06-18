@@ -312,8 +312,6 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
-     * @param txid Transaction hash
-     * @param outputIndex Output index of the UTXO
      * @param satoshis Amount of UTXO in satoshis
      * @param proof Merkle tree proof
      * @param pubKey Uncompressed ECDSA public key to which the UTXO was sent
@@ -393,8 +391,6 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
-     * @param txid Transaction hash
-     * @param outputIndex Output index of the UTXO
      * @param satoshis Amount of UTXO in satoshis
      * @param proof Merkle tree proof
      * @param pubKey Uncompressed ECDSA public key to which the UTXO was sent
