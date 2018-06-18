@@ -57,20 +57,6 @@ contract UTXORedeemableToken is StandardToken {
     /* Maximum redeemable tokens, must be initialized by token constructor. */
     uint256 public maximumRedeemable;
 
-    /* Redemption event, containing all relevant data for later analysis if desired. */
-    event UTXORedeemed(
-        bytes32 txid,
-        uint8 outputIndex,
-        uint256 satoshis,
-        bytes32[] proof,
-        bytes pubKey,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        address indexed redeemer,
-        uint256 numberOfTokens
-    );
-
     /* Claim, stake, and minting events need to happen atleast once every week for this function to
        run automatically, otherwise function can be manually called for that week */
     function storeWeekUnclaimed() public {
@@ -338,8 +324,6 @@ contract UTXORedeemableToken is StandardToken {
      * @return The number of tokens redeemed, if successful
      */
     function redeemUTXO (
-        bytes32 txid,
-        uint8 outputIndex,
         uint256 satoshis,
         bytes32[] proof,
         bytes pubKey,
@@ -363,9 +347,7 @@ contract UTXORedeemableToken is StandardToken {
         /* Calculate the UTXO Merkle leaf hash. */
         bytes32 merkleLeafHash = keccak256(
             abi.encodePacked(
-                txid, 
                 originalAddress, 
-                outputIndex, 
                 satoshis
             )
         );
@@ -403,20 +385,6 @@ contract UTXORedeemableToken is StandardToken {
 
         /* Mark the transfer event. */
         emit Transfer(address(0), msg.sender, tokensRedeemed);
-
-        /* Mark the UTXO redemption event. */
-        emit UTXORedeemed(
-            txid, 
-            outputIndex, 
-            satoshis, 
-            proof, 
-            pubKey, 
-            v, 
-            r,
-            s, 
-            msg.sender, 
-            tokensRedeemed
-        );
         
         /* Return the number of tokens redeemed. */
         return tokensRedeemed;
@@ -438,8 +406,6 @@ contract UTXORedeemableToken is StandardToken {
      * @return The number of tokens redeemed, if successful
      */
     function redeemUTXO (
-        bytes32 txid,
-        uint8 outputIndex,
         uint256 satoshis,
         bytes32[] proof,
         bytes pubKey,
@@ -454,8 +420,6 @@ contract UTXORedeemableToken is StandardToken {
     {
         /* Credit claimer */
         tokensRedeemed = redeemUTXO (
-            txid,
-            outputIndex,
             satoshis,
             proof,
             pubKey,
