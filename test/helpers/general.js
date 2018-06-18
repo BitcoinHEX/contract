@@ -1,3 +1,7 @@
+const accounts = web3.eth.accounts
+
+const origin = accounts[0]
+
 const expectRevert = async promise => {
   try {
     await promise
@@ -23,4 +27,8 @@ const expectRevert = async promise => {
   assert(false, "Expected throw wasn't received")
 }
 
-module.exports = expectRevert
+module.exports = {
+  accounts,
+  origin,
+  expectRevert
+}

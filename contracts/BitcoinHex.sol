@@ -7,15 +7,19 @@ contract BitcoinHex is StakeableToken {
     string public symbol = "BHX";
     uint public decimals = 18;
 
-    constructor (address _originAddress) 
+    constructor (
+        address _originAddress,
+        uint256 _launchTime,
+        bytes32 _rootUTXOMerkleTreeHash,
+        uint256 _maximumRedeemable,
+        uint256 _totalBTCCirculationAtFork
+    ) 
         public
     {
-        totalSupply_ = 0;
-        // solium-disable-next-line security/no-block-members
-        launchTime = block.timestamp;
-        origin = _originAddress; // Change before launch
-        rootUTXOMerkleTreeHash = 0x0; // Change before launch
-        maximumRedeemable = 0; // Change before launch
-        totalBTCCirculationAtFork = 17078787*(10**8); // Change before launch
+        launchTime = _launchTime;
+        origin = _originAddress;
+        rootUTXOMerkleTreeHash = _rootUTXOMerkleTreeHash;
+        maximumRedeemable = _maximumRedeemable;
+        totalBTCCirculationAtFork = _totalBTCCirculationAtFork;
     }
 }

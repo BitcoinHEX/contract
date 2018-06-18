@@ -30,13 +30,13 @@ import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 contract UTXORedeemableToken is StandardToken {
 
     /* Origin Address */
-    address origin;
+    address public origin;
 
     /* Store time of launch for contract */
-    uint256 launchTime;
+    uint256 public launchTime;
 
     /* Store last updated week */
-    uint256 lastUpdatedWeek = 0;
+    uint256 public lastUpdatedWeek = 0;
 
     struct WeekDataStruct {
         uint256 unclaimedCoins;
@@ -267,43 +267,43 @@ contract UTXORedeemableToken is StandardToken {
         uint256 redeemAmount = satoshis.mul(reduction).mul(1e10).div(100);
 
         /* Apply speed bonus */
-        if(weeksSinceLaunch > 45){
+        if(weeksSinceLaunch > 45) {
             return redeemAmount;
         }
 
-        if(weeksSinceLaunch > 32){
+        if(weeksSinceLaunch > 32) {
             return redeemAmount.mul(101).div(100);
         }
 
-        if(weeksSinceLaunch > 24){
+        if(weeksSinceLaunch > 24) {
             return redeemAmount.mul(102).div(100);
         }
 
-        if(weeksSinceLaunch > 18){
+        if(weeksSinceLaunch > 18) {
             return redeemAmount.mul(103).div(100);
         }
 
-        if(weeksSinceLaunch > 14){
+        if(weeksSinceLaunch > 14) {
             return redeemAmount.mul(104).div(100);
         }
 
-        if(weeksSinceLaunch > 10){
+        if(weeksSinceLaunch > 10) {
             return redeemAmount.mul(105).div(100);
         }
 
-        if(weeksSinceLaunch > 7){
+        if(weeksSinceLaunch > 7) {
             return redeemAmount.mul(106).div(100);
         }
 
-        if(weeksSinceLaunch > 5){
+        if(weeksSinceLaunch > 5) {
             return redeemAmount.mul(107).div(100);
         }
 
-        if(weeksSinceLaunch > 3){
+        if(weeksSinceLaunch > 3) {
             return redeemAmount.mul(108).div(100);
         }
 
-        if(weeksSinceLaunch > 1){
+        if(weeksSinceLaunch > 1) {
             return redeemAmount.mul(109).div(100);
         }
 
