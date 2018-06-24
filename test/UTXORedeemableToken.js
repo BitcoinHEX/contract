@@ -5,9 +5,7 @@ const {
   testEcsdaVerify
 } = require('./helpers/urt')
 
-const { redeemer } = require('./helpers/general')
-
-describe.only('when deploying UTXORedeemableToken', () => {
+describe('when deploying UTXORedeemableToken', () => {
   contract('UTXORedeemableTokenStub', accounts => {
     let urt
 
@@ -43,7 +41,7 @@ describe.only('when deploying UTXORedeemableToken', () => {
       })
 
       it('should verify bitcoin signature using ecdsaVerify', async () => {
-        await testEcsdaVerify(urt, redeemer)
+        await testEcsdaVerify(urt)
       })
 
       // it('should convert ethereum public key to address', async () => {

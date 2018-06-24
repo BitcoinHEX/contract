@@ -93,21 +93,34 @@ contract UTXORedeemableToken is StandardToken {
         uint8 v, 
         bytes32 r, 
         bytes32 s, 
-        address expected
+        address expected,
+        bool addPrefix
     ) 
       public 
       pure 
       returns (bool) 
     {
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
+        bytes32 formattedHash;
+
+        if (!addPrefix) {
+            formattedHash = hash;
+        } else {
+            // accomodate geth method of signing data with prefixed message
+            bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+            formattedHash = keccak256(abi.encodePacked(prefix, hash));
+        }
+
         return ecrecover(
-            prefixedHash, 
+            formattedHash, 
             v, 
             r, 
             s
         ) == expected;
     }
+
+    // function validateSignature (bytes32 hash, uint8 v, bytes32 r, bytes32 s, address expected) public pure returns (bool) {
+    //     return ecrecover(hash, v, r, s) == expected;
+    // }
 
     /**
      * @dev Validate that the hash of a provided address was signed by the ECDSA public key associated with the specified Ethereum address
@@ -130,11 +143,12 @@ contract UTXORedeemableToken is StandardToken {
       returns (bool)
     {
         return validateSignature(
-            sha256(abi.encodePacked(addr)), 
+            sha256(abi.encodePacked(addr)),  // hash
             v, 
             r, 
             s, 
-            pubKeyToEthereumAddress(pubKey)
+            pubKeyToEthereumAddress(pubKey), // expected
+            false // do not prepend message
         );
     }
 

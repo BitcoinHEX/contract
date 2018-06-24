@@ -1,8 +1,7 @@
 const UtxoRedeemableToken = artifacts.require('UTXORedeemableTokenStub')
 
-const Message = require('bitcore-message')
-const { PrivateKey, PublicKey } = require('bitcore-lib')
-const ethUtil = require('ethereumjs-util')
+const { ECPair, crypto } = require('bitcoinjs-lib')
+const { ecsign, publicToAddress } = require('ethereumjs-util')
 const BigNumber = require('bignumber.js')
 
 const privPubKeys = require('../data/privPubKeys')
@@ -75,7 +74,14 @@ const testVerifySignature = async (
   // see: https://github.com/trufflesuite/ganache-cli/issues/243
   const v = new BigNumber('0x' + signature.slice(128, 130)).add(27).toNumber()
 
-  const valid = await urt.validateSignature(messageHash, v, r, s, testedAddress)
+  const valid = await urt.validateSignature(
+    messageHash,
+    v,
+    r,
+    s,
+    testedAddress,
+    true
+  )
 
   if (shouldBeValid) {
     assert(valid, 'signed message should validate')
@@ -84,36 +90,23 @@ const testVerifySignature = async (
   }
 }
 
-const parseSignature = sig => ({
-  v: ((sig[0] - 27) & 1) + 27,
-  r: sig.slice(1, 65),
-  s: sig.slice(66)
-})
-
 const testEcsdaVerify = async urt => {
+  // set bitcoin stuff from private key
   const wif = privPubKeys[0].privateKey
-  console.log('wif', wif)
-  const privKey = PrivateKey.fromWIF(wif)
-  console.log('privKey', privKey)
-  const pubKey = PublicKey(privKey)
-  console.log('pubKey', pubKey)
-  const pubKeyBuffer = Buffer.from(pubKey.toString('hex'), 'hex')
-  console.log('pubKeyBuffer', pubKeyBuffer)
-  const ethAddressBuffer = ethUtil.publicToAddress(pubKeyBuffer, true)
-  const ethAddress = ethAddressBuffer.toString('hex')
-  console.log('ethAddress', ethAddress)
-  const signature64 = Message(ethAddress).sign(privKey)
-  console.log(Buffer.from(signature64, 'base64'))
-  console.log(Buffer.from(signature64, 'base64').length)
-  const signatureHex = Buffer.from(signature64, 'base64').toString('hex')
-  console.log('sig', signatureHex)
-  const { v, r, s } = parseSignature(signatureHex)
-  console.log('v, r, s', v, r, s)
+  const ecPair = ECPair.fromWIF(wif)
 
-  const ecsdaArgs = ['0x' + ethAddress, '0x' + pubKey, v, '0x' + r, '0x' + s]
-  console.log('ecsdaArgs', ecsdaArgs)
-  const verified = await urt.ecdsaVerify(...ecsdaArgs)
-  console.log(verified)
+  const ethAddress = accounts[1].slice(2)
+  const ethHashBuf = crypto.sha256(Buffer.from(ethAddress, 'hex'))
+  let { v, r, s } = ecsign(ethHashBuf, ecPair.d.toBuffer())
+  v = parseInt(v, 10)
+  r = '0x' + r.toString('hex')
+  s = '0x' + s.toString('hex')
+  const pubKey =
+    '0x' +
+    ecPair.Q.affineX.toBuffer(32).toString('hex') +
+    ecPair.Q.affineY.toBuffer(32).toString('hex')
+
+  const verified = await urt.ecdsaVerify('0x' + ethAddress, pubKey, v, r, s)
   assert(verified, 'ecsdaVerify should verify')
 }
 
