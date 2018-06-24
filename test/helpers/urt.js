@@ -1,7 +1,9 @@
 const UtxoRedeemableToken = artifacts.require('UTXORedeemableTokenStub')
 
+const Message = require('bitcore-message')
+const { PrivateKey, PublicKey } = require('bitcore-lib')
+const ethUtil = require('ethereumjs-util')
 const BigNumber = require('bignumber.js')
-const { PrivateKey, PublicKey, Address, Networks } = require('bitcore-lib')
 
 const privPubKeys = require('../data/privPubKeys')
 const { origin, bigZero, accounts } = require('./general')
@@ -82,28 +84,37 @@ const testVerifySignature = async (
   }
 }
 
-const getBitcoinPublicKey = (privatKey, address) => {
-  const privateKey = PrivateKey(privPubKeys[0].privateKey, Networks.mainnet)
-  console.log(privateKey)
-  const pubKey = PublicKey(privateKey)
-  console.log(pubKey)
-  const derivedAddress = Address.fromPublicKey(pubKey)
-  console.log(derivedAddress, Networks.mainnet)
-
-  if (address) {
-    assert.equal(
-      derivedAddress,
-      privPubKeys[0].address,
-      'address should match given private key'
-    )
-  }
-}
+const parseSignature = sig => ({
+  v: ((sig[0] - 27) & 1) + 27,
+  r: sig.slice(1, 65),
+  s: sig.slice(66)
+})
 
 const testEcsdaVerify = async urt => {
-  const pubKey = getBitcoinPublicKey(
-    privPubKeys[0].privateKey,
-    privPubKeys[0].address
-  )
+  const wif = privPubKeys[0].privateKey
+  console.log('wif', wif)
+  const privKey = PrivateKey.fromWIF(wif)
+  console.log('privKey', privKey)
+  const pubKey = PublicKey(privKey)
+  console.log('pubKey', pubKey)
+  const pubKeyBuffer = Buffer.from(pubKey.toString('hex'), 'hex')
+  console.log('pubKeyBuffer', pubKeyBuffer)
+  const ethAddressBuffer = ethUtil.publicToAddress(pubKeyBuffer, true)
+  const ethAddress = ethAddressBuffer.toString('hex')
+  console.log('ethAddress', ethAddress)
+  const signature64 = Message(ethAddress).sign(privKey)
+  console.log(Buffer.from(signature64, 'base64'))
+  console.log(Buffer.from(signature64, 'base64').length)
+  const signatureHex = Buffer.from(signature64, 'base64').toString('hex')
+  console.log('sig', signatureHex)
+  const { v, r, s } = parseSignature(signatureHex)
+  console.log('v, r, s', v, r, s)
+
+  const ecsdaArgs = ['0x' + ethAddress, '0x' + pubKey, v, '0x' + r, '0x' + s]
+  console.log('ecsdaArgs', ecsdaArgs)
+  const verified = await urt.ecdsaVerify(...ecsdaArgs)
+  console.log(verified)
+  assert(verified, 'ecsdaVerify should verify')
 }
 
 module.exports = {

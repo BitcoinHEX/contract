@@ -3,6 +3,7 @@ const BigNumber = require('bignumber.js')
 const accounts = web3.eth.accounts
 
 const origin = accounts[0]
+const redeemer = accounts[1]
 
 const bigZero = new BigNumber(0)
 
@@ -34,6 +35,7 @@ const expectRevert = async promise => {
 module.exports = {
   accounts,
   origin,
+  redeemer,
   bigZero,
   expectRevert
 }
