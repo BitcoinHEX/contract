@@ -71,8 +71,8 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Extract a bytes32 subarray from an arbitrary length bytes array.
-     * @param data Bytes array from which to extract the subarray
-     * @param pos Starting position from which to copy
+     * @param _data Bytes array from which to extract the subarray
+     * @param _pos Starting position from which to copy
      * @return Extracted length 32 byte array
      */
     function extract
@@ -92,11 +92,11 @@ contract UTXORedeemableToken is StandardToken {
     
     /**
      * @dev Validate that a provided ECSDA signature was signed by the specified address
-     * @param hash Hash of signed data
-     * @param v v parameter of ECDSA signature
-     * @param r r parameter of ECDSA signature
-     * @param s s parameter of ECDSA signature
-     * @param expected Address claiming to have created this signature
+     * @param _hash Hash of signed data
+     * @param _v v parameter of ECDSA signature
+     * @param _r r parameter of ECDSA signature
+     * @param _s s parameter of ECDSA signature
+     * @param _expected Address claiming to have created this signature
      * @return Whether or not the signature was valid
      */
     function validateSignature
@@ -132,11 +132,11 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Validate that the hash of a provided address was signed by the ECDSA public key associated with the specified Ethereum address
-     * @param addr Address signed
-     * @param pubKey Uncompressed ECDSA public key claiming to have created this signature
-     * @param v v parameter of ECDSA signature
-     * @param r r parameter of ECDSA signature
-     * @param s s parameter of ECDSA signature
+     * @param _addr Address signed
+     * @param _pubKey Uncompressed ECDSA public key claiming to have created this signature
+     * @param _v v parameter of ECDSA signature
+     * @param _r r parameter of ECDSA signature
+     * @param _s s parameter of ECDSA signature
      * @return Whether or not the signature was valid
      */
     function ecdsaVerify
@@ -163,7 +163,7 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Convert an uncompressed ECDSA public key into an Ethereum address
-     * @param pubKey Uncompressed ECDSA public key to convert
+     * @param _pubKey Uncompressed ECDSA public key to convert
      * @return Ethereum address generated from the ECDSA public key
      */
     function pubKeyToEthereumAddress
@@ -175,14 +175,14 @@ contract UTXORedeemableToken is StandardToken {
         returns (address) 
     {
         return address(
-            uint(keccak256(_pubKey)) & 0x000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+            uint256(keccak256(_pubKey)) & 0x000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
         );
     }
 
     /**
      * @dev Calculate the Bitcoin-style address associated with an ECDSA public key
-     * @param pubKey ECDSA public key to convert
-     * @param isCompressed Whether or not the Bitcoin address was generated from a compressed key
+     * @param _pubKey ECDSA public key to convert
+     * @param _isCompressed Whether or not the Bitcoin address was generated from a compressed key
      * @return Raw Bitcoin address (no base58-check encoding)
      */
     function pubKeyToBitcoinAddress
@@ -200,9 +200,9 @@ contract UTXORedeemableToken is StandardToken {
         */
 
         /* x coordinate - first 32 bytes of public key */
-        uint256 _x = uint(extract(_pubKey, 0));
+        uint256 _x = uint256(extract(_pubKey, 0));
         /* y coordinate - second 32 bytes of public key */
-        uint256 _y = uint(extract(_pubKey, 32)); 
+        uint256 _y = uint256(extract(_pubKey, 32)); 
         uint8 _startingByte;
         if (_isCompressed) {
             /* Hash the compressed public key format. */
@@ -221,8 +221,8 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Verify a Merkle proof using the UTXO Merkle tree
-     * @param proof Generated Merkle tree proof
-     * @param merkleLeafHash Hash asserted to be present in the Merkle tree
+     * @param _proof Generated Merkle tree proof
+     * @param _merkleLeafHash Hash asserted to be present in the Merkle tree
      * @return Whether or not the proof is valid
      */
     function verifyProof
@@ -239,11 +239,11 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Verify that a UTXO with the specified Merkle leaf hash can be redeemed
-     * @param merkleLeafHash Merkle tree hash of the UTXO to be checked
-     * @param proof Merkle tree proof
+     * @param _merkleLeafHash Merkle tree hash of the UTXO to be checked
+     * @param _proof Merkle tree proof
      * @return Whether or not the UTXO with the specified hash can be redeemed
      */
-    function canRedeemUTXOHash
+    function canRedeemUtxoHash
     (
         bytes32 _merkleLeafHash, 
         bytes32[] _proof) 
@@ -258,12 +258,20 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Convenience helper function to check if a UTXO can be redeemed
+<<<<<<< HEAD
      * @param originalAddress Raw Bitcoin address (no base58-check encoding)
      * @param satoshis Amount of UTXO in satoshis
      * @param proof Merkle tree proof
+=======
+     * @param _txid Transaction hash
+     * @param _originalAddress Raw Bitcoin address (no base58-check encoding)
+     * @param _outputIndex Output index of UTXO
+     * @param _satoshis Amount of UTXO in satoshis
+     * @param _proof Merkle tree proof
+>>>>>>> format function names, change uint to uint256
      * @return Whether or not the UTXO can be redeemed
      */
-    function canRedeemUTXO
+    function canRedeemUtxo
     (
         bytes20 _originalAddress,
         uint256 _satoshis,
@@ -282,7 +290,7 @@ contract UTXORedeemableToken is StandardToken {
         );
     
         /* Verify the proof. */
-        return canRedeemUTXOHash(merkleLeafHash, _proof);
+        return canRedeemUtxoHash(merkleLeafHash, _proof);
     }
 
     function getRedeemAmount(
@@ -374,13 +382,13 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
-     * @param satoshis Amount of UTXO in satoshis
-     * @param proof Merkle tree proof
-     * @param pubKey Uncompressed ECDSA public key to which the UTXO was sent
-     * @param isCompressed Whether the Bitcoin address was generated from a compressed public key
-     * @param v v parameter of ECDSA signature
-     * @param r r parameter of ECDSA signature
-     * @param s s parameter of ECDSA signature
+     * @param _satoshis Amount of UTXO in satoshis
+     * @param _proof Merkle tree proof
+     * @param _pubKey Uncompressed ECDSA public key to which the UTXO was sent
+     * @param _isCompressed Whether the Bitcoin address was generated from a compressed public key
+     * @param _v v parameter of ECDSA signature
+     * @param _r r parameter of ECDSA signature
+     * @param _s s parameter of ECDSA signature
      * @return The number of tokens redeemed, if successful
      */
     function redeemUTXO (
@@ -413,7 +421,7 @@ contract UTXORedeemableToken is StandardToken {
         );
 
         /* Verify that the UTXO can be redeemed. */
-        require(canRedeemUTXOHash(_merkleLeafHash, _proof));
+        require(canRedeemUtxoHash(_merkleLeafHash, _proof));
 
         /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
         require(
@@ -453,14 +461,14 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
-     * @param satoshis Amount of UTXO in satoshis
-     * @param proof Merkle tree proof
-     * @param pubKey Uncompressed ECDSA public key to which the UTXO was sent
-     * @param isCompressed Whether the Bitcoin address was generated from a compressed public key
-     * @param v v parameter of ECDSA signature
-     * @param r r parameter of ECDSA signature
-     * @param s s parameter of ECDSA signature
-     * @param referrer address of referring person
+     * @param _satoshis Amount of UTXO in satoshis
+     * @param _proof Merkle tree proof
+     * @param _pubKey Uncompressed ECDSA public key to which the UTXO was sent
+     * @param _isCompressed Whether the Bitcoin address was generated from a compressed public key
+     * @param _v v parameter of ECDSA signature
+     * @param _r r parameter of ECDSA signature
+     * @param _s s parameter of ECDSA signature
+     * @param _referrer address of referring person
      * @return The number of tokens redeemed, if successful
      */
     function redeemUTXO (

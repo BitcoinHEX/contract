@@ -5,7 +5,7 @@ const {
   testEcsdaVerify,
   testPubKeyToEthereumAddress,
   testPubKeyToBitcoinAddress,
-  testCanRedeemUTXOHash,
+  testCanRedeemUtxoHash,
   testCanRedeemUTXO
 } = require('./helpers/urt')
 
@@ -56,11 +56,11 @@ describe('when deploying UTXORedeemableToken', () => {
         await testPubKeyToBitcoinAddress(urt, 0)
       })
 
-      it.only('should allow redeeming valid UTXO hash', async () => {
-        await testCanRedeemUTXOHash(urt)
+      it('should allow redeeming valid UTXO hash', async () => {
+        await testCanRedeemUtxoHash(urt)
       })
 
-      it.only('should allow redeeming valid UTXO', async () => {
+      it('should allow redeeming valid UTXO', async () => {
         await testCanRedeemUTXO(urt)
       })
 

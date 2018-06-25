@@ -169,7 +169,7 @@ const testPubKeyToBitcoinAddress = async (urt, privKeyIndex) => {
   )
 }
 
-const testCanRedeemUTXOHash = async urt => {
+const testCanRedeemUtxoHash = async urt => {
   const merkleLeafBufs = defaultMerkleTree.elements.map(item =>
     Buffer.from(item, 'hex')
   )
@@ -177,7 +177,7 @@ const testCanRedeemUTXOHash = async urt => {
     .getProofOrdered(merkleLeafBufs[0], 1)
     .map(getFormattedLeaf)
 
-  const canRedeem = await urt.canRedeemUTXOHash(
+  const canRedeem = await urt.canRedeemUtxoHash(
     '0x' + merkleLeafBufs[0].toString('hex'),
     proof
   )
@@ -251,6 +251,6 @@ module.exports = {
   testEcsdaVerify,
   testPubKeyToEthereumAddress,
   testPubKeyToBitcoinAddress,
-  testCanRedeemUTXOHash,
+  testCanRedeemUtxoHash,
   testCanRedeemUTXO
 }
