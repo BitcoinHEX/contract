@@ -6,7 +6,7 @@ const {
   testPubKeyToEthereumAddress,
   testPubKeyToBitcoinAddress,
   testCanRedeemUtxoHash,
-  testCanRedeemUTXO
+  testCanRedeemUtxo
 } = require('./helpers/urt')
 
 describe('when deploying UTXORedeemableToken', () => {
@@ -60,8 +60,8 @@ describe('when deploying UTXORedeemableToken', () => {
         await testCanRedeemUtxoHash(urt)
       })
 
-      it('should allow redeeming valid UTXO', async () => {
-        await testCanRedeemUTXO(urt)
+      it.only('should allow redeeming valid UTXO', async () => {
+        await testCanRedeemUtxo(urt)
       })
 
       // it('should redeem UTXO', async () => {

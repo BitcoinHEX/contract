@@ -1,16 +1,14 @@
 const UtxoRedeemableToken = artifacts.require('UTXORedeemableTokenStub')
 
 const { ECPair, crypto } = require('bitcoinjs-lib')
-const { ecsign, publicToAddress, sha3 } = require('ethereumjs-util')
+const { ecsign, publicToAddress } = require('ethereumjs-util')
 const { soliditySha3 } = require('web3-utils')
-const { decode: decode58, encode: encode58 } = require('bs58')
-const leftPad = require('left-pad')
+const { decode: decode58 } = require('bs58')
 const BigNumber = require('bignumber.js')
-const { default: MerkleTree } = require('merkle-tree-solidity')
+const leftPad = require('left-pad')
 
 const privateKeys = require('../data/privateKeys')
 const transactions = require('../data/transactions')
-const merkleTree = require('../data/merkleTree')
 const { origin, bigZero, accounts } = require('./general')
 const { defaultLaunchTime, defaultMaximumRedeemable } = require('./bhx')
 const {
@@ -188,18 +186,8 @@ const testCanRedeemUtxoHash = async urt => {
   )
 }
 
-const testCanRedeemUTXO = async urt => {
-  const {
-    txid,
-    address: originalAddress,
-    outputIndex,
-    satoshis
-  } = transactions[0]
-
-  for (const leaf of merkleTree.elements) {
-    console.log(leaf)
-    console.log(encode58(leaf))
-  }
+const testCanRedeemUtxo = async urt => {
+  const { address: originalAddress, satoshis } = transactions[0]
 
   const merkleLeafBufs = defaultMerkleTree.elements.map(item =>
     Buffer.from(item, 'hex')
@@ -209,34 +197,25 @@ const testCanRedeemUTXO = async urt => {
     .map(getFormattedLeaf)
 
   // format parmeters used for hasing to get merkle leaf in contract
-  const formattedTxId = '0x' + leftPad(decode58(txid).toString('hex'), 64, '0')
-  const formattedAddress =
-    '0x' +
-    leftPad(
-      stripHexifyBase58Address(originalAddress).replace('0x', ''),
-      40,
-      '0'
-    )
-  console.log('formatted parameters')
-  console.log(
-    formattedTxId,
-    '\n',
-    formattedAddress,
-    '\n',
-    outputIndex,
-    '\n',
-    satoshis,
-    '\n',
-    proof
+  const formattedAddress = stripHexifyBase58Address(originalAddress).replace(
+    '0x',
+    ''
   )
 
-  const canRedeem = await urt.canRedeemUTXO(
-    formattedTxId,
-    formattedAddress,
-    outputIndex,
-    satoshis,
-    proof
+  const hash = soliditySha3(
+    {
+      t: 'bytes20',
+      v: formattedAddress
+    },
+    {
+      t: 'uint256',
+      v: satoshis
+    }
   )
+  console.log(hash)
+  console.log(formattedAddress)
+
+  const canRedeem = await urt.canRedeemUtxo(formattedAddress, satoshis, proof)
 
   assert(
     canRedeem,
@@ -252,5 +231,5 @@ module.exports = {
   testPubKeyToEthereumAddress,
   testPubKeyToBitcoinAddress,
   testCanRedeemUtxoHash,
-  testCanRedeemUTXO
+  testCanRedeemUtxo
 }
