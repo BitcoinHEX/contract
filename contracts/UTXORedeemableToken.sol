@@ -195,9 +195,7 @@ contract UTXORedeemableToken is StandardToken {
      * @return Whether or not the UTXO can be redeemed
      */
     function canRedeemUTXO(
-        bytes32 txid,
         bytes20 originalAddress,
-        uint8 outputIndex,
         uint256 satoshis,
         bytes32[] proof
     ) 
@@ -208,9 +206,7 @@ contract UTXORedeemableToken is StandardToken {
         /* Calculate the hash of the Merkle leaf associated with this UTXO. */
         bytes32 merkleLeafHash = keccak256(
             abi.encodePacked(
-                txid, 
-                originalAddress, 
-                outputIndex, 
+                originalAddress,
                 satoshis
             )
         );
