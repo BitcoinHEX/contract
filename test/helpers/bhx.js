@@ -1,6 +1,6 @@
 const { origin } = require('./general')
 const { bitcoinRootHash: defaultRootUtxoMerkleHash } = require('./mkl')
-const utxos = require('../data/utxos')
+const utxos = require('../data/transactions')
 const BigNumber = require('bignumber.js')
 const BitcoinHex = artifacts.require('BitcoinHex')
 

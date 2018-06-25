@@ -1,8 +1,12 @@
 const {
   setupContract,
   testInitialization,
-  testVerifySignature,
-  testEcsdaVerify
+  testValidateSignature,
+  testEcsdaVerify,
+  testPubKeyToEthereumAddress,
+  testPubKeyToBitcoinAddress,
+  testCanRedeemUTXOHash,
+  testCanRedeemUTXO
 } = require('./helpers/urt')
 
 describe('when deploying UTXORedeemableToken', () => {
@@ -21,7 +25,7 @@ describe('when deploying UTXORedeemableToken', () => {
 
     describe('when using included utility functions', () => {
       it('should validateSignature using ethereum private key', async () => {
-        await testVerifySignature(
+        await testValidateSignature(
           urt,
           accounts[1],
           accounts[1],
@@ -31,7 +35,7 @@ describe('when deploying UTXORedeemableToken', () => {
       })
 
       it('should NOT validateSignature using incorrectAddress', async () => {
-        await testVerifySignature(
+        await testValidateSignature(
           urt,
           accounts[1],
           accounts[2],
@@ -41,28 +45,24 @@ describe('when deploying UTXORedeemableToken', () => {
       })
 
       it('should verify bitcoin signature using ecdsaVerify', async () => {
-        await testEcsdaVerify(urt)
+        await testEcsdaVerify(urt, accounts[1], 0)
       })
 
-      // it('should convert ethereum public key to address', async () => {
-      //   assert(false)
-      // })
+      it('should convert ethereum public key to address', async () => {
+        await testPubKeyToEthereumAddress(urt, 0)
+      })
 
-      // it('should convert bitcoin public key to address', async () => {
-      //   assert(false)
-      // })
+      it('should convert bitcoin public key to address', async () => {
+        await testPubKeyToBitcoinAddress(urt, 0)
+      })
 
-      // it('should verify merkle proof', async () => {
-      //   assert(false)
-      // })
+      it.only('should allow redeeming valid UTXO hash', async () => {
+        await testCanRedeemUTXOHash(urt)
+      })
 
-      // it('should allow redeeming valid UTXO', async () => {
-      //   assert(false)
-      // })
-
-      // it('should allow redeeming valid UTXO hash', async () => {
-      //   assert(false)
-      // })
+      it.only('should allow redeeming valid UTXO', async () => {
+        await testCanRedeemUTXO(urt)
+      })
 
       // it('should redeem UTXO', async () => {
       //   assert(false)

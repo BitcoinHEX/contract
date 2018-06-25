@@ -57,8 +57,11 @@ contract UTXORedeemableToken is StandardToken {
 
     /* Claim, stake, and minting events need to happen atleast once every week for this function to
        run automatically, otherwise function can be manually called for that week */
-    function storeWeekUnclaimed() public {
+    function storeWeekUnclaimed()
+      public 
+    {
         uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
+
         if (weeksSinceLaunch < 51 && weeksSinceLaunch > lastUpdatedWeek) {
             uint256 unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
             weekData[weeksSinceLaunch] = WeekDataStruct(unclaimedCoins);
@@ -72,11 +75,19 @@ contract UTXORedeemableToken is StandardToken {
      * @param pos Starting position from which to copy
      * @return Extracted length 32 byte array
      */
-    function extract(bytes data, uint256 pos) private pure returns (bytes32 result) { 
-        for (uint256 i = 0; i < 32; i++) {
-            result ^= (bytes32(0xff00000000000000000000000000000000000000000000000000000000000000) & data[i + pos]) >> (i * 8);
+    function extract
+    (
+        bytes _data, 
+        uint256 _pos
+    ) 
+        private
+        pure 
+        returns (bytes32 _result) 
+    { 
+        for (uint256 _i = 0; _i < 32; _i++) {
+            _result ^= (bytes32(0xff00000000000000000000000000000000000000000000000000000000000000) & _data[_i + _pos]) >> (_i * 8);
         }
-        return result;
+        return _result;
     }
     
     /**
@@ -88,39 +99,36 @@ contract UTXORedeemableToken is StandardToken {
      * @param expected Address claiming to have created this signature
      * @return Whether or not the signature was valid
      */
-    function validateSignature (
-        bytes32 hash, 
-        uint8 v, 
-        bytes32 r, 
-        bytes32 s, 
-        address expected,
-        bool addPrefix
+    function validateSignature
+    (
+        bytes32 _hash, 
+        uint8 _v, 
+        bytes32 _r, 
+        bytes32 _s, 
+        address _expected,
+        bool _addPrefix
     ) 
       public 
       pure 
       returns (bool) 
     {
-        bytes32 formattedHash;
+        bytes32 _formattedHash;
 
-        if (!addPrefix) {
-            formattedHash = hash;
+        if (!_addPrefix) {
+            _formattedHash = _hash;
         } else {
             // accomodate geth method of signing data with prefixed message
-            bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-            formattedHash = keccak256(abi.encodePacked(prefix, hash));
+            bytes memory _prefix = "\x19Ethereum Signed Message:\n32";
+            _formattedHash = keccak256(abi.encodePacked(_prefix, _hash));
         }
 
         return ecrecover(
-            formattedHash, 
-            v, 
-            r, 
-            s
-        ) == expected;
+            _formattedHash, 
+            _v, 
+            _r, 
+            _s
+        ) == _expected;
     }
-
-    // function validateSignature (bytes32 hash, uint8 v, bytes32 r, bytes32 s, address expected) public pure returns (bool) {
-    //     return ecrecover(hash, v, r, s) == expected;
-    // }
 
     /**
      * @dev Validate that the hash of a provided address was signed by the ECDSA public key associated with the specified Ethereum address
@@ -131,23 +139,24 @@ contract UTXORedeemableToken is StandardToken {
      * @param s s parameter of ECDSA signature
      * @return Whether or not the signature was valid
      */
-    function ecdsaVerify (
-        address addr, 
-        bytes pubKey, 
-        uint8 v, 
-        bytes32 r, 
-        bytes32 s
+    function ecdsaVerify
+    (
+        address _addr, 
+        bytes _pubKey, 
+        uint8 _v, 
+        bytes32 _r, 
+        bytes32 _s
     ) 
       public 
       pure 
       returns (bool)
     {
         return validateSignature(
-            sha256(abi.encodePacked(addr)),  // hash
-            v, 
-            r, 
-            s, 
-            pubKeyToEthereumAddress(pubKey), // expected
+            sha256(abi.encodePacked(_addr)),  // hash
+            _v, 
+            _r, 
+            _s, 
+            pubKeyToEthereumAddress(_pubKey), // expected
             false // do not prepend message
         );
     }
@@ -157,8 +166,17 @@ contract UTXORedeemableToken is StandardToken {
      * @param pubKey Uncompressed ECDSA public key to convert
      * @return Ethereum address generated from the ECDSA public key
      */
-    function pubKeyToEthereumAddress (bytes pubKey) public pure returns (address) {
-        return address(uint(keccak256(pubKey)) & 0x000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
+    function pubKeyToEthereumAddress
+    (
+        bytes _pubKey
+    )
+        public 
+        pure 
+        returns (address) 
+    {
+        return address(
+            uint(keccak256(_pubKey)) & 0x000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        );
     }
 
     /**
@@ -167,25 +185,37 @@ contract UTXORedeemableToken is StandardToken {
      * @param isCompressed Whether or not the Bitcoin address was generated from a compressed key
      * @return Raw Bitcoin address (no base58-check encoding)
      */
-    function pubKeyToBitcoinAddress(bytes pubKey, bool isCompressed) public pure returns (bytes20) {
+    function pubKeyToBitcoinAddress
+    (
+        bytes _pubKey, 
+        bool _isCompressed
+    ) 
+        public 
+        pure 
+        returns (bytes20) 
+    {
         /* Helpful references:
            - https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses 
            - https://github.com/cryptocoinjs/ecurve/blob/master/lib/point.js
         */
 
         /* x coordinate - first 32 bytes of public key */
-        uint256 x = uint(extract(pubKey, 0));
+        uint256 _x = uint(extract(_pubKey, 0));
         /* y coordinate - second 32 bytes of public key */
-        uint256 y = uint(extract(pubKey, 32)); 
-        uint8 startingByte;
-        if (isCompressed) {
+        uint256 _y = uint(extract(_pubKey, 32)); 
+        uint8 _startingByte;
+        if (_isCompressed) {
             /* Hash the compressed public key format. */
-            startingByte = y % 2 == 0 ? 0x02 : 0x03;
-            return ripemd160(abi.encodePacked(sha256(abi.encodePacked(startingByte, x))));
+            _startingByte = _y % 2 == 0 ? 0x02 : 0x03;
+            return ripemd160(
+                abi.encodePacked(sha256(abi.encodePacked(_startingByte, _x)))
+            );
         } else {
             /* Hash the uncompressed public key format. */
-            startingByte = 0x04;
-            return ripemd160(abi.encodePacked(sha256(abi.encodePacked(startingByte, x, y))));
+            _startingByte = 0x04;
+            return ripemd160(
+                abi.encodePacked(sha256(abi.encodePacked(_startingByte, _x, _y)))
+            );
         }
     }
 
@@ -195,8 +225,35 @@ contract UTXORedeemableToken is StandardToken {
      * @param merkleLeafHash Hash asserted to be present in the Merkle tree
      * @return Whether or not the proof is valid
      */
-    function verifyProof(bytes32[] proof, bytes32 merkleLeafHash) public view returns (bool) {
-        return MerkleProof.verifyProof(proof, rootUTXOMerkleTreeHash, merkleLeafHash);
+    function verifyProof
+    (
+        bytes32[] _proof, 
+        bytes32 _merkleLeafHash
+    ) 
+        public 
+        view 
+        returns (bool)
+    {
+        return MerkleProof.verifyProof(_proof, rootUTXOMerkleTreeHash, _merkleLeafHash);
+    }
+
+    /**
+     * @dev Verify that a UTXO with the specified Merkle leaf hash can be redeemed
+     * @param merkleLeafHash Merkle tree hash of the UTXO to be checked
+     * @param proof Merkle tree proof
+     * @return Whether or not the UTXO with the specified hash can be redeemed
+     */
+    function canRedeemUTXOHash
+    (
+        bytes32 _merkleLeafHash, 
+        bytes32[] _proof) 
+        public view returns (bool) 
+    {
+        /* Check that the UTXO has not yet been redeemed and that it exists in the Merkle tree. */
+        return(
+          (redeemedUTXOs[_merkleLeafHash] == false) && 
+          verifyProof(_proof, _merkleLeafHash)
+        );
     }
 
     /**
@@ -206,10 +263,11 @@ contract UTXORedeemableToken is StandardToken {
      * @param proof Merkle tree proof
      * @return Whether or not the UTXO can be redeemed
      */
-    function canRedeemUTXO(
-        bytes20 originalAddress,
-        uint256 satoshis,
-        bytes32[] proof
+    function canRedeemUTXO
+    (
+        bytes20 _originalAddress,
+        uint256 _satoshis,
+        bytes32[] _proof
     ) 
         public 
         view 
@@ -218,54 +276,49 @@ contract UTXORedeemableToken is StandardToken {
         /* Calculate the hash of the Merkle leaf associated with this UTXO. */
         bytes32 merkleLeafHash = keccak256(
             abi.encodePacked(
-                originalAddress,
-                satoshis
+                _originalAddress, 
+                _satoshis
             )
         );
     
         /* Verify the proof. */
-        return canRedeemUTXOHash(merkleLeafHash, proof);
-    }
-      
-    /**
-     * @dev Verify that a UTXO with the specified Merkle leaf hash can be redeemed
-     * @param merkleLeafHash Merkle tree hash of the UTXO to be checked
-     * @param proof Merkle tree proof
-     * @return Whether or not the UTXO with the specified hash can be redeemed
-     */
-    function canRedeemUTXOHash(bytes32 merkleLeafHash, bytes32[] proof) public view returns (bool) {
-        /* Check that the UTXO has not yet been redeemed and that it exists in the Merkle tree. */
-        return((redeemedUTXOs[merkleLeafHash] == false) && verifyProof(proof, merkleLeafHash));
+        return canRedeemUTXOHash(merkleLeafHash, _proof);
     }
 
-    function getRedeemAmount(uint256 amount) internal view returns (uint256 redeemed) {
+    function getRedeemAmount(
+        uint256 _amount
+    ) 
+        internal 
+        view 
+        returns (uint256) 
+    {
         /* Convert from 8 decimals to 18 */
-        uint256 satoshis = amount.mul(1e10);
+        uint256 _satoshis = _amount.mul(1e10);
 
         /* Weeks since launch */
-        uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
+        uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
         /* Calculate percent reduction */
-        uint256 reduction = uint256(100).sub(weeksSinceLaunch.mul(2));
+        uint256 _reduction = uint256(100).sub(_weeksSinceLaunch.mul(2));
 
         /* Silly whale reduction
            If claim amount is above 1000 BHX with 18 decimals ( 1e3 * 1e18 = 1e20) */
-        if (satoshis > 1e21) {
+        if (_satoshis > 1e21) {
             /* If claim amount is below 100000 BHX with 18 decimals (1e5 * 1e18 = 1e23) */
-            if (satoshis < 1e23) {
+            if (_satoshis < 1e23) {
                 /* If between 1000 and 10000, penalise by 50% to 75% linearly
                    The following is a range convert from 1000-10000 to 500-2500
-                   satoshis = ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow
-                   satoshis = ((x - 1000) / (10000 - 1000)) * (2500 - 500) + 500
-                   satoshis = (2 (x - 1000))/9 + 500 */
-                satoshis = satoshis
+                   _satoshis = ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow
+                   _satoshis = ((x - 1000) / (10000 - 1000)) * (2500 - 500) + 500
+                   _satoshis = (2 (x - 1000))/9 + 500 */
+                _satoshis = _satoshis
                     .sub(1e11)
                     .mul(2)
                     .div(9)
                     .add(5e10);
             } else {
                 /* If greater than 10000 BHX penalise by 75% */
-                satoshis = satoshis.div(4);
+                _satoshis = _satoshis.div(4);
             }
         }
 
@@ -273,50 +326,50 @@ contract UTXORedeemableToken is StandardToken {
           Calculate redeem amount in standard token decimals (1e18): 
           already has 8 decimals (1e8 * 1e10 = 1e18) 
         */
-        uint256 redeemAmount = satoshis.mul(reduction).mul(1e10).div(100);
+        uint256 _redeemAmount = _satoshis.mul(_reduction).mul(1e10).div(100);
 
         /* Apply speed bonus */
-        if(weeksSinceLaunch > 45) {
-            return redeemAmount;
+        if(_weeksSinceLaunch > 45) {
+            return _redeemAmount;
         }
 
-        if(weeksSinceLaunch > 32) {
-            return redeemAmount.mul(101).div(100);
+        if(_weeksSinceLaunch > 32) {
+            return _redeemAmount.mul(101).div(100);
         }
 
-        if(weeksSinceLaunch > 24) {
-            return redeemAmount.mul(102).div(100);
+        if(_weeksSinceLaunch > 24) {
+            return _redeemAmount.mul(102).div(100);
         }
 
-        if(weeksSinceLaunch > 18) {
-            return redeemAmount.mul(103).div(100);
+        if(_weeksSinceLaunch > 18) {
+            return _redeemAmount.mul(103).div(100);
         }
 
-        if(weeksSinceLaunch > 14) {
-            return redeemAmount.mul(104).div(100);
+        if(_weeksSinceLaunch > 14) {
+            return _redeemAmount.mul(104).div(100);
         }
 
-        if(weeksSinceLaunch > 10) {
-            return redeemAmount.mul(105).div(100);
+        if(_weeksSinceLaunch > 10) {
+            return _redeemAmount.mul(105).div(100);
         }
 
-        if(weeksSinceLaunch > 7) {
-            return redeemAmount.mul(106).div(100);
+        if(_weeksSinceLaunch > 7) {
+            return _redeemAmount.mul(106).div(100);
         }
 
-        if(weeksSinceLaunch > 5) {
-            return redeemAmount.mul(107).div(100);
+        if(_weeksSinceLaunch > 5) {
+            return _redeemAmount.mul(107).div(100);
         }
 
-        if(weeksSinceLaunch > 3) {
-            return redeemAmount.mul(108).div(100);
+        if(_weeksSinceLaunch > 3) {
+            return _redeemAmount.mul(108).div(100);
         }
 
-        if(weeksSinceLaunch > 1) {
-            return redeemAmount.mul(109).div(100);
+        if(_weeksSinceLaunch > 1) {
+            return _redeemAmount.mul(109).div(100);
         }
 
-        return redeemAmount.mul(110).div(100);
+        return _redeemAmount.mul(110).div(100);
     }
 
     /**
@@ -331,16 +384,16 @@ contract UTXORedeemableToken is StandardToken {
      * @return The number of tokens redeemed, if successful
      */
     function redeemUTXO (
-        uint256 satoshis,
-        bytes32[] proof,
-        bytes pubKey,
-        bool isCompressed,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _satoshis,
+        bytes32[] _proof,
+        bytes _pubKey,
+        bool _isCompressed,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) 
         public 
-        returns (uint256 tokensRedeemed)
+        returns (uint256 _tokensRedeemed)
     {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
@@ -349,52 +402,52 @@ contract UTXORedeemableToken is StandardToken {
         require(block.timestamp.sub(launchTime).div(7 days) < 50);
 
         /* Calculate original Bitcoin-style address associated with the provided public key. */
-        bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey, isCompressed);
+        bytes20 _originalAddress = pubKeyToBitcoinAddress(_pubKey, _isCompressed);
 
         /* Calculate the UTXO Merkle leaf hash. */
-        bytes32 merkleLeafHash = keccak256(
+        bytes32 _merkleLeafHash = keccak256(
             abi.encodePacked(
-                originalAddress, 
-                satoshis
+                _originalAddress, 
+                _satoshis
             )
         );
 
         /* Verify that the UTXO can be redeemed. */
-        require(canRedeemUTXOHash(merkleLeafHash, proof));
+        require(canRedeemUTXOHash(_merkleLeafHash, _proof));
 
         /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
         require(
             ecdsaVerify(
                 msg.sender, 
-                pubKey, 
-                v, 
-                r, 
-                s
+                _pubKey, 
+                _v, 
+                _r, 
+                _s
             )
         );
 
         /* Mark the UTXO as redeemed. */
-        redeemedUTXOs[merkleLeafHash] = true;
+        redeemedUTXOs[_merkleLeafHash] = true;
 
-        tokensRedeemed = getRedeemAmount(satoshis);
+        _tokensRedeemed = getRedeemAmount(_satoshis);
 
         /* Sanity check. */
-        require(totalRedeemed.add(tokensRedeemed) <= maximumRedeemable);
+        require(totalRedeemed.add(_tokensRedeemed) <= maximumRedeemable);
 
         /* Track total redeemed tokens. */
-        totalRedeemed = totalRedeemed.add(tokensRedeemed);
+        totalRedeemed = totalRedeemed.add(_tokensRedeemed);
 
         /* Credit the redeemer. */ 
-        balances[msg.sender] = balances[msg.sender].add(tokensRedeemed);
+        balances[msg.sender] = balances[msg.sender].add(_tokensRedeemed);
 
         /* Increase supply */
-        totalSupply_ = totalSupply_.add(tokensRedeemed);
+        totalSupply_ = totalSupply_.add(_tokensRedeemed);
 
         /* Mark the transfer event. */
-        emit Transfer(address(0), msg.sender, tokensRedeemed);
+        emit Transfer(address(0), msg.sender, _tokensRedeemed);
         
         /* Return the number of tokens redeemed. */
-        return tokensRedeemed;
+        return _tokensRedeemed;
 
     }
 
@@ -411,31 +464,31 @@ contract UTXORedeemableToken is StandardToken {
      * @return The number of tokens redeemed, if successful
      */
     function redeemUTXO (
-        uint256 satoshis,
-        bytes32[] proof,
-        bytes pubKey,
-        bool isCompressed,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        address referrer
+        uint256 _satoshis,
+        bytes32[] _proof,
+        bytes _pubKey,
+        bool _isCompressed,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        address _referrer
     ) 
         external 
         returns (uint256 tokensRedeemed) 
     {
         /* Credit claimer */
         tokensRedeemed = redeemUTXO (
-            satoshis,
-            proof,
-            pubKey,
-            isCompressed,
-            v,
-            r,
-            s
+            _satoshis,
+            _proof,
+            _pubKey,
+            _isCompressed,
+            _v,
+            _r,
+            _s
         );
 
         /* Credit referrer */
-        balances[referrer] = balances[referrer].add(tokensRedeemed.div(20));
+        balances[_referrer] = balances[_referrer].add(tokensRedeemed.div(20));
 
         /* Increase supply */
         totalSupply_ = totalSupply_.add(tokensRedeemed.div(20));

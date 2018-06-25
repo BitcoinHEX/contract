@@ -34,15 +34,13 @@ const invalidLeaf = invalidFormattedHash
 // bitcoin merkle tree items
 //
 
-const formattedBitcoinHashes = merkleTree.elements.map(item =>
-  Buffer.from(item, 'hex')
-)
-const bitcoinMerkleTree = new MerkleTree(formattedBitcoinHashes)
+const merkleLeafBufs = merkleTree.elements.map(item => Buffer.from(item, 'hex'))
+const bitcoinMerkleTree = new MerkleTree(merkleLeafBufs)
 const bitcoinRootHash = getFormattedHash(bitcoinMerkleTree.getRoot())
 const bitcoinProof = bitcoinMerkleTree
-  .getProofOrdered(formattedBitcoinHashes[0], 1)
+  .getProofOrdered(merkleLeafBufs[0], 1)
   .map(getFormattedHash)
-const bitcoinLeaf = getFormattedHash(formattedBitcoinHashes[0])
+const bitcoinLeaf = getFormattedHash(merkleLeafBufs[0])
 
 const setupContract = async () => {
   const mkl = await MerkleProof.new()
