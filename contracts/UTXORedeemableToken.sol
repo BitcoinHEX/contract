@@ -225,7 +225,8 @@ contract UTXORedeemableToken is StandardToken {
     }
 
     function getRedeemAmount(uint256 amount) internal view returns (uint256 redeemed) {
-        uint256 satoshis = amount;
+        /* Convert from 8 decimals to 18 */
+        uint256 satoshis = amount.mul(1e10);
 
         /* Weeks since launch */
         uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
