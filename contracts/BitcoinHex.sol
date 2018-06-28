@@ -9,14 +9,13 @@ contract BitcoinHex is StakeableToken {
 
     constructor (
         address _originAddress,
-        uint256 _launchTime,
         bytes32 _rootUTXOMerkleTreeHash,
         uint256 _maximumRedeemable,
         uint256 _totalBTCCirculationAtFork
     ) 
         public
     {
-        launchTime = _launchTime;
+        launchTime = block.timestamp;
         origin = _originAddress;
         rootUTXOMerkleTreeHash = _rootUTXOMerkleTreeHash;
         maximumRedeemable = _maximumRedeemable;
