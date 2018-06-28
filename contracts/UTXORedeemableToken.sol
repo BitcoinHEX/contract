@@ -187,9 +187,7 @@ contract UTXORedeemableToken is StandardToken {
 
     /**
      * @dev Convenience helper function to check if a UTXO can be redeemed
-     * @param txid Transaction hash
      * @param originalAddress Raw Bitcoin address (no base58-check encoding)
-     * @param outputIndex Output index of UTXO
      * @param satoshis Amount of UTXO in satoshis
      * @param proof Merkle tree proof
      * @return Whether or not the UTXO can be redeemed
