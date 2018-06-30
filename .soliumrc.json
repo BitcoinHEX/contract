@@ -29,6 +29,7 @@
         ],
         "security/no-inline-assembly": "off",
         "security/no-assign-params": "off",
+        "security/no-block-members": "off",
         "semicolon-whitespace": "error",
         "uppercase": "off",
         "variable-declarations": "error",

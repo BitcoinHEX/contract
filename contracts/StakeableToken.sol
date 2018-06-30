@@ -1,9 +1,5 @@
 pragma solidity ^0.4.23;
-
 import "./UTXORedeemableToken.sol";
-
-/* solium-disable security/no-block-members */
-
 
 contract StakeableToken is UTXORedeemableToken {
 

@@ -21,8 +21,6 @@ pragma solidity ^0.4.23;
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 
-/* solium-disable security/no-block-members */
-
 
 /**
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum

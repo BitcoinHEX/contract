@@ -1,8 +1,6 @@
 pragma solidity ^0.4.23;
 import "./StakeableToken.sol";
 
-/* solium-disable security/no-block-members */
-
 contract BitcoinHex is StakeableToken {
     string public name = "BitcoinHex"; 
     string public symbol = "BHX";
