@@ -21,6 +21,8 @@ pragma solidity ^0.4.23;
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 
+/* solium-disable security/no-block-members */
+
 
 /**
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
@@ -75,8 +77,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _pos Starting position from which to copy
      * @return Extracted length 32 byte array
      */
-    function extract
-    (
+    function extract(
         bytes _data, 
         uint256 _pos
     ) 
@@ -99,8 +100,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _expected Address claiming to have created this signature
      * @return Whether or not the signature was valid
      */
-    function validateSignature
-    (
+    function validateSignature(
         bytes32 _hash, 
         uint8 _v, 
         bytes32 _r, 
@@ -139,8 +139,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _s s parameter of ECDSA signature
      * @return Whether or not the signature was valid
      */
-    function ecdsaVerify
-    (
+    function ecdsaVerify(
         address _addr, 
         bytes _pubKey, 
         uint8 _v, 
@@ -166,8 +165,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _pubKey Uncompressed ECDSA public key to convert
      * @return Ethereum address generated from the ECDSA public key
      */
-    function pubKeyToEthereumAddress
-    (
+    function pubKeyToEthereumAddress(
         bytes _pubKey
     )
         public 
@@ -185,8 +183,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _isCompressed Whether or not the Bitcoin address was generated from a compressed key
      * @return Raw Bitcoin address (no base58-check encoding)
      */
-    function pubKeyToBitcoinAddress
-    (
+    function pubKeyToBitcoinAddress(
         bytes _pubKey, 
         bool _isCompressed
     ) 
@@ -225,8 +222,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _merkleLeafHash Hash asserted to be present in the Merkle tree
      * @return Whether or not the proof is valid
      */
-    function verifyProof
-    (
+    function verifyProof(
         bytes32[] _proof, 
         bytes32 _merkleLeafHash
     ) 
@@ -243,10 +239,10 @@ contract UTXORedeemableToken is StandardToken {
      * @param _proof Merkle tree proof
      * @return Whether or not the UTXO with the specified hash can be redeemed
      */
-    function canRedeemUtxoHash
-    (
+    function canRedeemUtxoHash(
         bytes32 _merkleLeafHash, 
-        bytes32[] _proof) 
+        bytes32[] _proof
+    ) 
         public view returns (bool) 
     {
         /* Check that the UTXO has not yet been redeemed and that it exists in the Merkle tree. */
@@ -263,8 +259,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _proof Merkle tree proof
      * @return Whether or not the UTXO can be redeemed
      */
-    function canRedeemUtxo
-    (
+    function canRedeemUtxo(
         bytes20 _originalAddress,
         uint256 _satoshis,
         bytes32[] _proof
@@ -286,14 +281,14 @@ contract UTXORedeemableToken is StandardToken {
     }
 
     function getRedeemAmount(
-        uint256 _amount
+        uint256 _satoshis
     ) 
-        internal 
+        public 
         view 
         returns (uint256) 
     {
         /* Convert from 8 decimals to 18 */
-        uint256 _satoshis = _amount.mul(1e10);
+        uint256 _bhxWei = _satoshis.mul(1e10);
 
         /* Weeks since launch */
         uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
@@ -302,23 +297,23 @@ contract UTXORedeemableToken is StandardToken {
         uint256 _reduction = uint256(100).sub(_weeksSinceLaunch.mul(2));
 
         /* Silly whale reduction
-           If claim amount is above 1000 BHX with 18 decimals ( 1e3 * 1e18 = 1e20) */
-        if (_satoshis > 1e21) {
+           If claim amount is above 1000 BHX with 18 decimals ( 1e3 * 1e18 = 1e21) */
+        if (_bhxWei > 1e21) {
             /* If claim amount is below 100000 BHX with 18 decimals (1e5 * 1e18 = 1e23) */
-            if (_satoshis < 1e23) {
+            if (_bhxWei < 1e23) {
                 /* If between 1000 and 10000, penalise by 50% to 75% linearly
                    The following is a range convert from 1000-10000 to 500-2500
-                   _satoshis = ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow
-                   _satoshis = ((x - 1000) / (10000 - 1000)) * (2500 - 500) + 500
-                   _satoshis = (2 (x - 1000))/9 + 500 */
-                _satoshis = _satoshis
+                   _bhxWei = ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow
+                   _bhxWei = ((x - 1000) / (10000 - 1000)) * (2500 - 500) + 500
+                   _bhxWei = (2 (x - 1000))/9 + 500 */
+                _bhxWei = _bhxWei
                     .sub(1e11)
                     .mul(2)
                     .div(9)
                     .add(5e10);
             } else {
                 /* If greater than 10000 BHX penalise by 75% */
-                _satoshis = _satoshis.div(4);
+                _bhxWei = _bhxWei.div(4);
             }
         }
 
@@ -326,7 +321,7 @@ contract UTXORedeemableToken is StandardToken {
           Calculate redeem amount in standard token decimals (1e18): 
           already has 8 decimals (1e8 * 1e10 = 1e18) 
         */
-        uint256 _redeemAmount = _satoshis.mul(_reduction).mul(1e10).div(100);
+        uint256 _redeemAmount = _bhxWei.mul(_reduction).div(100);
 
         /* Apply speed bonus */
         if(_weeksSinceLaunch > 45) {
@@ -383,7 +378,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _s s parameter of ECDSA signature
      * @return The number of tokens redeemed, if successful
      */
-    function redeemUTXO (
+    function redeemUtxo(
         uint256 _satoshis,
         bytes32[] _proof,
         bytes _pubKey,
@@ -396,10 +391,10 @@ contract UTXORedeemableToken is StandardToken {
         returns (uint256 _tokensRedeemed)
     {
         /* Check if weekly data needs to be updated */
-        storeWeekUnclaimed();
+        // storeWeekUnclaimed();
 
-        /* Disable claims after 50 weeks */
-        require(block.timestamp.sub(launchTime).div(7 days) < 50);
+        // /* Disable claims after 50 weeks */
+        // require(block.timestamp.sub(launchTime).div(7 days) < 50);
 
         /* Calculate original Bitcoin-style address associated with the provided public key. */
         bytes20 _originalAddress = pubKeyToBitcoinAddress(_pubKey, _isCompressed);
@@ -463,7 +458,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _referrer address of referring person
      * @return The number of tokens redeemed, if successful
      */
-    function redeemUTXO (
+    function redeemReferredUtxo(
         uint256 _satoshis,
         bytes32[] _proof,
         bytes _pubKey,
@@ -474,10 +469,10 @@ contract UTXORedeemableToken is StandardToken {
         address _referrer
     ) 
         external 
-        returns (uint256 tokensRedeemed) 
+        returns (uint256 _tokensRedeemed) 
     {
         /* Credit claimer */
-        tokensRedeemed = redeemUTXO (
+        _tokensRedeemed = redeemUtxo (
             _satoshis,
             _proof,
             _pubKey,
@@ -488,12 +483,12 @@ contract UTXORedeemableToken is StandardToken {
         );
 
         /* Credit referrer */
-        balances[_referrer] = balances[_referrer].add(tokensRedeemed.div(20));
+        balances[_referrer] = balances[_referrer].add(_tokensRedeemed.div(20));
 
         /* Increase supply */
-        totalSupply_ = totalSupply_.add(tokensRedeemed.div(20));
+        totalSupply_ = totalSupply_.add(_tokensRedeemed.div(20));
 
-        return tokensRedeemed;
+        return _tokensRedeemed;
     }
 
 }

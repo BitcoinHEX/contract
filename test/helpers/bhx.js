@@ -11,8 +11,9 @@ const defaultDecimals = new BigNumber(18)
 const defaultLaunchTime = new BigNumber(
   Math.round(new Date().getTime() / 1000)
 ).add(60 * 60 * 24)
+// multiply each by 1e10 and add 10 percent in order to get wei units redeemable
 const defaultMaximumRedeemable = utxos.reduce(
-  (total, tx) => total.add(tx.satoshis),
+  (total, tx) => total.add(new BigNumber(tx.satoshis).mul(1.1e10)),
   new BigNumber(0)
 )
 const defaultTotalBTCCirculationAtFork = defaultMaximumRedeemable

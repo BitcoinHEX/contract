@@ -7,9 +7,8 @@ const { decode: decode58 } = require('bs58')
 const BigNumber = require('bignumber.js')
 
 const privateKeys = require('../data/privateKeys')
-const transactions = require('../data/transactions')
 const dataMerkleTree = require('../data/merkleTree.json')
-const { origin, bigZero, accounts } = require('./general')
+const { origin, bigZero, accounts, timeWarp } = require('./general')
 const { defaultLaunchTime, defaultMaximumRedeemable } = require('./bhx')
 const {
   bitcoinRootHash: defaultRootUtxoMerkleHash,
@@ -27,8 +26,11 @@ const setupContract = async () => {
   return urt
 }
 
-const getProofAndComonents = txIndex => {
-  const { address: originalAddress, satoshis } = transactions[txIndex]
+const bitcoinPrivateKeys = privateKeyIndex =>
+  privateKeys[privateKeyIndex].privateKey
+
+const getProofAndComponents = bitcoinTx => {
+  const { address: originalAddress, satoshis } = bitcoinTx
   const formattedAddress = stripHexifyBase58Address(originalAddress)
 
   const potentialMerkleLeaf = soliditySha3(
@@ -80,6 +82,23 @@ const retrievePubKey = wif => {
   )
 }
 
+const retrieveBitcoinAddress = wif => ECPair.fromWIF(wif).getAddress()
+
+// sign and format resulting signature components
+const signEthAddress = (wif, ethAddress) => {
+  const ecPair = ECPair.fromWIF(wif)
+  let { v, r, s } = ecsign(
+    crypto.sha256(Buffer.from(ethAddress.replace('0x', ''), 'hex')),
+    ecPair.d.toBuffer()
+  )
+
+  v = parseInt(v, 10)
+  r = '0x' + r.toString('hex')
+  s = '0x' + s.toString('hex')
+
+  return { v, r, s }
+}
+
 // remove 1st byte mainnet designation & 4 byte checksum at end & convert to hex
 const stripHexifyBase58Address = address =>
   '0x' +
@@ -88,6 +107,38 @@ const stripHexifyBase58Address = address =>
     .toString('hex')
 
 const getFormattedLeaf = leafBuffer => '0x' + leafBuffer.toString('hex')
+
+const timeWarpRelativeToLaunchTime = async (urt, seconds, moveAhead) => {
+  const launchTime = await urt.launchTime()
+  const currentBlock = await web3.eth.getBlock(web3.eth.blockNumber)
+  let targetSeconds
+  assert(
+    currentBlock.timestamp < launchTime.toNumber(),
+    'cannot warp backwards'
+  )
+  if (moveAhead) {
+    // eslint-disable-next-line no-console
+    console.log(`warping to ${seconds} seconds ahead of bet launchTime...`)
+    targetSeconds = launchTime
+      .sub(currentBlock.timestamp)
+      .add(seconds)
+      .toNumber()
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(`warping to ${seconds} seconds before bet launchTime...`)
+    targetSeconds = launchTime
+      .sub(currentBlock.timestamp)
+      .sub(seconds)
+      .toNumber()
+  }
+
+  assert(
+    currentBlock.timestamp < launchTime.add(targetSeconds).toNumber(),
+    'cannot warp backwards'
+  )
+
+  await timeWarp(targetSeconds)
+}
 
 const testInitialization = async urt => {
   const contractOrigin = await urt.origin()
@@ -159,29 +210,19 @@ const testValidateSignature = async (
   }
 }
 
-const testEcsdaVerify = async (urt, ethAddress, privKeyIndex) => {
-  const { privateKey: wif } = privateKeys[privKeyIndex]
-  const ecPair = ECPair.fromWIF(wif)
-  ethAddress = ethAddress.replace('0x', '')
-  const ethHashBuf = crypto.sha256(Buffer.from(ethAddress, 'hex'))
+const testEcsdaVerify = async (urt, bitcoinPrivateKey, ethAddress) => {
+  const { v, r, s } = signEthAddress(bitcoinPrivateKey, ethAddress)
+  const pubKey = retrievePubKey(bitcoinPrivateKey)
 
-  // sign and format resulting signature components
-  let { v, r, s } = ecsign(ethHashBuf, ecPair.d.toBuffer())
-  v = parseInt(v, 10)
-  r = '0x' + r.toString('hex')
-  s = '0x' + s.toString('hex')
-
-  const pubKey = retrievePubKey(wif)
-  const verified = await urt.ecdsaVerify('0x' + ethAddress, pubKey, v, r, s)
+  const verified = await urt.ecdsaVerify(ethAddress, pubKey, v, r, s)
 
   assert(verified, 'ecsdaVerify should verify properly formatted signature')
 }
 
-const testPubKeyToEthereumAddress = async (urt, privKeyIndex) => {
-  const { privateKey: wif } = privateKeys[privKeyIndex]
+const testPubKeyToEthereumAddress = async (urt, bitcoinPrivateKey) => {
+  const pubKey = retrievePubKey(bitcoinPrivateKey)
   const actualAddress = '0x' + publicToAddress(pubKey).toString('hex')
 
-  const pubKey = retrievePubKey(wif)
   const address = await urt.pubKeyToEthereumAddress(pubKey)
 
   assert.equal(
@@ -191,11 +232,12 @@ const testPubKeyToEthereumAddress = async (urt, privKeyIndex) => {
   )
 }
 
-const testPubKeyToBitcoinAddress = async (urt, privKeyIndex) => {
-  const { privateKey: wif, address: actualAddress } = privateKeys[privKeyIndex]
-  const rawHexAddress = stripHexifyBase58Address(actualAddress)
+const testPubKeyToBitcoinAddress = async (urt, bitcoinPrivateKey) => {
+  const rawHexAddress = stripHexifyBase58Address(
+    retrieveBitcoinAddress(bitcoinPrivateKey)
+  )
 
-  const pubKey = retrievePubKey(wif)
+  const pubKey = retrievePubKey(bitcoinPrivateKey)
   const resultAddress = await urt.pubKeyToBitcoinAddress(pubKey, true)
 
   assert.equal(
@@ -205,9 +247,7 @@ const testPubKeyToBitcoinAddress = async (urt, privKeyIndex) => {
   )
 }
 
-const testCanRedeemUtxoHash = async (urt, txIndex) => {
-  const { potentialMerkleLeaf, proof } = getProofAndComonents(txIndex)
-
+const testCanRedeemUtxoHash = async (urt, potentialMerkleLeaf, proof) => {
   const canRedeem = await urt.canRedeemUtxoHash(potentialMerkleLeaf, proof)
 
   assert(
@@ -216,9 +256,7 @@ const testCanRedeemUtxoHash = async (urt, txIndex) => {
   )
 }
 
-const testCanRedeemUtxo = async (urt, txIndex) => {
-  const { proof, formattedAddress, satoshis } = getProofAndComonents(txIndex)
-
+const testCanRedeemUtxo = async (urt, proof, formattedAddress, satoshis) => {
   const canRedeem = await urt.canRedeemUtxo(formattedAddress, satoshis, proof)
 
   assert(
@@ -227,12 +265,34 @@ const testCanRedeemUtxo = async (urt, txIndex) => {
   )
 }
 
-const testRedeemUtxo = async (urt, txIndex) => {
-  const { proof, satoshis } = getProofAndComonents(txIndex)
+const testRedeemUtxo = async (
+  urt,
+  proof,
+  satoshis,
+  bitcoinPrivateKey,
+  config
+) => {
+  const pubKey = retrievePubKey(bitcoinPrivateKey)
+  const { v, r, s } = signEthAddress(bitcoinPrivateKey, config.from)
+  const preRedeemerBalance = await urt.balanceOf(config.from)
+
+  await urt.redeemUtxo(satoshis, proof, pubKey, true, v, r, s, config)
+
+  const postRedeemerBalance = await urt.balanceOf(config.from)
+  const expectedRedeemAmount = await urt.getRedeemAmount(satoshis)
+
+  assert.equal(
+    postRedeemerBalance.sub(preRedeemerBalance).toString(),
+    expectedRedeemAmount.toString(),
+    'redeemer token balance should be incremented by expectedRedeemAmount'
+  )
 }
 
 module.exports = {
   setupContract,
+  bitcoinPrivateKeys,
+  getProofAndComponents,
+  timeWarpRelativeToLaunchTime,
   testInitialization,
   testValidateSignature,
   testEcsdaVerify,

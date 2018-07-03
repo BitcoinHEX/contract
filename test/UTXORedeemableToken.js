@@ -1,5 +1,8 @@
 const {
   setupContract,
+  bitcoinPrivateKeys,
+  getProofAndComponents,
+  timeWarpRelativeToLaunchTime,
   testInitialization,
   testValidateSignature,
   testEcsdaVerify,
@@ -9,6 +12,8 @@ const {
   testCanRedeemUtxo,
   testRedeemUtxo
 } = require('./helpers/urt')
+
+const transactions = require('./data/transactions')
 
 describe('when deploying UTXORedeemableToken', () => {
   contract('UTXORedeemableTokenStub', accounts => {
@@ -46,27 +51,38 @@ describe('when deploying UTXORedeemableToken', () => {
       })
 
       it('should verify bitcoin signature using ecdsaVerify', async () => {
-        await testEcsdaVerify(urt, accounts[1], 0)
+        await testEcsdaVerify(urt, bitcoinPrivateKeys(0), accounts[1])
       })
 
-      it('should convert ethereum public key to address', async () => {
-        await testPubKeyToEthereumAddress(urt, 0)
+      it('should convert public key to ethereum address', async () => {
+        await testPubKeyToEthereumAddress(urt, bitcoinPrivateKeys(0))
       })
 
-      it('should convert bitcoin public key to address', async () => {
-        await testPubKeyToBitcoinAddress(urt, 0)
+      it('should convert public key to bitcoin address', async () => {
+        await testPubKeyToBitcoinAddress(urt, bitcoinPrivateKeys(0))
       })
 
       it('should allow redeeming valid UTXO hash', async () => {
-        await testCanRedeemUtxoHash(urt, 0)
+        const bitcoinTx = transactions[0]
+        const { potentialMerkleLeaf, proof } = getProofAndComponents(bitcoinTx)
+        await testCanRedeemUtxoHash(urt, potentialMerkleLeaf, proof)
       })
 
       it('should allow redeeming valid UTXO', async () => {
-        await testCanRedeemUtxo(urt, 0)
+        const bitcoinTx = transactions[0]
+        const { proof, formattedAddress, satoshis } = getProofAndComponents(
+          bitcoinTx
+        )
+        await testCanRedeemUtxo(urt, proof, formattedAddress, satoshis)
       })
 
       it('should redeem UTXO', async () => {
-        await testRedeemUtxo(urt, 0)
+        await timeWarpRelativeToLaunchTime(urt, 60, true)
+        const bitcoinTx = transactions[0]
+        const { proof, satoshis } = getProofAndComponents(bitcoinTx)
+        await testRedeemUtxo(urt, proof, satoshis, bitcoinPrivateKeys(0), {
+          from: accounts[1]
+        })
       })
 
       // it('should redeem UTXO with referrer', async () => {
