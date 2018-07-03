@@ -75,23 +75,33 @@ describe('when deploying UTXORedeemableToken', () => {
         )
         await testCanRedeemUtxo(urt, proof, formattedAddress, satoshis)
       })
-
-      it('should redeem UTXO', async () => {
-        await timeWarpRelativeToLaunchTime(urt, 60, true)
-        const bitcoinTx = transactions[0]
-        const { proof, satoshis } = getProofAndComponents(bitcoinTx)
-        await testRedeemUtxo(urt, proof, satoshis, bitcoinPrivateKeys(0), {
-          from: accounts[1]
-        })
-      })
-
-      // it('should redeem UTXO with referrer', async () => {
-      //   assert(false)
-      // })
-
-      // it('should increment week correctly', async () => {
-      //   assert(false)
-      // })
     })
+  })
+})
+
+describe('when redeeming utxos', () => {
+  contract('UtxoRedeemableToken', accounts => {
+    let urt
+
+    before('setup contract', async () => {
+      urt = await setupContract()
+    })
+
+    it('should redeem UTXO', async () => {
+      await timeWarpRelativeToLaunchTime(urt, 60, true)
+      const bitcoinTx = transactions[0]
+      const { proof, satoshis } = getProofAndComponents(bitcoinTx)
+      await testRedeemUtxo(urt, proof, satoshis, bitcoinPrivateKeys(0), {
+        from: accounts[1]
+      })
+    })
+
+    // it('should redeem UTXO with referrer', async () => {
+    //   assert(false)
+    // })
+
+    // it('should increment week correctly', async () => {
+    //   assert(false)
+    // })
   })
 })

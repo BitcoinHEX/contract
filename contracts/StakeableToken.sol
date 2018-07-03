@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 import "./UTXORedeemableToken.sol";
 
+
 contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
@@ -18,12 +19,25 @@ contract StakeableToken is UTXORedeemableToken {
 
     mapping(address => StakeStruct[]) public staked;
 
-    function compound(uint256 _principle, uint256 _periods, uint256 _interestRateTimesHundred) internal pure returns (uint256) {
+    function compound(
+        uint256 _principle, 
+        uint256 _periods, 
+        uint256 _interestRateTimesHundred
+    ) 
+        internal 
+        pure 
+        returns (uint256) 
+    {
         /* Calculate compound interest */
         return (_principle * (100 + _interestRateTimesHundred) ** _periods)/(100 ** _periods);
     }
 
-    function startStake(uint256 _value, uint256 _unlockTime) external {
+    function startStake(
+        uint256 _value, 
+        uint256 _unlockTime
+    ) 
+        external 
+    {
         address staker = msg.sender;
 
         /* Make sure staker has enough funds */
@@ -51,7 +65,13 @@ contract StakeableToken is UTXORedeemableToken {
         stakedCoins = stakedCoins.add(_value);
     }
 
-    function calculateWeAreAllSatoshiRewards(StakeStruct stake) internal view returns (uint256 rewards) {
+    function calculateWeAreAllSatoshiRewards(
+        StakeStruct stake
+    ) 
+        internal 
+        view 
+        returns (uint256 rewards)
+    {
         /* Calculate what week stake was opened */
         uint256 startWeek = stake.stakeTime.sub(launchTime).div(7 days);
 
@@ -60,11 +80,17 @@ contract StakeableToken is UTXORedeemableToken {
 
         /* Award 2% of unclaimed coins at end of every week */
         for (uint256 i = startWeek; i < weeksSinceLaunch; i++) {
-            rewards = rewards.add(weekData[i].unclaimedCoins.mul(stake.stakeAmount).div(50));
+            rewards = rewards.add(unclaimedCoinsByWeek[i].mul(stake.stakeAmount).div(50));
         }
     }
 
-    function calculateViralRewards(uint256 rewards) internal view returns (uint256) {
+    function calculateViralRewards(
+        uint256 rewards
+    ) 
+        internal 
+        view 
+        returns (uint256)
+    {
         /* Add bonus percentage to rewards from 0-10% based on adoption */
         return rewards.mul(totalRedeemed).div(totalBTCCirculationAtFork).div(10);
     }
@@ -74,7 +100,13 @@ contract StakeableToken is UTXORedeemableToken {
         return rewards.mul(totalRedeemed).div(maximumRedeemable).div(10);
     }
 
-    function calculateStakingRewards(StakeStruct stake) internal view returns (uint256) {
+    function calculateStakingRewards(
+        StakeStruct stake
+    ) 
+        internal 
+        view 
+        returns (uint256)
+    {
         /* Base interest rate */
         uint256 interestRateTimesHundred = 100;
 
@@ -95,7 +127,14 @@ contract StakeableToken is UTXORedeemableToken {
         
     }
 
-    function calculateAdditionalRewards(StakeStruct stake, uint256 initRewards) internal view returns (uint256 rewards) {
+    function calculateAdditionalRewards(
+        StakeStruct stake, 
+        uint256 initRewards
+    ) 
+        internal 
+        view 
+        returns (uint256 rewards)
+    {
         rewards = initRewards.add(calculateWeAreAllSatoshiRewards(stake));
         rewards = rewards
             .add(calculateViralRewards(rewards))
@@ -104,7 +143,13 @@ contract StakeableToken is UTXORedeemableToken {
         return rewards;
     }
 
-    function getCurrentStaked(address staker) external view returns(uint256 stakes) {
+    function getCurrentStaked(
+        address staker
+    ) 
+        external 
+        view 
+        returns(uint256 stakes)
+    {
         for (uint256 i; i < staked[staker].length; i++) {
             /* Add Stake Amount */
             stakes = stakes.add(staked[staker][i].stakeAmount);
@@ -119,7 +164,11 @@ contract StakeableToken is UTXORedeemableToken {
         return stakes;
     }
 
-    function claimStakingRewards(address staker) external {
+    function claimStakingRewards(
+        address staker
+    ) 
+        external 
+    {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 

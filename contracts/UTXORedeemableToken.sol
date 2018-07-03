@@ -21,8 +21,6 @@ pragma solidity ^0.4.23;
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 
-/* solium-disable security/no-block-members */
-
 
 /**
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
@@ -38,12 +36,8 @@ contract UTXORedeemableToken is StandardToken {
     /* Store last updated week */
     uint256 public lastUpdatedWeek = 0;
 
-    struct WeekDataStruct {
-        uint256 unclaimedCoins;
-    }
-
     /* Weekly update data */
-    mapping(uint256 => WeekDataStruct) internal weekData;
+    mapping(uint256 => uint256) internal unclaimedCoinsByWeek;
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
     bytes32 public rootUTXOMerkleTreeHash;
@@ -66,7 +60,7 @@ contract UTXORedeemableToken is StandardToken {
 
         if (weeksSinceLaunch < 51 && weeksSinceLaunch > lastUpdatedWeek) {
             uint256 unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-            weekData[weeksSinceLaunch] = WeekDataStruct(unclaimedCoins);
+            unclaimedCoinsByWeek[weeksSinceLaunch] = unclaimedCoins;
             lastUpdatedWeek = weeksSinceLaunch;
         }
     }
@@ -290,12 +284,6 @@ contract UTXORedeemableToken is StandardToken {
         /* Convert from 8 decimals to 18 */
         uint256 _bhxWei = _satoshis.mul(1e10);
 
-        /* Weeks since launch */
-        uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
-
-        /* Calculate percent reduction */
-        uint256 _reduction = uint256(100).sub(_weeksSinceLaunch.mul(2));
-
         /* Silly whale reduction
            If claim amount is above 1000 BHX with 18 decimals ( 1e3 * 1e18 = 1e21) */
         if (_bhxWei > 1e21) {
@@ -316,6 +304,14 @@ contract UTXORedeemableToken is StandardToken {
                 _bhxWei = _bhxWei.div(4);
             }
         }
+
+        /* If before launch return 0 weeks otherwise calculate */
+        uint256 _weeksSinceLaunch = launchTime < block.timestamp 
+            ? block.timestamp.sub(launchTime).div(7 days) 
+            : 0;
+
+        /* Calculate percent reduction */
+        uint256 _reduction = uint256(100).sub(_weeksSinceLaunch.mul(2));
 
         /* 
           Calculate redeem amount in standard token decimals (1e18): 
@@ -390,8 +386,10 @@ contract UTXORedeemableToken is StandardToken {
         public 
         returns (uint256 _tokensRedeemed)
     {
+        // ensure that redeeming after launch time
+        require(block.timestamp >= launchTime);
         /* Check if weekly data needs to be updated */
-        // storeWeekUnclaimed();
+        storeWeekUnclaimed();
 
         // /* Disable claims after 50 weeks */
         // require(block.timestamp.sub(launchTime).div(7 days) < 50);
