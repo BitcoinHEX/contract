@@ -5,7 +5,6 @@ const { ecsign, publicToAddress } = require('ethereumjs-util')
 const { soliditySha3 } = require('web3-utils')
 const { decode: decode58 } = require('bs58')
 const BigNumber = require('bignumber.js')
-const leftPad = require('left-pad')
 
 const privateKeys = require('../data/privateKeys')
 const transactions = require('../data/transactions')
@@ -28,11 +27,58 @@ const setupContract = async () => {
   return urt
 }
 
+const getProofAndComonents = txIndex => {
+  const { address: originalAddress, satoshis } = transactions[txIndex]
+  const formattedAddress = stripHexifyBase58Address(originalAddress)
+
+  const potentialMerkleLeaf = soliditySha3(
+    {
+      t: 'bytes20',
+      v: formattedAddress
+    },
+    {
+      t: 'uint256',
+      v: satoshis
+    }
+  )
+  const merkleLeafBufs = defaultMerkleTree.elements.map(item =>
+    Buffer.from(item, 'hex')
+  )
+  const hashMerkleLeafIndex = defaultMerkleTree.elements
+    .map(element => element.toString('hex'))
+    .indexOf(potentialMerkleLeaf.replace('0x', ''))
+  const proof = defaultMerkleTree
+    .getProofOrdered(
+      merkleLeafBufs[hashMerkleLeafIndex],
+      hashMerkleLeafIndex + 1
+    )
+    .map(getFormattedLeaf)
+
+  assert(
+    dataMerkleTree.elements.includes(
+      potentialMerkleLeaf.replace('0x', ''),
+      'resulting potentialMerkleLeaf should be included in dataMerkleTree elements'
+    )
+  )
+
+  return {
+    potentialMerkleLeaf,
+    proof,
+    formattedAddress,
+    satoshis
+  }
+}
+
 // get pub key by concatenating x and y coordinates
-const retrievePubKey = ecPair =>
-  '0x' +
-  ecPair.Q.affineX.toBuffer(32).toString('hex') +
-  ecPair.Q.affineY.toBuffer(32).toString('hex')
+const retrievePubKey = wif => {
+  const ecPair = ECPair.fromWIF(wif)
+
+  return (
+    '0x' +
+    ecPair.Q.affineX.toBuffer(32).toString('hex') +
+    ecPair.Q.affineY.toBuffer(32).toString('hex')
+  )
+}
 
 // remove 1st byte mainnet designation & 4 byte checksum at end & convert to hex
 const stripHexifyBase58Address = address =>
@@ -114,12 +160,9 @@ const testValidateSignature = async (
 }
 
 const testEcsdaVerify = async (urt, ethAddress, privKeyIndex) => {
-  // set bitcoin stuff from private key
   const { privateKey: wif } = privateKeys[privKeyIndex]
   const ecPair = ECPair.fromWIF(wif)
-
-  // get ethereum claim address ready for verification
-  ethAddress = ethAddress.slice(2)
+  ethAddress = ethAddress.replace('0x', '')
   const ethHashBuf = crypto.sha256(Buffer.from(ethAddress, 'hex'))
 
   // sign and format resulting signature components
@@ -128,9 +171,7 @@ const testEcsdaVerify = async (urt, ethAddress, privKeyIndex) => {
   r = '0x' + r.toString('hex')
   s = '0x' + s.toString('hex')
 
-  const pubKey = retrievePubKey(ecPair)
-
-  // attempt verification against pubkey originating from Bitcoin
+  const pubKey = retrievePubKey(wif)
   const verified = await urt.ecdsaVerify('0x' + ethAddress, pubKey, v, r, s)
 
   assert(verified, 'ecsdaVerify should verify properly formatted signature')
@@ -138,11 +179,11 @@ const testEcsdaVerify = async (urt, ethAddress, privKeyIndex) => {
 
 const testPubKeyToEthereumAddress = async (urt, privKeyIndex) => {
   const { privateKey: wif } = privateKeys[privKeyIndex]
-  const ecPair = ECPair.fromWIF(wif)
-  const pubKey = retrievePubKey(ecPair)
   const actualAddress = '0x' + publicToAddress(pubKey).toString('hex')
 
+  const pubKey = retrievePubKey(wif)
   const address = await urt.pubKeyToEthereumAddress(pubKey)
+
   assert.equal(
     address,
     actualAddress,
@@ -151,14 +192,10 @@ const testPubKeyToEthereumAddress = async (urt, privKeyIndex) => {
 }
 
 const testPubKeyToBitcoinAddress = async (urt, privKeyIndex) => {
-  // get selected privateKey/address from data
   const { privateKey: wif, address: actualAddress } = privateKeys[privKeyIndex]
-
   const rawHexAddress = stripHexifyBase58Address(actualAddress)
-  // generate public key
-  const ecPair = ECPair.fromWIF(wif)
-  const pubKey = retrievePubKey(ecPair)
 
+  const pubKey = retrievePubKey(wif)
   const resultAddress = await urt.pubKeyToBitcoinAddress(pubKey, true)
 
   assert.equal(
@@ -168,18 +205,10 @@ const testPubKeyToBitcoinAddress = async (urt, privKeyIndex) => {
   )
 }
 
-const testCanRedeemUtxoHash = async urt => {
-  const merkleLeafBufs = defaultMerkleTree.elements.map(item =>
-    Buffer.from(item, 'hex')
-  )
-  const proof = defaultMerkleTree
-    .getProofOrdered(merkleLeafBufs[0], 1)
-    .map(getFormattedLeaf)
+const testCanRedeemUtxoHash = async (urt, txIndex) => {
+  const { potentialMerkleLeaf, proof } = getProofAndComonents(txIndex)
 
-  const canRedeem = await urt.canRedeemUtxoHash(
-    '0x' + merkleLeafBufs[0].toString('hex'),
-    proof
-  )
+  const canRedeem = await urt.canRedeemUtxoHash(potentialMerkleLeaf, proof)
 
   assert(
     canRedeem,
@@ -187,49 +216,8 @@ const testCanRedeemUtxoHash = async urt => {
   )
 }
 
-const testCanRedeemUtxo = async urt => {
-  const { address: originalAddress, satoshis } = transactions[0]
-
-  // ensure that merkle trees are compatible
-  assert.equal(
-    dataMerkleTree.root,
-    defaultRootUtxoMerkleHash,
-    'root derived from merkleTree should equal root in defaultMerkleTree'
-  )
-
-  // format parmeters used for hashing to get merkle leaf in contract
-  const formattedAddress = stripHexifyBase58Address(originalAddress)
-
-  const hash = soliditySha3(
-    {
-      t: 'bytes20',
-      v: formattedAddress
-    },
-    {
-      t: 'uint256',
-      v: satoshis
-    }
-  )
-
-  assert(
-    dataMerkleTree.elements.includes(
-      hash.replace('0x', ''),
-      'resulting hash should be included in dataMerkleTree elements'
-    )
-  )
-
-  const merkleLeafBufs = defaultMerkleTree.elements.map(item =>
-    Buffer.from(item, 'hex')
-  )
-  const hashMerkleLeafIndex = defaultMerkleTree.elements
-    .map(element => element.toString('hex'))
-    .indexOf(hash.replace('0x', ''))
-  const proof = defaultMerkleTree
-    .getProofOrdered(
-      merkleLeafBufs[hashMerkleLeafIndex],
-      hashMerkleLeafIndex + 1
-    )
-    .map(getFormattedLeaf)
+const testCanRedeemUtxo = async (urt, txIndex) => {
+  const { proof, formattedAddress, satoshis } = getProofAndComonents(txIndex)
 
   const canRedeem = await urt.canRedeemUtxo(formattedAddress, satoshis, proof)
 
@@ -237,6 +225,10 @@ const testCanRedeemUtxo = async urt => {
     canRedeem,
     'should be able to redeem using correct merkleLeaf components'
   )
+}
+
+const testRedeemUtxo = async (urt, txIndex) => {
+  const { proof, satoshis } = getProofAndComonents(txIndex)
 }
 
 module.exports = {
@@ -247,5 +239,6 @@ module.exports = {
   testPubKeyToEthereumAddress,
   testPubKeyToBitcoinAddress,
   testCanRedeemUtxoHash,
-  testCanRedeemUtxo
+  testCanRedeemUtxo,
+  testRedeemUtxo
 }
