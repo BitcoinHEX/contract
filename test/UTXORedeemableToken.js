@@ -60,7 +60,7 @@ describe('when deploying UTXORedeemableToken', () => {
         await testCanRedeemUtxoHash(urt)
       })
 
-      it.only('should allow redeeming valid UTXO', async () => {
+      it('should allow redeeming valid UTXO', async () => {
         await testCanRedeemUtxo(urt)
       })
 

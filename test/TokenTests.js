@@ -1,5 +1,4 @@
 const {
-  defaultLaunchTime,
   defaultRootUtxoMerkleHash,
   defaultMaximumRedeemable,
   defaultTotalBTCCirculationAtFork
@@ -15,7 +14,6 @@ describe('when deploying BitcoinHex', () => {
     before('setup BitcoinHex', async () => {
       bhx = await BitcoinHexStub.new(
         origin,
-        defaultLaunchTime,
         defaultRootUtxoMerkleHash,
         defaultMaximumRedeemable,
         defaultTotalBTCCirculationAtFork

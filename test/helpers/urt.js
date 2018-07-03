@@ -9,6 +9,7 @@ const leftPad = require('left-pad')
 
 const privateKeys = require('../data/privateKeys')
 const transactions = require('../data/transactions')
+const dataMerkleTree = require('../data/merkleTree.json')
 const { origin, bigZero, accounts } = require('./general')
 const { defaultLaunchTime, defaultMaximumRedeemable } = require('./bhx')
 const {
@@ -189,18 +190,15 @@ const testCanRedeemUtxoHash = async urt => {
 const testCanRedeemUtxo = async urt => {
   const { address: originalAddress, satoshis } = transactions[0]
 
-  const merkleLeafBufs = defaultMerkleTree.elements.map(item =>
-    Buffer.from(item, 'hex')
+  // ensure that merkle trees are compatible
+  assert.equal(
+    dataMerkleTree.root,
+    defaultRootUtxoMerkleHash,
+    'root derived from merkleTree should equal root in defaultMerkleTree'
   )
-  const proof = defaultMerkleTree
-    .getProofOrdered(merkleLeafBufs[0], 1)
-    .map(getFormattedLeaf)
 
-  // format parmeters used for hasing to get merkle leaf in contract
-  const formattedAddress = stripHexifyBase58Address(originalAddress).replace(
-    '0x',
-    ''
-  )
+  // format parmeters used for hashing to get merkle leaf in contract
+  const formattedAddress = stripHexifyBase58Address(originalAddress)
 
   const hash = soliditySha3(
     {
@@ -212,14 +210,32 @@ const testCanRedeemUtxo = async urt => {
       v: satoshis
     }
   )
-  console.log(hash)
-  console.log(formattedAddress)
+
+  assert(
+    dataMerkleTree.elements.includes(
+      hash.replace('0x', ''),
+      'resulting hash should be included in dataMerkleTree elements'
+    )
+  )
+
+  const merkleLeafBufs = defaultMerkleTree.elements.map(item =>
+    Buffer.from(item, 'hex')
+  )
+  const hashMerkleLeafIndex = defaultMerkleTree.elements
+    .map(element => element.toString('hex'))
+    .indexOf(hash.replace('0x', ''))
+  const proof = defaultMerkleTree
+    .getProofOrdered(
+      merkleLeafBufs[hashMerkleLeafIndex],
+      hashMerkleLeafIndex + 1
+    )
+    .map(getFormattedLeaf)
 
   const canRedeem = await urt.canRedeemUtxo(formattedAddress, satoshis, proof)
 
   assert(
     canRedeem,
-    'should be able to redeem usig correct merkleLeaf components'
+    'should be able to redeem using correct merkleLeaf components'
   )
 }
 
