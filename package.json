@@ -7,6 +7,8 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "babel-register": "^6.26.0",
+    "bitcoinjs-lib": "^3.3.2",
+    "bs58": "^4.0.1",
     "eslint": "^4.19.1",
     "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-compat": "^2.3.0",
@@ -20,14 +22,17 @@
     "rimraf": "^2.6.2",
     "solium": "^1.1.7",
     "truffle": "^4.1.11",
-    "truffle-wallet-provider": "^0.0.5"
+    "truffle-wallet-provider": "^0.0.5",
+    "web3-utils": "^1.0.0-beta.34"
   },
   "scripts": {
     "compile": "truffle compile",
-    "clean:install": "rimraf node_modules && npm install",
-    "clean:contracts": "rimraf build && npm run compile",
-    "lint": "npm run lint:sol && npm run lint:js",
-    "test": "npm run clean:contracts && truffle test",
+    "post:install:comment": "must remove bitcore-lib instance in bitcore-message because of package requirements",
+    "post:install": "rimraf node_modules/bitcore-message/node_modules/bitcore-lib",
+    "clean:install": "rimraf node_modules && yarn install && yarn run post:install",
+    "clean:contracts": "rimraf build && yarn run compile",
+    "lint": "yarn run lint:sol && yarn run lint:js",
+    "test": "yarn run clean:contracts && truffle test",
     "lint:sol": "solium --dir ./contracts",
     "lint:js": "prettier migrations/* test/* --write"
   },
@@ -39,5 +44,8 @@
   "bugs": {
     "url": "https://github.com/BitcoinHEX/contract/issues"
   },
-  "homepage": "https://bitcoinhex.com"
+  "homepage": "https://bitcoinhex.com",
+  "dependencies": {
+    "left-pad": "^1.3.0"
+  }
 }
