@@ -9,16 +9,16 @@ const BigNumber = require('bignumber.js')
 const privateKeys = require('../data/privateKeys')
 const dataMerkleTree = require('../data/merkleTree.json')
 const { origin, bigZero, accounts, timeWarp } = require('./general')
-const { defaultLaunchTime, defaultMaximumRedeemable } = require('./bhx')
+const { defaultMaximumRedeemable } = require('./bhx')
 const {
   bitcoinRootHash: defaultRootUtxoMerkleHash,
   bitcoinMerkleTree: defaultMerkleTree
 } = require('./mkl')
 
-const setupContract = async () => {
+const setupContract = async launchTime => {
   const urt = await UtxoRedeemableToken.new(
     origin,
-    defaultLaunchTime,
+    launchTime,
     defaultRootUtxoMerkleHash,
     defaultMaximumRedeemable
   )
@@ -140,7 +140,7 @@ const timeWarpRelativeToLaunchTime = async (urt, seconds, moveAhead) => {
   await timeWarp(targetSeconds)
 }
 
-const testInitialization = async urt => {
+const testInitialization = async (urt, expectedLaunchTime) => {
   const contractOrigin = await urt.origin()
   const launchTime = await urt.launchTime()
   const lastUpdatedWeek = await urt.lastUpdatedWeek()
@@ -151,8 +151,8 @@ const testInitialization = async urt => {
   assert.equal(contractOrigin, origin, 'contractOrigin should match origin')
   assert.equal(
     launchTime.toString(),
-    defaultLaunchTime.toString(),
-    'launchTime should match defaultLaunchTime'
+    expectedLaunchTime.toString(),
+    'launchTime should match expectedLaunchTime'
   )
   assert.equal(
     lastUpdatedWeek.toString(),
@@ -288,6 +288,46 @@ const testRedeemUtxo = async (
   )
 }
 
+const testRedeemReferredUtxo = async (
+  urt,
+  proof,
+  satoshis,
+  bitcoinPrivateKey,
+  referrer,
+  config
+) => {
+  const pubKey = retrievePubKey(bitcoinPrivateKey)
+  const { v, r, s } = signEthAddress(bitcoinPrivateKey, config.from)
+  const preRedeemerBalance = await urt.balanceOf(config.from)
+  const preReferrerBalance = await urt.balanceOf(referrer)
+  await urt.redeemReferredUtxo(
+    satoshis,
+    proof,
+    pubKey,
+    true,
+    v,
+    r,
+    s,
+    referrer,
+    config
+  )
+  const postRedeemerBalance = await urt.balanceOf(config.from)
+  const postReferrerBalance = await urt.balanceOf(referrer)
+  const expectedRedeemAmount = await urt.getRedeemAmount(satoshis)
+  const expectedReferralAmount = expectedRedeemAmount.div(20).floor(0)
+
+  assert.equal(
+    postRedeemerBalance.sub(preRedeemerBalance).toString(),
+    expectedRedeemAmount.toString(),
+    'redeemer token balance should be incremented by expectedRedeemAmount'
+  )
+  assert.equal(
+    postReferrerBalance.sub(preReferrerBalance).toString(),
+    expectedReferralAmount.toString(),
+    'referrer token balance should be incremented by expectedReferralAmount'
+  )
+}
+
 module.exports = {
   setupContract,
   bitcoinPrivateKeys,
@@ -300,5 +340,6 @@ module.exports = {
   testPubKeyToBitcoinAddress,
   testCanRedeemUtxoHash,
   testCanRedeemUtxo,
-  testRedeemUtxo
+  testRedeemUtxo,
+  testRedeemReferredUtxo
 }

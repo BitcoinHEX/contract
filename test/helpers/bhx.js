@@ -7,10 +7,11 @@ const BitcoinHex = artifacts.require('BitcoinHex')
 const defaultName = 'BitcoinHex'
 const defaultSymbol = 'BHX'
 const defaultDecimals = new BigNumber(18)
-// 1 day from now as unix timestamp
-const defaultLaunchTime = new BigNumber(
-  Math.round(new Date().getTime() / 1000)
-).add(60 * 60 * 24)
+// 1 day from now as unix timestamp in local blockchain time
+const getDefaultLaunchTime = async () => {
+  const { timestamp: blockTime } = await web3.eth.getBlock(web3.eth.blockNumber)
+  return blockTime + 60 * 60 * 24
+}
 // multiply each by 1e10 and add 10 percent in order to get wei units redeemable
 const defaultMaximumRedeemable = utxos.reduce(
   (total, tx) => total.add(new BigNumber(tx.satoshis).mul(1.1e10)),
@@ -68,6 +69,6 @@ module.exports = {
   defaultName,
   defaultSymbol,
   defaultDecimals,
-  defaultLaunchTime,
+  getDefaultLaunchTime,
   defaultMaximumRedeemable
 }

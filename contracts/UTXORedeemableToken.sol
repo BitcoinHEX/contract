@@ -469,6 +469,9 @@ contract UTXORedeemableToken is StandardToken {
         external 
         returns (uint256 _tokensRedeemed) 
     {
+        /* Prevent Self-Referral */
+        require(_referrer != msg.sender);
+
         /* Credit claimer */
         _tokensRedeemed = redeemUtxo (
             _satoshis,

@@ -4,6 +4,8 @@ const accounts = web3.eth.accounts
 
 const origin = accounts[0]
 const redeemer = accounts[1]
+const referrer = accounts[2]
+const otherAccount = accounts[9]
 
 const bigZero = new BigNumber(0)
 
@@ -63,6 +65,8 @@ module.exports = {
   accounts,
   origin,
   redeemer,
+  referrer,
+  otherAccount,
   bigZero,
   expectRevert,
   timeWarp
