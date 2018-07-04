@@ -9,6 +9,11 @@ const otherAccount = accounts[9]
 
 const bigZero = new BigNumber(0)
 
+const getCurrentBlockTime = async () => {
+  const { timestamp } = await web3.eth.getBlock(web3.eth.blockNumber)
+  return timestamp
+}
+
 const send = (method, params = []) =>
   web3.currentProvider.send({
     id: 0,
@@ -69,5 +74,6 @@ module.exports = {
   otherAccount,
   bigZero,
   expectRevert,
-  timeWarp
+  timeWarp,
+  getCurrentBlockTime
 }

@@ -11,7 +11,8 @@ const {
   testCanRedeemUtxoHash,
   testCanRedeemUtxo,
   testRedeemUtxo,
-  testRedeemReferredUtxo
+  testRedeemReferredUtxo,
+  testWeekIncrement
 } = require('./helpers/urt')
 const { getDefaultLaunchTime } = require('./helpers/bhx')
 const {
@@ -166,9 +167,40 @@ describe('when redeeming utxos', () => {
         }
       )
     })
+  })
+})
 
-    // it('should increment week correctly', async () => {
-    //   assert(false)
-    // })
+describe('when incrementing weeks', () => {
+  contract('UtxoRedeemableToken', () => {
+    let urt
+    let launchTime
+    let testWeeks
+    const oneBlockWeek = 60 * 60 * 24 * 7
+
+    before('setup contract', async () => {
+      launchTime = await getDefaultLaunchTime()
+      urt = await setupContract(launchTime)
+    })
+
+    it(`should increment first 3 weeks correctly`, async () => {
+      testWeeks = [1, 2, 3]
+      for (const week of testWeeks) {
+        await timeWarpRelativeToLaunchTime(urt, oneBlockWeek * week, true)
+        await testWeekIncrement(urt, week, true)
+      }
+    })
+
+    it('should increment last 3 weeks correctly', async () => {
+      testWeeks = [48, 49, 50]
+      for (const week of testWeeks) {
+        await timeWarpRelativeToLaunchTime(urt, oneBlockWeek * week, true)
+        await testWeekIncrement(urt, week, true)
+      }
+    })
+
+    it('should NOT increment weeks past 50', async () => {
+      await timeWarpRelativeToLaunchTime(urt, oneBlockWeek * 52, true)
+      await testWeekIncrement(urt, 51, false)
+    })
   })
 })

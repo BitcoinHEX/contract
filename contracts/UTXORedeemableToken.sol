@@ -37,13 +37,13 @@ contract UTXORedeemableToken is StandardToken {
     uint256 public lastUpdatedWeek = 0;
 
     /* Weekly update data */
-    mapping(uint256 => uint256) internal unclaimedCoinsByWeek;
+    mapping(uint256 => uint256) public unclaimedCoinsByWeek;
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
     bytes32 public rootUTXOMerkleTreeHash;
 
     /* Redeemed UTXOs. */
-    mapping(bytes32 => bool) internal redeemedUTXOs;
+    mapping(bytes32 => bool) public redeemedUTXOs;
 
     /* Total tokens redeemed so far. */
     uint256 public totalRedeemed = 0;
@@ -56,12 +56,12 @@ contract UTXORedeemableToken is StandardToken {
     function storeWeekUnclaimed()
       public 
     {
-        uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
+        uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
-        if (weeksSinceLaunch < 51 && weeksSinceLaunch > lastUpdatedWeek) {
+        if (_weeksSinceLaunch <= 50 && _weeksSinceLaunch > lastUpdatedWeek) {
             uint256 unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-            unclaimedCoinsByWeek[weeksSinceLaunch] = unclaimedCoins;
-            lastUpdatedWeek = weeksSinceLaunch;
+            unclaimedCoinsByWeek[_weeksSinceLaunch] = unclaimedCoins;
+            lastUpdatedWeek = _weeksSinceLaunch;
         }
     }
 

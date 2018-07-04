@@ -8,7 +8,13 @@ const BigNumber = require('bignumber.js')
 
 const privateKeys = require('../data/privateKeys')
 const dataMerkleTree = require('../data/merkleTree.json')
-const { origin, bigZero, accounts, timeWarp } = require('./general')
+const {
+  origin,
+  bigZero,
+  accounts,
+  timeWarp
+  // getCurrentBlockTime
+} = require('./general')
 const { defaultMaximumRedeemable } = require('./bhx')
 const {
   bitcoinRootHash: defaultRootUtxoMerkleHash,
@@ -110,32 +116,24 @@ const getFormattedLeaf = leafBuffer => '0x' + leafBuffer.toString('hex')
 
 const timeWarpRelativeToLaunchTime = async (urt, seconds, moveAhead) => {
   const launchTime = await urt.launchTime()
-  const currentBlock = await web3.eth.getBlock(web3.eth.blockNumber)
+  const { timestamp: now } = await web3.eth.getBlock(web3.eth.blockNumber)
   let targetSeconds
-  assert(
-    currentBlock.timestamp < launchTime.toNumber(),
-    'cannot warp backwards'
-  )
+
   if (moveAhead) {
     // eslint-disable-next-line no-console
     console.log(`warping to ${seconds} seconds ahead of bet launchTime...`)
     targetSeconds = launchTime
-      .sub(currentBlock.timestamp)
+      .sub(now)
       .add(seconds)
       .toNumber()
   } else {
     // eslint-disable-next-line no-console
     console.log(`warping to ${seconds} seconds before bet launchTime...`)
     targetSeconds = launchTime
-      .sub(currentBlock.timestamp)
+      .sub(now)
       .sub(seconds)
       .toNumber()
   }
-
-  assert(
-    currentBlock.timestamp < launchTime.add(targetSeconds).toNumber(),
-    'cannot warp backwards'
-  )
 
   await timeWarp(targetSeconds)
 }
@@ -328,6 +326,68 @@ const testRedeemReferredUtxo = async (
   )
 }
 
+const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
+  const preLastUpdatedWeek = await urt.lastUpdatedWeek()
+  const preUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek)
+
+  await urt.storeWeekUnclaimed()
+
+  const postLastUpdatedWeek = await urt.lastUpdatedWeek()
+  const postUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek)
+
+  const maximumRedeemable = await urt.maximumRedeemable()
+  const totalRedeemed = await urt.totalRedeemed()
+  const expectedUnclaimedCoins = maximumRedeemable.sub(totalRedeemed)
+
+  if (shouldIncrement) {
+    assert(
+      preLastUpdatedWeek.lessThan(postLastUpdatedWeek),
+      'postLastWeekUpdated should be greater than preLastWeekUpdated'
+    )
+    assert.equal(
+      postLastUpdatedWeek.toString(),
+      new BigNumber(expectedWeek).toString(),
+      'lastUpdatedWeek should be incremented by 1'
+    )
+    assert(
+      preUnclaimedCoins.equals(0),
+      'preUnclaimedCoins should be 0 before incremeneting a week'
+    )
+    assert.equal(
+      postUnclaimedCoins.toString(),
+      expectedUnclaimedCoins.toString(),
+      'postUnclaimedCoins should match expectedUnclaimedCoins'
+    )
+  } else {
+    assert.equal(
+      preLastUpdatedWeek.toString(),
+      postLastUpdatedWeek.toString(),
+      'pre and post lastUpdatedWeek should match'
+    )
+    assert.equal(
+      postUnclaimedCoins.toString(),
+      preUnclaimedCoins.toString(),
+      'postUnclaimedCoins should match expectedUnclaimedCoins'
+    )
+  }
+}
+
+// const testStoreWeekUnclaimed = async (urt, launchTime) => {
+//   const currentBlockTime = await getCurrentBlockTime()
+//   const currentWeek = new BigNumber(currentBlockTime)
+//     .sub(launchTime)
+//     .div(60 * 60 * 24 * 7)
+//     .floor(0)
+
+//   const preLastUpdatedWeek = await urt.lastUpdatedWeek()
+//   const preUnclaimedCoins = await urt.unclaimedCoinsByWeek(currentWeek)
+
+//   await urt.storeWeekUnclaimed()
+
+//   const postLastUpdatedWeek = await urt.lastUpdatedWeek()
+//   const postUnclaimedCoins = await urt.unclaimedCoinsByWeek(currentWeek)
+// }
+
 module.exports = {
   setupContract,
   bitcoinPrivateKeys,
@@ -341,5 +401,7 @@ module.exports = {
   testCanRedeemUtxoHash,
   testCanRedeemUtxo,
   testRedeemUtxo,
-  testRedeemReferredUtxo
+  testRedeemReferredUtxo,
+  // testStoreWeekUnclaimed,
+  testWeekIncrement
 }
