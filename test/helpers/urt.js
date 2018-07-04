@@ -8,13 +8,7 @@ const BigNumber = require('bignumber.js')
 
 const privateKeys = require('../data/privateKeys')
 const dataMerkleTree = require('../data/merkleTree.json')
-const {
-  origin,
-  bigZero,
-  accounts,
-  timeWarp
-  // getCurrentBlockTime
-} = require('./general')
+const { origin, bigZero, accounts, timeWarp } = require('./general')
 const { defaultMaximumRedeemable } = require('./bhx')
 const {
   bitcoinRootHash: defaultRootUtxoMerkleHash,
@@ -347,7 +341,7 @@ const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
     assert.equal(
       postLastUpdatedWeek.toString(),
       new BigNumber(expectedWeek).toString(),
-      'lastUpdatedWeek should be incremented by 1'
+      'postLastUpdatedWeek should match expectedWeek'
     )
     assert(
       preUnclaimedCoins.equals(0),
@@ -359,6 +353,14 @@ const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
       'postUnclaimedCoins should match expectedUnclaimedCoins'
     )
   } else {
+    if (expectedWeek <= 50) {
+      assert.equal(
+        new BigNumber(expectedWeek).toString(),
+        postLastUpdatedWeek.toString(),
+        'postLastUpdatedWeek should match expectedWeek'
+      )
+    }
+
     assert.equal(
       preLastUpdatedWeek.toString(),
       postLastUpdatedWeek.toString(),
@@ -371,22 +373,6 @@ const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
     )
   }
 }
-
-// const testStoreWeekUnclaimed = async (urt, launchTime) => {
-//   const currentBlockTime = await getCurrentBlockTime()
-//   const currentWeek = new BigNumber(currentBlockTime)
-//     .sub(launchTime)
-//     .div(60 * 60 * 24 * 7)
-//     .floor(0)
-
-//   const preLastUpdatedWeek = await urt.lastUpdatedWeek()
-//   const preUnclaimedCoins = await urt.unclaimedCoinsByWeek(currentWeek)
-
-//   await urt.storeWeekUnclaimed()
-
-//   const postLastUpdatedWeek = await urt.lastUpdatedWeek()
-//   const postUnclaimedCoins = await urt.unclaimedCoinsByWeek(currentWeek)
-// }
 
 module.exports = {
   setupContract,
@@ -402,6 +388,5 @@ module.exports = {
   testCanRedeemUtxo,
   testRedeemUtxo,
   testRedeemReferredUtxo,
-  // testStoreWeekUnclaimed,
   testWeekIncrement
 }

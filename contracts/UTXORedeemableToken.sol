@@ -471,6 +471,7 @@ contract UTXORedeemableToken is StandardToken {
     {
         /* Prevent Self-Referral */
         require(_referrer != msg.sender);
+        require(_referrer != address(0));
 
         /* Credit claimer */
         _tokensRedeemed = redeemUtxo (
