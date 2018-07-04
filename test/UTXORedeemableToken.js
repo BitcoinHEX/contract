@@ -48,6 +48,7 @@ describe('when using included utility functions', () => {
   contract('UTXORedeemableTokenStub', () => {
     let urt
     let launchTime
+    const privateKeyIndexes = [1, 2, 3, 4]
 
     before('setup contract stub', async () => {
       launchTime = await getDefaultLaunchTime()
@@ -62,29 +63,47 @@ describe('when using included utility functions', () => {
     })
 
     it('should verify bitcoin signature using ecdsaVerify', async () => {
-      await testEcsdaVerify(urt, bitcoinPrivateKeys(0), redeemer)
+      for (const privateKeyIndex of privateKeyIndexes) {
+        await testEcsdaVerify(
+          urt,
+          bitcoinPrivateKeys(privateKeyIndex),
+          redeemer
+        )
+      }
     })
 
     it('should convert public key to ethereum address', async () => {
-      await testPubKeyToEthereumAddress(urt, bitcoinPrivateKeys(0))
+      for (const privateKeyIndex of privateKeyIndexes) {
+        await testPubKeyToEthereumAddress(
+          urt,
+          bitcoinPrivateKeys(privateKeyIndex)
+        )
+      }
     })
 
     it('should convert public key to bitcoin address', async () => {
-      await testPubKeyToBitcoinAddress(urt, bitcoinPrivateKeys(0))
+      for (const privateKeyIndex of privateKeyIndexes) {
+        await testPubKeyToBitcoinAddress(
+          urt,
+          bitcoinPrivateKeys(privateKeyIndex)
+        )
+      }
     })
 
     it('should allow redeeming valid UTXO hash', async () => {
-      const bitcoinTx = transactions[0]
-      const { potentialMerkleLeaf, proof } = getProofAndComponents(bitcoinTx)
-      await testCanRedeemUtxoHash(urt, potentialMerkleLeaf, proof)
+      for (const bitcoinTx of transactions) {
+        const { potentialMerkleLeaf, proof } = getProofAndComponents(bitcoinTx)
+        await testCanRedeemUtxoHash(urt, potentialMerkleLeaf, proof)
+      }
     })
 
     it('should allow redeeming valid UTXO', async () => {
-      const bitcoinTx = transactions[0]
-      const { proof, formattedAddress, satoshis } = getProofAndComponents(
-        bitcoinTx
-      )
-      await testCanRedeemUtxo(urt, proof, formattedAddress, satoshis)
+      for (const bitcoinTx of transactions) {
+        const { proof, formattedAddress, satoshis } = getProofAndComponents(
+          bitcoinTx
+        )
+        await testCanRedeemUtxo(urt, proof, formattedAddress, satoshis)
+      }
     })
   })
 })
@@ -351,6 +370,56 @@ describe('when redeeming utxos', () => {
           }
         )
       )
+    })
+
+    it('should redeem with any valid UTXO', async () => {
+      await timeWarpRelativeToLaunchTime(urt, 60, true)
+
+      let index = 0
+      for (const bitcoinTx of transactions) {
+        // problem with data given at the moment when using transactions[1]... skip for now
+        // TODO: make sure correct data is used for testing!!!
+        if (index !== 1) {
+          const { proof, satoshis } = getProofAndComponents(bitcoinTx)
+
+          await testRedeemUtxo(
+            urt,
+            proof,
+            satoshis,
+            bitcoinPrivateKeys(index),
+            {
+              from: redeemer
+            }
+          )
+        }
+
+        index++
+      }
+    })
+
+    it('should redeem referred with any valid UTXO', async () => {
+      await timeWarpRelativeToLaunchTime(urt, 60, true)
+      let index = 0
+      for (const bitcoinTx of transactions) {
+        // problem with data given at the moment it seems when using account[1]... skip for now
+        // TODO: make sure correct data is used for testing!!!
+        if (index !== 1) {
+          const { proof, satoshis } = getProofAndComponents(bitcoinTx)
+
+          await testRedeemReferredUtxo(
+            urt,
+            proof,
+            satoshis,
+            bitcoinPrivateKeys(index),
+            referrer,
+            {
+              from: redeemer
+            }
+          )
+        }
+
+        index++
+      }
     })
   })
 })

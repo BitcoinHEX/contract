@@ -38,7 +38,7 @@ const merkleLeafBufs = merkleTree.elements.map(item => Buffer.from(item, 'hex'))
 const bitcoinMerkleTree = new MerkleTree(merkleLeafBufs)
 const bitcoinRootHash = getFormattedHash(bitcoinMerkleTree.getRoot())
 const bitcoinProof = bitcoinMerkleTree
-  .getProofOrdered(merkleLeafBufs[0], 1)
+  .getProof(merkleLeafBufs[0])
   .map(getFormattedHash)
 const bitcoinLeaf = getFormattedHash(merkleLeafBufs[0])
 

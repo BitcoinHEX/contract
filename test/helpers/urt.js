@@ -50,10 +50,7 @@ const getProofAndComponents = bitcoinTx => {
     .map(element => element.toString('hex'))
     .indexOf(potentialMerkleLeaf.replace('0x', ''))
   const proof = defaultMerkleTree
-    .getProofOrdered(
-      merkleLeafBufs[hashMerkleLeafIndex],
-      hashMerkleLeafIndex + 1
-    )
+    .getProof(merkleLeafBufs[hashMerkleLeafIndex])
     .map(getFormattedLeaf)
 
   assert(
