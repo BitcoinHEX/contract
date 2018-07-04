@@ -12,7 +12,8 @@ const {
   testCanRedeemUtxo,
   testRedeemUtxo,
   testRedeemReferredUtxo,
-  testWeekIncrement
+  testWeekIncrement,
+  testGetRedeemAmount
 } = require('./helpers/urt')
 const { getDefaultLaunchTime } = require('./helpers/bhx')
 const {
@@ -25,6 +26,8 @@ const {
   incorrectBitcoinPrivateKey,
   incorrectProof
 } = require('./helpers/general')
+
+const BigNumber = require('bignumber.js')
 
 const transactions = require('./data/transactions')
 
@@ -434,6 +437,10 @@ describe('when incrementing weeks', () => {
       urt = await setupContract(launchTime)
     })
 
+    it('should NOT increment week when before launchTime', async () => {
+      await expectRevert(testWeekIncrement(urt, 1, true))
+    })
+
     it(`should increment first 3 weeks correctly`, async () => {
       testWeeks = [1, 2, 3]
       for (const week of testWeeks) {
@@ -453,6 +460,27 @@ describe('when incrementing weeks', () => {
     it('should NOT increment weeks past 50', async () => {
       await timeWarpRelativeToLaunchTime(urt, oneBlockWeek * 52 + 1, true)
       await testWeekIncrement(urt, 51, false)
+    })
+  })
+})
+
+describe('when checking redeem amounts at different times', async () => {
+  contract('UtxoRedeemableToken', () => {
+    let urt
+
+    before('setup contract', async () => {
+      const launchTime = await getDefaultLaunchTime()
+      urt = await setupContract(launchTime)
+    })
+
+    it('should get correct amounts for each week', async () => {
+      for (const week of Array.apply(null, { length: 50 }).map(
+        Number.call,
+        Number
+      )) {
+        await timeWarpRelativeToLaunchTime(urt, oneBlockWeek * week + 1, true)
+        await testGetRedeemAmount(urt, BigNumber.random(9).mul(1e9))
+      }
     })
   })
 })

@@ -8,7 +8,14 @@ const BigNumber = require('bignumber.js')
 
 const privateKeys = require('../data/privateKeys')
 const dataMerkleTree = require('../data/merkleTree.json')
-const { origin, bigZero, accounts, timeWarp } = require('./general')
+const {
+  origin,
+  bigZero,
+  accounts,
+  timeWarp,
+  getCurrentBlockTime,
+  oneBlockWeek
+} = require('./general')
 const { defaultMaximumRedeemable } = require('./bhx')
 const {
   bitcoinRootHash: defaultRootUtxoMerkleHash,
@@ -371,6 +378,73 @@ const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
   }
 }
 
+const calculateExpectedRedeemAmount = async (urt, amount) => {
+  // convert to wei units
+  let bigAmount = new BigNumber(amount).mul(1e10)
+  await urt.storeWeekUnclaimed()
+  const blockTime = await getCurrentBlockTime()
+  const launchTime = await urt.launchTime()
+  const timeDiff = new BigNumber(blockTime).sub(launchTime)
+  const weeksSinceLaunch = timeDiff.greaterThan(0)
+    ? timeDiff.div(oneBlockWeek).floor(0)
+    : bigZero
+
+  if (bigAmount.greaterThan('1e21')) {
+    bigAmount = bigAmount.lessThan('1e23')
+      ? bigAmount
+          .sub('1e11')
+          .mul(2)
+          .div(9)
+          .floor(0)
+          .add('5e10')
+      : bigAmount.div(4).floor(0)
+  }
+
+  // TODO: talk with other dev on if this is really intended....
+  // reduction plus bonus? seems redundant
+  const reduction = new BigNumber(100).sub(weeksSinceLaunch.mul(2))
+  bigAmount = bigAmount
+    .mul(reduction)
+    .div(100)
+    .floor(0)
+
+  switch (true) {
+    case weeksSinceLaunch.greaterThan(45):
+      return bigAmount
+    case weeksSinceLaunch.greaterThan(32):
+      return bigAmount.mul(1.01)
+    case weeksSinceLaunch.greaterThan(24):
+      return bigAmount.mul(1.02)
+    case weeksSinceLaunch.greaterThan(18):
+      return bigAmount.mul(1.03)
+    case weeksSinceLaunch.greaterThan(14):
+      return bigAmount.mul(1.04)
+    case weeksSinceLaunch.greaterThan(10):
+      return bigAmount.mul(1.05)
+    case weeksSinceLaunch.greaterThan(7):
+      return bigAmount.mul(1.06)
+    case weeksSinceLaunch.greaterThan(5):
+      return bigAmount.mul(1.07)
+    case weeksSinceLaunch.greaterThan(3):
+      return bigAmount.mul(1.08)
+    case weeksSinceLaunch.greaterThan(1):
+      return bigAmount.mul(1.09)
+    default:
+      return bigAmount.mul(1.1)
+  }
+}
+
+const testGetRedeemAmount = async (urt, amount) => {
+  const redeemAmount = await urt.getRedeemAmount(amount)
+  const expectedAmount = await calculateExpectedRedeemAmount(urt, amount)
+
+  assert.equal(
+    redeemAmount.toString(),
+    expectedAmount.toString(),
+    'redeemAmount should match expectedAmount'
+  )
+}
+
 module.exports = {
   setupContract,
   bitcoinPrivateKeys,
@@ -385,5 +459,6 @@ module.exports = {
   testCanRedeemUtxo,
   testRedeemUtxo,
   testRedeemReferredUtxo,
-  testWeekIncrement
+  testWeekIncrement,
+  testGetRedeemAmount
 }
