@@ -1,4 +1,4 @@
-const { origin } = require('./general')
+const { origin, getCurrentBlockTime, send } = require('./general')
 const { bitcoinRootHash: defaultRootUtxoMerkleHash } = require('./mkl')
 const utxos = require('../data/transactions')
 const BigNumber = require('bignumber.js')
@@ -9,7 +9,10 @@ const defaultSymbol = 'BHX'
 const defaultDecimals = new BigNumber(18)
 // 1 day from now as unix timestamp in local blockchain time
 const getDefaultLaunchTime = async () => {
-  const { timestamp: blockTime } = await web3.eth.getBlock(web3.eth.blockNumber)
+  // block time seems to get out of sync between describe blocks...
+  await send('evm_increaseTime', [1])
+  await send('evm_mine')
+  const blockTime = await getCurrentBlockTime()
   return blockTime + 60 * 60 * 24
 }
 // multiply each by 1e10 and add 10 percent in order to get wei units redeemable

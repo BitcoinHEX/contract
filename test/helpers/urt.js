@@ -8,7 +8,14 @@ const BigNumber = require('bignumber.js')
 
 const privateKeys = require('../data/privateKeys')
 const dataMerkleTree = require('../data/merkleTree.json')
-const { origin, bigZero, accounts, timeWarp } = require('./general')
+const {
+  origin,
+  bigZero,
+  accounts,
+  timeWarp,
+  getCurrentBlockTime,
+  oneBlockWeek
+} = require('./general')
 const { defaultMaximumRedeemable } = require('./bhx')
 const {
   bitcoinRootHash: defaultRootUtxoMerkleHash,
@@ -50,10 +57,7 @@ const getProofAndComponents = bitcoinTx => {
     .map(element => element.toString('hex'))
     .indexOf(potentialMerkleLeaf.replace('0x', ''))
   const proof = defaultMerkleTree
-    .getProofOrdered(
-      merkleLeafBufs[hashMerkleLeafIndex],
-      hashMerkleLeafIndex + 1
-    )
+    .getProof(merkleLeafBufs[hashMerkleLeafIndex])
     .map(getFormattedLeaf)
 
   assert(
@@ -110,32 +114,24 @@ const getFormattedLeaf = leafBuffer => '0x' + leafBuffer.toString('hex')
 
 const timeWarpRelativeToLaunchTime = async (urt, seconds, moveAhead) => {
   const launchTime = await urt.launchTime()
-  const currentBlock = await web3.eth.getBlock(web3.eth.blockNumber)
+  const { timestamp: now } = await web3.eth.getBlock(web3.eth.blockNumber)
   let targetSeconds
-  assert(
-    currentBlock.timestamp < launchTime.toNumber(),
-    'cannot warp backwards'
-  )
+
   if (moveAhead) {
     // eslint-disable-next-line no-console
     console.log(`warping to ${seconds} seconds ahead of bet launchTime...`)
     targetSeconds = launchTime
-      .sub(currentBlock.timestamp)
+      .sub(now)
       .add(seconds)
       .toNumber()
   } else {
     // eslint-disable-next-line no-console
     console.log(`warping to ${seconds} seconds before bet launchTime...`)
     targetSeconds = launchTime
-      .sub(currentBlock.timestamp)
+      .sub(now)
       .sub(seconds)
       .toNumber()
   }
-
-  assert(
-    currentBlock.timestamp < launchTime.add(targetSeconds).toNumber(),
-    'cannot warp backwards'
-  )
 
   await timeWarp(targetSeconds)
 }
@@ -328,6 +324,127 @@ const testRedeemReferredUtxo = async (
   )
 }
 
+const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
+  const preLastUpdatedWeek = await urt.lastUpdatedWeek()
+  const preUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek)
+
+  await urt.storeWeekUnclaimed()
+
+  const postLastUpdatedWeek = await urt.lastUpdatedWeek()
+  const postUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek)
+
+  const maximumRedeemable = await urt.maximumRedeemable()
+  const totalRedeemed = await urt.totalRedeemed()
+  const expectedUnclaimedCoins = maximumRedeemable.sub(totalRedeemed)
+
+  if (shouldIncrement) {
+    assert(
+      preLastUpdatedWeek.lessThan(postLastUpdatedWeek),
+      'postLastWeekUpdated should be greater than preLastWeekUpdated'
+    )
+    assert.equal(
+      postLastUpdatedWeek.toString(),
+      new BigNumber(expectedWeek).toString(),
+      'postLastUpdatedWeek should match expectedWeek'
+    )
+    assert(
+      preUnclaimedCoins.equals(0),
+      'preUnclaimedCoins should be 0 before incremeneting a week'
+    )
+    assert.equal(
+      postUnclaimedCoins.toString(),
+      expectedUnclaimedCoins.toString(),
+      'postUnclaimedCoins should match expectedUnclaimedCoins'
+    )
+  } else {
+    if (expectedWeek <= 50) {
+      assert.equal(
+        new BigNumber(expectedWeek).toString(),
+        postLastUpdatedWeek.toString(),
+        'postLastUpdatedWeek should match expectedWeek'
+      )
+    }
+
+    assert.equal(
+      preLastUpdatedWeek.toString(),
+      postLastUpdatedWeek.toString(),
+      'pre and post lastUpdatedWeek should match'
+    )
+    assert.equal(
+      postUnclaimedCoins.toString(),
+      preUnclaimedCoins.toString(),
+      'postUnclaimedCoins should match expectedUnclaimedCoins'
+    )
+  }
+}
+
+const calculateExpectedRedeemAmount = async (urt, amount) => {
+  // convert to wei units
+  let bigAmount = new BigNumber(amount).mul(1e10)
+  await urt.storeWeekUnclaimed()
+  const blockTime = await getCurrentBlockTime()
+  const launchTime = await urt.launchTime()
+  const timeDiff = new BigNumber(blockTime).sub(launchTime)
+  const weeksSinceLaunch = timeDiff.greaterThan(0)
+    ? timeDiff.div(oneBlockWeek).floor(0)
+    : bigZero
+
+  if (bigAmount.greaterThan('1e21')) {
+    bigAmount = bigAmount.lessThan('1e23')
+      ? bigAmount
+          .sub('1e11')
+          .mul(2)
+          .div(9)
+          .floor(0)
+          .add('5e10')
+      : bigAmount.div(4).floor(0)
+  }
+
+  // TODO: talk with other dev on if this is really intended....
+  // reduction plus bonus? seems redundant
+  const reduction = new BigNumber(100).sub(weeksSinceLaunch.mul(2))
+  bigAmount = bigAmount
+    .mul(reduction)
+    .div(100)
+    .floor(0)
+
+  switch (true) {
+    case weeksSinceLaunch.greaterThan(45):
+      return bigAmount
+    case weeksSinceLaunch.greaterThan(32):
+      return bigAmount.mul(1.01)
+    case weeksSinceLaunch.greaterThan(24):
+      return bigAmount.mul(1.02)
+    case weeksSinceLaunch.greaterThan(18):
+      return bigAmount.mul(1.03)
+    case weeksSinceLaunch.greaterThan(14):
+      return bigAmount.mul(1.04)
+    case weeksSinceLaunch.greaterThan(10):
+      return bigAmount.mul(1.05)
+    case weeksSinceLaunch.greaterThan(7):
+      return bigAmount.mul(1.06)
+    case weeksSinceLaunch.greaterThan(5):
+      return bigAmount.mul(1.07)
+    case weeksSinceLaunch.greaterThan(3):
+      return bigAmount.mul(1.08)
+    case weeksSinceLaunch.greaterThan(1):
+      return bigAmount.mul(1.09)
+    default:
+      return bigAmount.mul(1.1)
+  }
+}
+
+const testGetRedeemAmount = async (urt, amount) => {
+  const redeemAmount = await urt.getRedeemAmount(amount)
+  const expectedAmount = await calculateExpectedRedeemAmount(urt, amount)
+
+  assert.equal(
+    redeemAmount.toString(),
+    expectedAmount.toString(),
+    'redeemAmount should match expectedAmount'
+  )
+}
+
 module.exports = {
   setupContract,
   bitcoinPrivateKeys,
@@ -341,5 +458,7 @@ module.exports = {
   testCanRedeemUtxoHash,
   testCanRedeemUtxo,
   testRedeemUtxo,
-  testRedeemReferredUtxo
+  testRedeemReferredUtxo,
+  testWeekIncrement,
+  testGetRedeemAmount
 }

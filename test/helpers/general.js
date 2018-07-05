@@ -8,6 +8,21 @@ const referrer = accounts[2]
 const otherAccount = accounts[9]
 
 const bigZero = new BigNumber(0)
+const addressZero = '0x' + '0'.repeat(40)
+const incorrectBitcoinPrivateKey =
+  '5KahFE6gzBkHPdZ9YCuLan3XiKyJnBX94Jqb2T5qfy91ZmubNFP'
+const incorrectProof = [
+  '0x' + 'a'.repeat('64'),
+  '0x' + 'b'.repeat('64'),
+  '0x' + 'c'.repeat('64')
+]
+
+const oneBlockWeek = 60 * 60 * 24 * 7
+
+const getCurrentBlockTime = async () => {
+  const { timestamp } = await web3.eth.getBlock(web3.eth.blockNumber)
+  return timestamp
+}
 
 const send = (method, params = []) =>
   web3.currentProvider.send({
@@ -32,7 +47,7 @@ const timeWarp = async seconds => {
     /* eslint-enable no-console */
   } else {
     // eslint-disable-next-line
-    console.log('❌ Did not warp... 0 seconds was given as an argument')
+    console.log('❌ Did not warp... less than 0 seconds was given as an argument')
   }
 }
 
@@ -55,7 +70,7 @@ const expectRevert = async promise => {
       `Expected throw, got ${error} instead`
     )
 
-    return
+    return true
   }
 
   assert(false, "Expected throw wasn't received")
@@ -67,7 +82,13 @@ module.exports = {
   redeemer,
   referrer,
   otherAccount,
+  incorrectBitcoinPrivateKey,
+  incorrectProof,
   bigZero,
+  addressZero,
+  oneBlockWeek,
   expectRevert,
-  timeWarp
+  send,
+  timeWarp,
+  getCurrentBlockTime
 }
