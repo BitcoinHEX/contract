@@ -5,6 +5,7 @@ const accounts = web3.eth.accounts
 const origin = accounts[0]
 const redeemer = accounts[1]
 const referrer = accounts[2]
+const stakers = accounts.slice(3, 8)
 const otherAccount = accounts[9]
 
 const bigZero = new BigNumber(0)
@@ -81,6 +82,7 @@ module.exports = {
   origin,
   redeemer,
   referrer,
+  stakers,
   otherAccount,
   incorrectBitcoinPrivateKey,
   incorrectProof,

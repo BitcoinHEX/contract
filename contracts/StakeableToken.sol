@@ -8,13 +8,13 @@ contract StakeableToken is UTXORedeemableToken {
 
     uint256 public totalBtcCirculationAtFork;
 
-    uint256 public stakedCoins;
+    uint256 public totalStakedCoins;
 
     struct StakeStruct {
         uint256 stakeAmount;
         uint256 stakeTime;
         uint256 unlockTime;
-        uint256 stakedCoinsAtStart;
+        uint256 totalStakedCoinsAtStart;
     }
 
     mapping(address => StakeStruct[]) public staked;
@@ -38,70 +38,96 @@ contract StakeableToken is UTXORedeemableToken {
     ) 
         external 
     {
-        address staker = msg.sender;
+        address _staker = msg.sender;
 
         /* Make sure staker has enough funds */
-        require(balances[staker] >= _value);
+        require(balances[_staker] >= _value);
+        /* ensure unlockTime is in the future */
+        require(_unlockTime >= block.timestamp.add(10 days));
+        /* ensure that unlock time is not more than approx 10 years */
+        require(_unlockTime <= block.timestamp.add(10 days * 3650));
 
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
         /* Remove balance from sender */
-        balances[staker] = balances[staker].sub(_value);
+        balances[_staker] = balances[_staker].sub(_value);
         balances[address(this)] = balances[address(this)].add(_value);
-        emit Transfer(staker, address(this), _value);
+        emit Transfer(_staker, address(this), _value);
 
         /* Create Stake */
-        staked[staker].push(
+        staked[_staker].push(
           StakeStruct(
-            uint128(_value), 
+            _value, 
             block.timestamp, 
             _unlockTime, 
-            stakedCoins
+            totalStakedCoins
           )
         );
 
         /* Add staked coins to global stake counter */
-        stakedCoins = stakedCoins.add(_value);
+        totalStakedCoins = totalStakedCoins.add(_value);
     }
 
     function calculateWeAreAllSatoshiRewards(
-        StakeStruct stake
-    ) 
-        internal 
-        view 
-        returns (uint256 rewards)
-    {
-        /* Calculate what week stake was opened */
-        uint256 startWeek = stake.stakeTime.sub(launchTime).div(7 days);
-
-        /* Calculate current week */
-        uint256 weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
-
-        /* Award 2% of unclaimed coins at end of every week */
-        for (uint256 i = startWeek; i < weeksSinceLaunch; i++) {
-            rewards = rewards.add(unclaimedCoinsByWeek[i].mul(stake.stakeAmount).div(50));
-        }
-    }
-
-    function calculateViralRewards(
-        uint256 rewards
+        StakeStruct _stake
     ) 
         internal 
         view 
         returns (uint256)
     {
-        /* Add bonus percentage to rewards from 0-10% based on adoption */
-        return rewards.mul(totalRedeemed).div(totalBtcCirculationAtFork).div(10);
+        uint256 _rewards = 0;
+        /* Calculate what week stake was opened */
+        uint256 startWeek = _stake.stakeTime
+            .sub(launchTime)
+            .div(7 days);
+
+        /* Calculate current week */
+        uint256 weeksSinceLaunch = block.timestamp
+            .sub(launchTime)
+            .div(7 days);
+
+        /* Award 2% of unclaimed coins at end of every week */
+        for (uint256 _i = startWeek; _i < weeksSinceLaunch; _i++) {
+            _rewards = _rewards
+                .add(unclaimedCoinsByWeek[_i]
+                .mul(_stake.stakeAmount)
+                .div(50));
+        }
+
+        return _rewards;
     }
 
-    function calculateCritMassRewards(uint256 rewards) internal view returns (uint256) {
-        /* Add bonus percentage to rewards from 0-10% based on adoption */
-        return rewards.mul(totalRedeemed).div(maximumRedeemable).div(10);
+    function calculateViralRewards(
+        uint256 _rewards
+    ) 
+        internal 
+        view 
+        returns (uint256)
+    {
+        /* Add bonus percentage to _rewards from 0-10% based on adoption */
+        return _rewards
+            .mul(totalRedeemed)
+            .div(totalBtcCirculationAtFork)
+            .div(10);
+    }
+
+    function calculateCritMassRewards(
+        uint256 _rewards
+    ) 
+        internal 
+        view 
+        returns (uint256)
+    {
+        /* Add bonus percentage to _rewards from 0-10% based on adoption */
+        return _rewards
+            .mul(totalRedeemed)
+            .div(maximumRedeemable)
+            .div(10);
     }
 
     function calculateStakingRewards(
-        StakeStruct stake
+        StakeStruct _stake
     ) 
         internal 
         view 
@@ -111,98 +137,128 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 interestRateTimesHundred = 100;
 
         /* Calculate Adoption Percent Scaler */
-        uint256 scaler = stake.stakedCoinsAtStart.mul(100).div(totalSupply_);
+        uint256 scaler = _stake.totalStakedCoinsAtStart
+            .mul(100)
+            .div(totalSupply_);
 
         /* Adjust interest rate by scaler */
         interestRateTimesHundred = interestRateTimesHundred.div(scaler);
 
         /* Calculate Periods */
-        uint256 periods = block.timestamp.sub(stake.stakeTime).div(10 days);
+        uint256 periods = block.timestamp
+            .sub(_stake.stakeTime)
+            .div(10 days);
 
         /* Compound */
-        uint256 compoundRound = compound(stake.stakeAmount, periods, interestRateTimesHundred);
+        uint256 compoundRound = compound(_stake.stakeAmount, periods, interestRateTimesHundred);
 
         /* Calculate final staking rewards with time bonus */
-        return compoundRound.mul(periods).div(1000).add(compoundRound).sub(stake.stakeAmount);
-        
+        return compoundRound
+            .mul(periods)
+            .div(1000)
+            .add(compoundRound)
+            .sub(_stake.stakeAmount);
     }
 
     function calculateAdditionalRewards(
-        StakeStruct stake, 
-        uint256 initRewards
+        StakeStruct _stake, 
+        uint256 _initRewards
     ) 
         internal 
         view 
-        returns (uint256 rewards)
+        returns (uint256)
     {
-        rewards = initRewards.add(calculateWeAreAllSatoshiRewards(stake));
-        rewards = rewards
-            .add(calculateViralRewards(rewards))
-            .add(calculateCritMassRewards(rewards));
+        uint256 _rewards = 0;
+        _rewards = _initRewards.add(calculateWeAreAllSatoshiRewards(_stake));
+        _rewards = _rewards
+            .add(calculateViralRewards(_rewards))
+            .add(calculateCritMassRewards(_rewards));
 
-        return rewards;
+        return _rewards;
     }
 
+    // paginate?
     function getCurrentStaked(
-        address staker
+        address _staker
     ) 
         external 
         view 
-        returns(uint256 stakes)
+        returns(uint256)
     {
-        for (uint256 i; i < staked[staker].length; i++) {
+        uint256 _stakes = 0;
+
+        for (uint256 _i; _i < staked[_staker].length; _i++) {
             /* Add Stake Amount */
-            stakes = stakes.add(staked[staker][i].stakeAmount);
+            _stakes = _stakes.add(staked[_staker][_i].stakeAmount);
             /* Check if stake has matured */
-            if (block.timestamp > staked[staker][i].unlockTime) {
+            if (block.timestamp > staked[_staker][_i].unlockTime) {
                 /* Calculate Rewards */
-                uint256 stakingRewards = calculateStakingRewards(staked[staker][i]);
-                stakes = stakes.add(calculateAdditionalRewards(staked[staker][i], stakingRewards));
+                _stakes = _stakes.add(
+                    calculateAdditionalRewards(
+                        staked[_staker][_i], 
+                        calculateStakingRewards(staked[_staker][_i])
+                    )
+                );
             }
         }
 
-        return stakes;
+        return _stakes;
     }
 
+    // TODO: check if this needs to be paginated somehow due to gas limits....
     function claimStakingRewards(
-        address staker
+        address _staker
     ) 
         external 
     {
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
-        for (uint256 i; i < staked[staker].length; i++) {
+        for (uint256 _i = 0; _i < staked[_staker].length; _i++) {
             /* Check if stake has matured */
-            if (block.timestamp > staked[staker][i].unlockTime) {
+            if (block.timestamp > staked[_staker][_i].unlockTime) {
                 /* Remove StakedCoins from global counter */
-                stakedCoins = stakedCoins.sub(staked[staker][i].stakeAmount);
+                totalStakedCoins = totalStakedCoins
+                    .sub(staked[_staker][_i].stakeAmount);
 
                 /* Sub staked coins from contract */
-                balances[address(this)] = balances[address(this)].sub(staked[staker][i].stakeAmount);
+                balances[address(this)] = balances[address(this)]
+                    .sub(staked[_staker][_i].stakeAmount);
                 
                 /* Add staked coins to staker */
-                balances[staker] = balances[staker].add(staked[staker][i].stakeAmount);
+                balances[_staker] = balances[_staker]
+                    .add(staked[_staker][_i].stakeAmount);
 
-                emit Transfer(address(this), staker, staked[staker][i].stakeAmount);
+                emit Transfer(
+                    address(this), 
+                    _staker, 
+                    staked[_staker][_i].stakeAmount
+                );
 
                 /* Calculate Rewards */
-                uint256 stakingRewards = calculateStakingRewards(staked[staker][i]);
-                uint256 rewards = rewards.add(calculateAdditionalRewards(staked[staker][i], stakingRewards));
+                uint256 _stakingRewards = calculateStakingRewards(staked[_staker][_i]);
+                uint256 _rewards = _stakingRewards.add(
+                    calculateAdditionalRewards(
+                        staked[_staker][_i], 
+                        _stakingRewards
+                    )
+                );
 
                 /* Award staking rewards to staker */
-                balances[staker] = balances[staker].add(rewards);
+                balances[_staker] = balances[_staker].add(_rewards);
 
                 /* Award rewards to origin contract */
-                balances[origin] = balances[origin].add(rewards.sub(stakingRewards));
+                balances[origin] = balances[origin]
+                    .add(_rewards
+                    .sub(_stakingRewards));
 
                 /* Increase supply */
-                totalSupply_ = totalSupply_.add(rewards.mul(2));
+                totalSupply_ = totalSupply_.add(_rewards.mul(2));
 
                 /* Remove Stake */
-                delete staked[staker][i];
+                delete staked[_staker][_i];
 
-                emit Mint(staker, rewards);
+                emit Mint(_staker, _rewards);
             }
         }
     }

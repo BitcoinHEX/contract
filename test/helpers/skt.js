@@ -51,8 +51,38 @@ const testInitializeStakeableToken = async (skt, expectedLaunchTime) => {
   )
 }
 
+const testStartStake = async (skt, amount, time, config) => {
+  const { from: staker } = config
+  const preBalance = await skt.balanceOf(staker)
+  const preStaked = await skt.getCurrentStaked(staker)
+  const preTotalStakedCoins = await skt.totalStakedCoins()
+
+  await skt.startStake(amount, time, config)
+
+  const postBalance = await skt.balanceOf(staker)
+  const postStaked = await skt.getCurrentStaked(staker)
+  const postTotalStakedCoins = await skt.totalStakedCoins()
+
+  assert.equal(
+    preBalance.sub(postBalance).toString(),
+    amount.toString(),
+    'staker balance should be decremented by stake amount'
+  )
+  assert.equal(
+    postStaked.sub(preStaked).toString(),
+    amount.toString(),
+    'staker staked amount should be incremented by stake amount'
+  )
+  assert.equal(
+    postTotalStakedCoins.sub(preTotalStakedCoins).toString(),
+    amount.toString(),
+    'totalStakedCoins should be incremented by stake amount'
+  )
+}
+
 module.exports = {
   defaultTotalBtcCirculationAtFork,
   setupStakeableToken,
-  testInitializeStakeableToken
+  testInitializeStakeableToken,
+  testStartStake
 }
