@@ -40,7 +40,7 @@ contract UTXORedeemableToken is StandardToken {
     mapping(uint256 => uint256) public unclaimedCoinsByWeek;
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
-    bytes32 public rootUTXOMerkleTreeHash;
+    bytes32 public rootUtxoMerkleTreeHash;
 
     /* Redeemed UTXOs. */
     mapping(bytes32 => bool) public redeemedUTXOs;
@@ -224,7 +224,7 @@ contract UTXORedeemableToken is StandardToken {
         view 
         returns (bool)
     {
-        return MerkleProof.verifyProof(_proof, rootUTXOMerkleTreeHash, _merkleLeafHash);
+        return MerkleProof.verifyProof(_proof, rootUtxoMerkleTreeHash, _merkleLeafHash);
     }
 
     /**

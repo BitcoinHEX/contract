@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 import "./StakeableToken.sol";
 
+
 contract BitcoinHex is StakeableToken {
     string public name = "BitcoinHex"; 
     string public symbol = "BHX";
@@ -8,16 +9,16 @@ contract BitcoinHex is StakeableToken {
 
     constructor (
         address _originAddress,
-        bytes32 _rootUTXOMerkleTreeHash,
+        bytes32 _rootUtxoMerkleTreeHash,
         uint256 _maximumRedeemable,
-        uint256 _totalBTCCirculationAtFork
+        uint256 _totalBtcCirculationAtFork
     ) 
         public
     {
         launchTime = block.timestamp;
         origin = _originAddress;
-        rootUTXOMerkleTreeHash = _rootUTXOMerkleTreeHash;
+        rootUtxoMerkleTreeHash = _rootUtxoMerkleTreeHash;
         maximumRedeemable = _maximumRedeemable;
-        totalBTCCirculationAtFork = _totalBTCCirculationAtFork;
+        totalBtcCirculationAtFork = _totalBtcCirculationAtFork;
     }
 }

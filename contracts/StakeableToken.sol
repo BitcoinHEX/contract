@@ -6,7 +6,7 @@ contract StakeableToken is UTXORedeemableToken {
 
     event Mint(address indexed _address, uint _reward);
 
-    uint256 public totalBTCCirculationAtFork;
+    uint256 public totalBtcCirculationAtFork;
 
     uint256 public stakedCoins;
 
@@ -92,7 +92,7 @@ contract StakeableToken is UTXORedeemableToken {
         returns (uint256)
     {
         /* Add bonus percentage to rewards from 0-10% based on adoption */
-        return rewards.mul(totalRedeemed).div(totalBTCCirculationAtFork).div(10);
+        return rewards.mul(totalRedeemed).div(totalBtcCirculationAtFork).div(10);
     }
 
     function calculateCritMassRewards(uint256 rewards) internal view returns (uint256) {

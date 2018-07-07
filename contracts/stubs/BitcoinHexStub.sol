@@ -7,16 +7,16 @@ import "../BitcoinHex.sol";
 contract BitcoinHexStub is BitcoinHex {
     constructor(
         address _originContract,
-        bytes32 _rootUTXOMerkleTreeHash,
+        bytes32 _rootUtxoMerkleTreeHash,
         uint256 _maximumRedeemable,
-        uint256 _totalBTCCirculationAtFork
+        uint256 _totalBtcCirculationAtFork
     ) 
       public 
       BitcoinHex(
           _originContract,
-          _rootUTXOMerkleTreeHash,
+          _rootUtxoMerkleTreeHash,
           _maximumRedeemable,
-          _totalBTCCirculationAtFork
+          _totalBtcCirculationAtFork
       )
     {}    
 }

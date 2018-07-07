@@ -140,7 +140,7 @@ const testInitialization = async (urt, expectedLaunchTime) => {
   const contractOrigin = await urt.origin()
   const launchTime = await urt.launchTime()
   const lastUpdatedWeek = await urt.lastUpdatedWeek()
-  const rootUTXOMerkleTreeHash = await urt.rootUTXOMerkleTreeHash()
+  const rootUtxoMerkleTreeHash = await urt.rootUtxoMerkleTreeHash()
   const totalRedeemed = await urt.totalRedeemed()
   const maximumRedeemable = await urt.maximumRedeemable()
 
@@ -156,9 +156,9 @@ const testInitialization = async (urt, expectedLaunchTime) => {
     'lastUpdatedWeek should start as 0'
   )
   assert.equal(
-    rootUTXOMerkleTreeHash,
+    rootUtxoMerkleTreeHash,
     defaultRootUtxoMerkleHash,
-    'rootUTXOMerkleTreeHash should match defaultRootUtxoMerkleHash'
+    'rootUtxoMerkleTreeHash should match defaultRootUtxoMerkleHash'
   )
   assert.equal(
     totalRedeemed.toString(),

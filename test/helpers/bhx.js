@@ -37,9 +37,9 @@ const testInitialization = async bhx => {
   const symbol = await bhx.symbol()
   const decimals = await bhx.decimals()
   const ContractOrigin = await bhx.origin()
-  const rootUtxoMerkleHash = await bhx.rootUTXOMerkleTreeHash()
+  const rootUtxoMerkleHash = await bhx.rootUtxoMerkleTreeHash()
   const maximumRedeemable = await bhx.maximumRedeemable()
-  const totalBTCCirculationAtFork = await bhx.totalBTCCirculationAtFork()
+  const totalBtcCirculationAtFork = await bhx.totalBtcCirculationAtFork()
 
   assert.equal(name, defaultName, 'name should match defaultName')
   assert.equal(symbol, defaultSymbol, 'symbol should match defaultSymbol')
@@ -61,8 +61,8 @@ const testInitialization = async bhx => {
   )
   assert.equal(
     defaultTotalBTCCirculationAtFork.toString(),
-    totalBTCCirculationAtFork.toString(),
-    'totalBTCCirculationAtFork should match defaultTotalBTCCirculationAtFork'
+    totalBtcCirculationAtFork.toString(),
+    'totalBtcCirculationAtFork should match defaultTotalBTCCirculationAtFork'
   )
 }
 
