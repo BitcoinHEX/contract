@@ -209,7 +209,42 @@ contract StakeableToken is UTXORedeemableToken {
         return _compounded.sub(_stake.stakeAmount);
     }
 
-    // paginate?
+    // for use in case user puts excessive stakes and array iteration hits gasLimit
+    function getCurrentStakedAtIndexes(
+        address _staker,
+        uint256 _startIndex,
+        uint256 _endIndex
+    )
+        public
+        view
+        returns (uint256)
+    {
+        uint256 _stakes = 0;
+
+        for (
+            uint256 _stakeIndex = _startIndex; 
+            _startIndex < _endIndex; 
+            _stakeIndex = _stakeIndex.add(1)
+        ) {
+            /* Add Stake Amount */
+            _stakes = _stakes.add(staked[_staker][_startIndex].stakeAmount);
+            /* Check if stake has matured */
+            if (block.timestamp > staked[_staker][_startIndex].unlockTime) {
+                /* Calculate Rewards */
+                _stakes = _stakes.add(
+                    calculateAdditionalRewards(
+                        _staker,
+                        _startIndex,
+                        calculateStakingRewards(_staker, _startIndex)
+                    )
+                );
+            }
+        }
+
+        return _stakes;
+    }
+
+    // safe for users who have no placed excessive amounts of stakes
     function getCurrentStaked(
         address _staker
     )
@@ -217,25 +252,7 @@ contract StakeableToken is UTXORedeemableToken {
         view 
         returns (uint256)
     {
-        uint256 _stakes = 0;
-
-        for (uint256 _i; _i < staked[_staker].length; _i++) {
-            /* Add Stake Amount */
-            _stakes = _stakes.add(staked[_staker][_i].stakeAmount);
-            /* Check if stake has matured */
-            if (block.timestamp > staked[_staker][_i].unlockTime) {
-                /* Calculate Rewards */
-                _stakes = _stakes.add(
-                    calculateAdditionalRewards(
-                        _staker,
-                        _i,
-                        calculateStakingRewards(_staker, _i)
-                    )
-                );
-            }
-        }
-
-        return _stakes;
+        return getCurrentStakedAtIndexes(_staker, 0, staked[_staker].length);
     }
 
     //
