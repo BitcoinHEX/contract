@@ -7,7 +7,6 @@ contract StakeableToken is UTXORedeemableToken {
     event Mint(address indexed _address, uint _reward);
 
     uint256 public totalBtcCirculationAtFork;
-
     uint256 public totalStakedCoins;
     uint256 public interestRatePercent;
 
@@ -20,41 +19,20 @@ contract StakeableToken is UTXORedeemableToken {
 
     mapping(address => StakeStruct[]) public staked;
 
-    function startStake(
-        uint256 _value, 
-        uint256 _unlockTime
-    ) 
-        external 
+    //
+    // start utility functions
+    //
+
+    function removeArrayEntry(
+        StakeStruct[] storage _array,
+        uint256 _index
+    )
+        internal
     {
-        address _staker = msg.sender;
-
-        /* Make sure staker has enough funds */
-        require(balances[_staker] >= _value);
-        /* ensure unlockTime is in the future */
-        require(_unlockTime >= block.timestamp.add(10 days));
-        /* ensure that unlock time is not more than approx 10 years */
-        require(_unlockTime <= block.timestamp.add(10 days * 3650));
-
-        /* Check if weekly data needs to be updated */
-        storeWeekUnclaimed();
-
-        /* Remove balance from sender */
-        balances[_staker] = balances[_staker].sub(_value);
-        balances[address(this)] = balances[address(this)].add(_value);
-        emit Transfer(_staker, address(this), _value);
-
-        /* Create Stake */
-        staked[_staker].push(
-          StakeStruct(
-            _value, 
-            block.timestamp, 
-            _unlockTime, 
-            totalStakedCoins
-          )
-        );
-
-        /* Add staked coins to global stake counter */
-        totalStakedCoins = totalStakedCoins.add(_value);
+        // set last item to index of item we want to get rid of
+        _array[_index] = _array[_array.length.sub(1)];
+        // remove last item in array now that safely copied to index of deleted item
+        _array.length = _array.length.sub(1);
     }
 
     function compound(
@@ -260,62 +238,132 @@ contract StakeableToken is UTXORedeemableToken {
         return _stakes;
     }
 
-    // TODO: paginate or make single use
-    function claimStakingRewards(
-        address _staker
+    //
+    // end utility functions
+    //
+
+    //
+    // start user functinos
+    //
+
+    function startStake(
+        uint256 _value, 
+        uint256 _unlockTime
     ) 
-        external 
+        external
+        returns (bool)
     {
+        address _staker = msg.sender;
+
+        /* Make sure staker has enough funds */
+        require(balances[_staker] >= _value);
+        /* ensure unlockTime is in the future */
+        require(_unlockTime >= block.timestamp.add(10 days));
+        /* ensure that unlock time is not more than approx 10 years */
+        require(_unlockTime <= block.timestamp.add(10 days * 3650));
+
         /* Check if weekly data needs to be updated */
         storeWeekUnclaimed();
 
-        for (uint256 _i = 0; _i < staked[_staker].length; _i++) {
+        /* Remove balance from sender */
+        balances[_staker] = balances[_staker].sub(_value);
+        balances[address(this)] = balances[address(this)].add(_value);
+        emit Transfer(_staker, address(this), _value);
+
+        /* Create Stake */
+        staked[_staker].push(
+          StakeStruct(
+            _value, 
+            block.timestamp, 
+            _unlockTime, 
+            totalStakedCoins
+          )
+        );
+
+        /* Add staked coins to global stake counter */
+        totalStakedCoins = totalStakedCoins.add(_value);
+
+        return true;
+    }
+
+    function claimSingleStakingReward(
+        address _staker,
+        uint256 _stakeIndex
+    )
+        public
+        returns (bool)
+    {
+        // Check if weekly data needs to be updated
+        storeWeekUnclaimed();
+        require(block.timestamp > staked[_staker][_stakeIndex].unlockTime);
+        // Remove StakedCoins from global counter
+        totalStakedCoins = totalStakedCoins
+            .sub(staked[_staker][_stakeIndex].stakeAmount);
+
+        // Sub staked coins from contract
+        balances[address(this)] = balances[address(this)]
+            .sub(staked[_staker][_stakeIndex].stakeAmount);
+        
+        // Add staked coins to staker
+        balances[_staker] = balances[_staker]
+            .add(staked[_staker][_stakeIndex].stakeAmount);
+
+        emit Transfer(
+            address(this), 
+            _staker, 
+            staked[_staker][_stakeIndex].stakeAmount
+        );
+
+        // Calculate Rewards
+        uint256 _stakingRewards = calculateStakingRewards(_staker, _stakeIndex);
+        uint256 _rewards = _stakingRewards.add(
+            calculateAdditionalRewards(
+                _staker,
+                _stakeIndex,
+                _stakingRewards
+            )
+        );
+
+        // Award staking rewards to staker
+        balances[_staker] = balances[_staker].add(_rewards);
+
+        // Award rewards to origin contract
+        balances[origin] = balances[origin]
+            .add(_rewards
+            .sub(_stakingRewards));
+
+        // Increase supply
+        totalSupply_ = totalSupply_.add(_rewards.mul(2));
+
+        // Remove Stake
+        removeArrayEntry(staked[_staker], _stakeIndex);
+
+        emit Mint(_staker, _rewards);
+    }
+
+    function claimMultipleStakingRewards(
+        address _staker,
+        uint256 _startIndex,
+        uint256 _endIndex
+    ) 
+        external 
+        returns (bool)
+    {
+        // ensure that indexes are in array bounds
+        require(_startIndex <= staked[_staker].length);
+        require(_endIndex <= staked[_staker].length);
+
+        for (uint256 _i = _startIndex; _i < _endIndex; _i++) {
             /* Check if stake has matured */
             if (block.timestamp > staked[_staker][_i].unlockTime) {
-                /* Remove StakedCoins from global counter */
-                totalStakedCoins = totalStakedCoins
-                    .sub(staked[_staker][_i].stakeAmount);
-
-                /* Sub staked coins from contract */
-                balances[address(this)] = balances[address(this)]
-                    .sub(staked[_staker][_i].stakeAmount);
-                
-                /* Add staked coins to staker */
-                balances[_staker] = balances[_staker]
-                    .add(staked[_staker][_i].stakeAmount);
-
-                emit Transfer(
-                    address(this), 
-                    _staker, 
-                    staked[_staker][_i].stakeAmount
-                );
-
-                /* Calculate Rewards */
-                uint256 _stakingRewards = calculateStakingRewards(_staker, _i);
-                uint256 _rewards = _stakingRewards.add(
-                    calculateAdditionalRewards(
-                        _staker,
-                        _i,
-                        _stakingRewards
-                    )
-                );
-
-                /* Award staking rewards to staker */
-                balances[_staker] = balances[_staker].add(_rewards);
-
-                /* Award rewards to origin contract */
-                balances[origin] = balances[origin]
-                    .add(_rewards
-                    .sub(_stakingRewards));
-
-                /* Increase supply */
-                totalSupply_ = totalSupply_.add(_rewards.mul(2));
-
-                /* Remove Stake */
-                delete staked[_staker][_i];
-
-                emit Mint(_staker, _rewards);
+                claimSingleStakingReward(_staker, _i);
             }
         }
+
+        return true;
     }
+
+    //
+    // end user functions
+    //
 }

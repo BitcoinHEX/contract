@@ -7,6 +7,7 @@ const { bitcoinRootHash: defaultRootUtxoMerkleHash } = require('./mkl')
 const { defaultMaximumRedeemable } = require('./bhx')
 
 const defaultTotalBtcCirculationAtFork = new BigNumber('1000e8')
+const defaultInterestRatePercent = new BigNumber(1)
 
 const setupStakeableToken = launchTime =>
   StakeableTokenStub.new(
@@ -23,6 +24,7 @@ const testInitializeStakeableToken = async (skt, expectedLaunchTime) => {
   const rootUtxoMerkleTreeHash = await skt.rootUtxoMerkleTreeHash()
   const totalBtcCirculationAtFork = await skt.totalBtcCirculationAtFork()
   const maximumRedeemable = await skt.maximumRedeemable()
+  const interestRatePercent = await skt.interestRatePercent()
 
   assert.equal(
     actualOrigin,
@@ -48,6 +50,11 @@ const testInitializeStakeableToken = async (skt, expectedLaunchTime) => {
     maximumRedeemable.toString(),
     defaultMaximumRedeemable.toString(),
     'maximumRedeemable should match defaultMaximumRedeemable'
+  )
+  assert.equal(
+    interestRatePercent.toString(),
+    defaultInterestRatePercent.toString(),
+    'interestRatePercent should match defaultInterestRatePercent'
   )
 }
 
