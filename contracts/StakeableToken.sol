@@ -9,6 +9,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 public totalBtcCirculationAtFork;
 
     uint256 public totalStakedCoins;
+    uint256 public interestRatePercent;
 
     struct StakeStruct {
         uint256 stakeAmount;
@@ -18,19 +19,6 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     mapping(address => StakeStruct[]) public staked;
-
-    function compound(
-        uint256 _principle, 
-        uint256 _periods, 
-        uint256 _interestRateTimesHundred
-    ) 
-        internal 
-        pure 
-        returns (uint256) 
-    {
-        /* Calculate compound interest */
-        return (_principle * (100 + _interestRateTimesHundred) ** _periods)/(100 ** _periods);
-    }
 
     function startStake(
         uint256 _value, 
@@ -69,13 +57,42 @@ contract StakeableToken is UTXORedeemableToken {
         totalStakedCoins = totalStakedCoins.add(_value);
     }
 
+    function compound(
+        uint256 _principle,
+        uint256 _periods,
+        uint256 _rate
+    )
+        public
+        pure
+        returns (uint256)
+    {
+        uint256 _maxGroupPeriods = 30;
+        uint256 _remainingPeriods = _periods % _maxGroupPeriods;
+        uint256 _groupings = _periods.div(_maxGroupPeriods);
+    
+        uint256 _compounded = _principle.div(1e10);
+        for(uint256 _i = 0; _i < _groupings; _i = _i.add(1)) {
+            _compounded = _compounded
+                .mul(uint256(100).add(_rate) ** 30)
+                .div(100 ** 30);
+        }
+
+        _compounded = _compounded
+            .mul(uint256(100).add(_rate) ** _remainingPeriods)
+            .div(100 ** _remainingPeriods);
+        
+        return _compounded.mul(1e10);
+    }
+
     function calculateWeAreAllSatoshiRewards(
-        StakeStruct _stake
+        address _staker,
+        uint256 _stakeIndex
     ) 
-        internal 
+        public 
         view 
         returns (uint256)
     {
+        StakeStruct storage _stake = staked[_staker][_stakeIndex];
         uint256 _rewards = 0;
         /* Calculate what week stake was opened */
         uint256 startWeek = _stake.stakeTime
@@ -98,10 +115,11 @@ contract StakeableToken is UTXORedeemableToken {
         return _rewards;
     }
 
+    // TODO: this must operate on weekly claims
     function calculateViralRewards(
         uint256 _rewards
     ) 
-        internal 
+        public 
         view 
         returns (uint256)
     {
@@ -115,7 +133,7 @@ contract StakeableToken is UTXORedeemableToken {
     function calculateCritMassRewards(
         uint256 _rewards
     ) 
-        internal 
+        public 
         view 
         returns (uint256)
     {
@@ -126,64 +144,100 @@ contract StakeableToken is UTXORedeemableToken {
             .div(10);
     }
 
-    function calculateStakingRewards(
-        StakeStruct _stake
+    function calculateSpeedBonus(
+        address _staker,
+        uint256 _stakeIndex,
+        uint256 _rewards
+    )
+        public
+        view
+        returns (uint256)
+    {
+        uint256 _stakeTime = staked[_staker][_stakeIndex].stakeTime;
+        uint256 _weeksSinceLaunch = _stakeTime
+            .sub(launchTime)
+            .div(7 days);
+
+        // bonus based on 10 percent being max 
+        uint256 _scaler = uint256(10) // max bonus percent
+            .sub( // sub calculated portion of max bonus percent
+                _weeksSinceLaunch
+                .mul(100) // raise by 100 due to integer division
+                .div(50) // max weeks
+                .mul(10) // max bonus percent
+                .div(100) // lower by 200 after calculations
+            );
+
+        return _rewards.mul(_scaler).div(100);
+    }
+
+    function calculateAdditionalRewards(
+        address _staker,
+        uint256 _stakeIndex, 
+        uint256 _initRewards
     ) 
-        internal 
+        public 
         view 
         returns (uint256)
     {
-        /* Base interest rate */
-        uint256 interestRateTimesHundred = 100;
+        // only give rewards if within first 50 weeks
+        if (block.timestamp.sub(launchTime).div(7 days) <= 50) {
+            uint256 _rewards = 0;
+            _rewards = _initRewards.add(calculateWeAreAllSatoshiRewards(_staker, _stakeIndex));
+            _rewards = _rewards
+                .add(calculateViralRewards(_rewards))
+                .add(calculateCritMassRewards(_rewards))
+                .add(calculateSpeedBonus(_staker, _stakeIndex, _rewards));
 
-        /* Calculate Adoption Percent Scaler */
-        uint256 scaler = _stake.totalStakedCoinsAtStart
+            return _rewards;
+        } else {
+            return 0;
+        }
+    }
+
+    function calculateStakingRewards(
+        address _staker,
+        uint256 _stakeIndex
+    ) 
+        public 
+        view 
+        returns (uint256)
+    {
+        StakeStruct storage _stake = staked[_staker][_stakeIndex];
+        /* Base interest rate */
+        uint256 _interestRateTimesHundred = interestRatePercent.mul(100);
+
+        // calculate percent of staked coins vs totalSupply to use for interest rate reduction
+        uint256 _scaler = _stake.totalStakedCoinsAtStart
             .mul(100)
             .div(totalSupply_);
 
-        /* Adjust interest rate by scaler */
-        interestRateTimesHundred = interestRateTimesHundred.div(scaler);
+        /* reduce interest rate by percent of tokens staked against totalSupply */
+        _interestRateTimesHundred = _interestRateTimesHundred.div(_scaler);
 
         /* Calculate Periods */
-        uint256 periods = block.timestamp
+        uint256 _periods = block.timestamp
             .sub(_stake.stakeTime)
             .div(10 days);
 
         /* Compound */
-        uint256 compoundRound = compound(_stake.stakeAmount, periods, interestRateTimesHundred);
+        uint256 _compounded = compound(
+            _stake.stakeAmount, 
+            _periods, 
+            _interestRateTimesHundred
+        );
 
         /* Calculate final staking rewards with time bonus */
-        return compoundRound
-            .mul(periods)
-            .div(1000)
-            .add(compoundRound)
-            .sub(_stake.stakeAmount);
-    }
-
-    function calculateAdditionalRewards(
-        StakeStruct _stake, 
-        uint256 _initRewards
-    ) 
-        internal 
-        view 
-        returns (uint256)
-    {
-        uint256 _rewards = 0;
-        _rewards = _initRewards.add(calculateWeAreAllSatoshiRewards(_stake));
-        _rewards = _rewards
-            .add(calculateViralRewards(_rewards))
-            .add(calculateCritMassRewards(_rewards));
-
-        return _rewards;
+        return _compounded.sub(_stake.stakeAmount);
     }
 
     // paginate?
     function getCurrentStaked(
         address _staker
-    ) 
+    )
         external 
         view 
-        returns(uint256)
+        returns (uint256)
     {
         uint256 _stakes = 0;
 
@@ -195,8 +249,9 @@ contract StakeableToken is UTXORedeemableToken {
                 /* Calculate Rewards */
                 _stakes = _stakes.add(
                     calculateAdditionalRewards(
-                        staked[_staker][_i], 
-                        calculateStakingRewards(staked[_staker][_i])
+                        _staker,
+                        _i,
+                        calculateStakingRewards(_staker, _i)
                     )
                 );
             }
@@ -205,7 +260,7 @@ contract StakeableToken is UTXORedeemableToken {
         return _stakes;
     }
 
-    // TODO: check if this needs to be paginated somehow due to gas limits....
+    // TODO: paginate or make single use
     function claimStakingRewards(
         address _staker
     ) 
@@ -236,10 +291,11 @@ contract StakeableToken is UTXORedeemableToken {
                 );
 
                 /* Calculate Rewards */
-                uint256 _stakingRewards = calculateStakingRewards(staked[_staker][_i]);
+                uint256 _stakingRewards = calculateStakingRewards(_staker, _i);
                 uint256 _rewards = _stakingRewards.add(
                     calculateAdditionalRewards(
-                        staked[_staker][_i], 
+                        _staker,
+                        _i,
                         _stakingRewards
                     )
                 );

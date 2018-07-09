@@ -374,6 +374,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param _s s parameter of ECDSA signature
      * @return The number of tokens redeemed, if successful
      */
+     // TODO: make sure that this cannot be claimed after 50 weeks
     function redeemUtxo(
         uint256 _satoshis,
         bytes32[] _proof,
