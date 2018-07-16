@@ -8,7 +8,7 @@ contract StakeableToken is UTXORedeemableToken {
 
     uint256 public totalBtcCirculationAtFork;
     uint256 public totalStakedCoins;
-    uint256 public interestRatePercent;
+    uint256 public constant interestRatePercent = 1;
 
     struct StakeStruct {
         uint256 stakeAmount;
@@ -23,6 +23,13 @@ contract StakeableToken is UTXORedeemableToken {
     // start utility functions
     //
 
+    /** 
+        @dev Moves last item in array to location of item to be removed,
+        overwriting array item. Shortens array length by 1, removing now
+        duplicate item at end of array.
+        @param _array an array of StakeStructs
+        @param _index index of the item to delete
+    */
     function removeArrayEntry(
         StakeStruct[] storage _array,
         uint256 _index
@@ -35,6 +42,16 @@ contract StakeableToken is UTXORedeemableToken {
         _array.length = _array.length.sub(1);
     }
 
+    /**
+        @dev compound groups up compounding periods by 30 in order to avoid  
+        uint overflows when taking (100 + rate) ** periods. Accuracy is also brought by
+        10 decimals in order to avoid uint overflows when 
+        taking compounded * ((100  + rate) ** periods).
+
+        @param _principle base amount being compounded
+        @param _periods amount of periods to compound principle
+        @param _rate rate given as uint percent 
+    */
     function compound(
         uint256 _principle,
         uint256 _periods,
@@ -62,6 +79,7 @@ contract StakeableToken is UTXORedeemableToken {
         return _compounded.mul(1e10);
     }
 
+    // TODO: double check this works as intended...
     function calculateWeAreAllSatoshiRewards(
         address _staker,
         uint256 _stakeIndex
@@ -93,7 +111,6 @@ contract StakeableToken is UTXORedeemableToken {
         return _rewards;
     }
 
-    // TODO: this must operate on weekly claims
     function calculateViralRewards(
         uint256 _rewards
     ) 
@@ -149,6 +166,9 @@ contract StakeableToken is UTXORedeemableToken {
         return _rewards.mul(_scaler).div(100);
     }
 
+    /**
+        @dev Additional rewards should only be given within first 50 weeks.
+     */
     function calculateAdditionalRewards(
         address _staker,
         uint256 _stakeIndex, 
@@ -209,7 +229,35 @@ contract StakeableToken is UTXORedeemableToken {
         return _compounded.sub(_stake.stakeAmount);
     }
 
-    // for use in case user puts excessive stakes and array iteration hits gasLimit
+    function getStakedEntry(
+        address _staker,
+        uint256 _stakeIndex
+    )
+        public
+        view
+        returns (uint256)
+    {
+        uint256 _stake = staked[_staker][_stakeIndex].stakeAmount;
+        
+        if (block.timestamp > staked[_staker][_stakeIndex].unlockTime) {
+            return _stake.add(
+                    calculateAdditionalRewards(
+                        _staker,
+                        _stakeIndex,
+                        calculateStakingRewards(_staker, _stakeIndex)
+                    )
+            );
+        } else {
+            return _stake;
+        }
+    }
+
+    /**
+        @notice Used in case user creates excessive stakes and array iteration hits gasLimit.
+        @param _staker user for which to check stakes
+        @param _startIndex get stakes from location
+        @param _endIndex get stakes up to location
+    */
     function getCurrentStakedAtIndexes(
         address _staker,
         uint256 _startIndex,
@@ -219,32 +267,29 @@ contract StakeableToken is UTXORedeemableToken {
         view
         returns (uint256)
     {
-        uint256 _stakes = 0;
+        require(_startIndex <= _endIndex);
+        require(_endIndex < staked[_staker].length);
 
+        if (_startIndex == _endIndex) {
+            return getStakedEntry(_staker, _startIndex);
+        }
+
+        uint256 _stakes = 0;
         for (
             uint256 _stakeIndex = _startIndex; 
             _startIndex < _endIndex; 
             _stakeIndex = _stakeIndex.add(1)
         ) {
-            /* Add Stake Amount */
-            _stakes = _stakes.add(staked[_staker][_startIndex].stakeAmount);
-            /* Check if stake has matured */
-            if (block.timestamp > staked[_staker][_startIndex].unlockTime) {
-                /* Calculate Rewards */
-                _stakes = _stakes.add(
-                    calculateAdditionalRewards(
-                        _staker,
-                        _startIndex,
-                        calculateStakingRewards(_staker, _startIndex)
-                    )
-                );
-            }
+            _stakes = _stakes.add(getStakedEntry(_staker, _stakeIndex));
         }
 
         return _stakes;
     }
 
-    // safe for users who have no placed excessive amounts of stakes
+    /**
+        @notice Safe for users who have no placed excessive amounts of stakes.
+        @param _staker the user address for which to check current staked
+    */
     function getCurrentStaked(
         address _staker
     )
@@ -252,7 +297,11 @@ contract StakeableToken is UTXORedeemableToken {
         view 
         returns (uint256)
     {
-        return getCurrentStakedAtIndexes(_staker, 0, staked[_staker].length);
+        if (staked[_staker].length == 0) {
+            return 0;
+        }
+
+        return getCurrentStakedAtIndexes(_staker, 0, staked[_staker].length.sub(1));
     }
 
     //
@@ -263,6 +312,12 @@ contract StakeableToken is UTXORedeemableToken {
     // start user functinos
     //
 
+    /** 
+        @notice start a stake in order to claim rewards at later unlock time.
+        Additional rewards only payable within first 50 weeks.
+        @param _value amount of tokens to lock
+        @param _unlockTime unix timestamp date for when to unlock tokens
+    */
     function startStake(
         uint256 _value, 
         uint256 _unlockTime
@@ -303,6 +358,13 @@ contract StakeableToken is UTXORedeemableToken {
         return true;
     }
 
+    /**
+        @notice Used for claiming a single stake. Another user can claim a stake on another 
+        user's behalf. All rewards and original stake go to original staker.
+        Useful for if _staker does not have any gas and someone else is claiming for them.
+        @param _staker user address for who is making the claim
+        @param _stakeIndex location of the stake to claim
+    */
     function claimSingleStakingReward(
         address _staker,
         uint256 _stakeIndex
@@ -358,6 +420,14 @@ contract StakeableToken is UTXORedeemableToken {
         emit Mint(_staker, _rewards);
     }
 
+    /**
+        @notice Used for claiming multiple stakes. Another user can 
+        claim a stake on another user's behalf. All rewards and original stake go to original staker.
+        Useful for if _staker does not have any gas and someone else is claiming for them.
+        @param _staker user address for who is making the claim
+        @param _startIndex claim stakes from this location
+        @param _endIndex claim stakes up to this location
+    */
     function claimMultipleStakingRewards(
         address _staker,
         uint256 _startIndex,
@@ -367,7 +437,7 @@ contract StakeableToken is UTXORedeemableToken {
         returns (bool)
     {
         // ensure that indexes are in array bounds
-        require(_startIndex <= staked[_staker].length);
+        require(_startIndex <= _endIndex);
         require(_endIndex <= staked[_staker].length);
 
         for (uint256 _i = _startIndex; _i < _endIndex; _i++) {
