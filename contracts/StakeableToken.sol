@@ -139,33 +139,6 @@ contract StakeableToken is UTXORedeemableToken {
             .div(10);
     }
 
-    function calculateSpeedBonus(
-        address _staker,
-        uint256 _stakeIndex,
-        uint256 _rewards
-    )
-        public
-        view
-        returns (uint256)
-    {
-        uint256 _stakeTime = staked[_staker][_stakeIndex].stakeTime;
-        uint256 _weeksSinceLaunch = _stakeTime
-            .sub(launchTime)
-            .div(7 days);
-
-        // bonus based on 10 percent being max 
-        uint256 _scaler = uint256(10) // max bonus percent
-            .sub( // sub calculated portion of max bonus percent
-                _weeksSinceLaunch
-                .mul(100) // raise by 100 due to integer division
-                .div(50) // max weeks
-                .mul(10) // max bonus percent
-                .div(100) // lower by 100 after calculations
-            );
-
-        return _rewards.mul(_scaler).div(100);
-    }
-
     /**
         @dev Additional rewards should only be given within first 50 weeks.
      */
@@ -184,8 +157,7 @@ contract StakeableToken is UTXORedeemableToken {
             _rewards = _initRewards.add(calculateWeAreAllSatoshiRewards(_staker, _stakeIndex));
             _rewards = _rewards
                 .add(calculateViralRewards(_rewards))
-                .add(calculateCritMassRewards(_rewards))
-                .add(calculateSpeedBonus(_staker, _stakeIndex, _rewards));
+                .add(calculateCritMassRewards(_rewards));
 
             return _rewards;
         } else {
