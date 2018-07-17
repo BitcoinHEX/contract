@@ -5,9 +5,10 @@
 Please see the [contracts/](contracts) directory.
 
 ## Develop
-Contracts are written in [Solidity][solidity] and tested using [Truffle][truffle] and [testrpc][testrpc]. Library contracts sourced from [OpenZeppelin.org][openzeppelin].
+Contracts are written in Solidity and tested using Truffle. Library contracts sourced from OpenZeppelin.org.
 
 ### Dependencies
+
 #### secrets.js
 This file is **NOT** checked in. You will need to supply a secrets.js that includes an InfuraKey and private key for accountPK. 
 Sample format:
@@ -18,14 +19,21 @@ var mainnetPK = accountPK;
 var ropstenPK = accountPK;
 
 module.exports = {infuraKey: infuraKey, mainnetPK: mainnetPK, ropstenPK:ropstenPK};
+```
 
+### Installation
+```bash
+yarn
 ```
 
 ### Compilation
 ```bash
-$ npm install
-$ npm run compile
-$ npm run test
+yarn compile
+```
+
+### Testing
+```bash
+yarn test
 ```
 
 ### Docs for wallet/app developers
@@ -41,8 +49,24 @@ $ npm run test
 # Token Specs, Lifecycle Bonuses, Reductions, & Modifiers
 This is meant to be a brief explanation of each modifier which is implemented/will be implemented in the BHX token contract.
 
+## Brief Overview
+**TODO: make sure that 1% is actually an acceptable interest rate**
+BitcoinHex is an ERC20 token which will fork Bitcoin UTXOs onto the ethereum blockchain. This is achieved through merkle proofs and eliptic curve recovery. 
+
+Merkle Proofs allow for proving that a specific UTXO does indeed exist on the Bitcoin blockchain. 
+
+Eliptic Curve Recovery allows for verifying an address. Due to the nature of public keys for both Bitcoin and Ethereum, one is able to verify ownership of said UTXOs on the Bitcoin blockchain on ethereum.
+
+The primary utility of BitcoinHex is trustless interest which can be utilized by locking tokens (staking) for a designated amount of time. At the end of the lock time, tokens as well as the compounded interest can be redeemed. Interest rate periods are 10 days and the interest rate is 1%.
+
+The target inflation rate is 3.5% per annum (excluding initial bonus rewards).
+
+There are a variety of rewards and penalties applied during the first 50 weeks to encourage adoption and encourage fair distribution of BHX tokens. These are explained in detail in the following sections:
+1. Staking Modifiers
+1. Redemption Modifiers
+
 ## Specifications
-**TODO: fill in missing fields and decide what network to deploy on
+**TODO: fill in missing fields and decide what test network to deploy on**
 
 Property | Value
 -- | --
@@ -56,6 +80,61 @@ Rinkeby Address | TBA
 Mainnet Etherscan Verified Contract | [TBA](https://etherscan.io)
 Rinkeby Etherscan Verified Contract | [TBA](https://rinkeby.etherscan.io)
 Bitcoin block fork | TBA
+
+## Lifecycle
+There are three main stages in the lifecycle of BHX. These stages are:
+1. token launch
+1. bonus period
+1. bonus end
+
+### Token Launch
+During this time, a Bitcoin block fork has been selected and the root merkle hash has been updated to exclude unwanted UTXOS (Mt.Gox etc.).
+
+The token is launched and a launchTime is selected. Once when the launchTime has occurred, redeeming can begin. Passing the launchTime marks the start of the **bonus period**.
+
+### Bonus Period
+The bonus period is a period of 50 weeks where additional rewards are given when a user redeems and/or stakes tokens. This 50 week period starts at the `launchTime` designated in the contract and ends 50 weeks later.
+
+During this time, users can redeem tokens from Bitcoin UTXOs and can stake redeemed tokens to participate in additional rewards given during the bonus period. Regular compounding interest is also given out during this time.
+
+### Bonus End
+After the bonus time, regular operations begin. During this period, there are no longer any additional bonuses. The only way that additional tokens are created/rewarded is through interest gained from staking.
+
+Tokens can no longer be redeemed at this point either.
+
+### Perspective From a User
+1. token is deployed
+1. `launchTime` passes
+1. user redeems tokens within 1 week
+    * user receives rewards for redeeming quickly 
+        * 1st week redeem means 10% speed bonus
+    * user receives no penalty for redeeming quickly 
+        * redeeming during first week means 0% we are all satoshi reduction
+    * user receives no pentalty due not overly large redeem amount
+        * less than 1k BHX tokens redeemed means no silly whale reduction
+1. user immediately stakes redeemed tokens for 30 days (3 periods)
+1. 30 days pass
+1. user redeems interest
+    * bonus redemption rewards are applied within 50 week period (current week is week 3)
+        * viral bonus is applied (see redemption modifiers section)
+        * critical mass bonus is applied (see redemption modifiers section)
+        * we are all satoshi bonus is applied (see redemption modifiers section)
+    * compound interest calculated for 3 periods is applied
+    * user receives sum of:
+        * original staked tokens
+        * compounded interest
+        * bonus rewards
+1. time goes on and it is now  50 weeks since launch
+1. user stakes tokens for 30 days (3 periods)
+1. 30 days pass
+1. user redeems interest
+    * no bonus redemption rewards are applied
+        * contract is now past bonus period
+    * compound interest calculated for 3 periods is applied
+    * user receives sum of:
+        * original staked tokens
+        * compounded interest
+
 
 ## Staking Modifiers
 These modifiers apply when staking coins after they have been redeemed. Staking modifiers can be divided into two sub-categories: Limited Time and Continuous.
@@ -90,10 +169,13 @@ This is a bonus awarded linearly from 0% - 10% how many active Bitcoin users hav
 This reward is not compounded, but applied after compounded interest.
 
 #### ThanksForTheBonuses
-All limited time staking bonuses are applied for a staker are also given to origin address. 
+All limited time staking bonuses applied for a staker are also given to origin address. 
 
 ### Continuous Staking Modifiers
 These modifiers apply even after the first 50 weeks after `launchTime`.
+
+#### Diminishing Interest
+As more tokens are staked for interest, the interest rate is adjusted downwards, resulting in a smaller actual interest rate.
 
 ## Redemption Modifiers
 These are modifiers which apply when initially redeeming from Bitcoin block UTXOs.

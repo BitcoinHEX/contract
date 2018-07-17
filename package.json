@@ -41,6 +41,7 @@
     "url": "git+https://github.com/BitcoinHEX/contract.git"
   },
   "author": "Kieran Mesquita <mesquitakieran@gmail.com>",
+  "contributors": ["Cody Lamson <me@codylamson.com> (https://codylamson.com)"],
   "bugs": {
     "url": "https://github.com/BitcoinHEX/contract/issues"
   },
