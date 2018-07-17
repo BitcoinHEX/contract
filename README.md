@@ -206,6 +206,7 @@ A 5% referral bonus can be credited to a referrer at no cost to redeemer when re
 
 ### WeAreAllSatoshi (reduction)
 Redemption reductions are applied increasing every week after `launchTime` until the reduction reaches 100% at week 50. At week 50 redemptions are no longer possible. This is described in the following table:
+
 Weeks Since Launch (w) | Percent Reduction
 -- | --
 0 | 0
