@@ -87,9 +87,40 @@ const testStartStake = async (skt, amount, time, config) => {
   )
 }
 
+// TODO: it seems that compounded interest is waaaay too high...
+// need to check on this
+const testClaimStake = async (skt, staker) => {
+  const preBalance = await skt.balanceOf(staker)
+  const preStaked = await skt.getCurrentStaked(staker)
+  const preTotalStakedCoins = await skt.totalStakedCoins()
+
+  await skt.claimSingleStakingReward(staker, 0)
+
+  const postBalance = await skt.balanceOf(staker)
+  const postStaked = await skt.getCurrentStaked(staker)
+  const postTotalStakedCoins = await skt.totalStakedCoins()
+
+  assert.equal(
+    postBalance.sub(preBalance).toString(),
+    preStaked.toString(),
+    'staker balance should be decremented by stake amount'
+  )
+  assert.equal(
+    preStaked.sub(postStaked).toString(),
+    preStaked.toString(),
+    'staker staked amount should be incremented by stake amount'
+  )
+  assert.equal(
+    preTotalStakedCoins.sub(postTotalStakedCoins).toString(),
+    preStaked.toString(),
+    'totalStakedCoins should be incremented by stake amount'
+  )
+}
+
 module.exports = {
   defaultTotalBtcCirculationAtFork,
   setupStakeableToken,
   testInitializeStakeableToken,
-  testStartStake
+  testStartStake,
+  testClaimStake
 }

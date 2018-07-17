@@ -1,7 +1,8 @@
 const {
   setupStakeableToken,
   testInitializeStakeableToken,
-  testStartStake
+  testStartStake,
+  testClaimStake
 } = require('./helpers/skt')
 const {
   timeWarpRelativeToLaunchTime,
@@ -58,6 +59,12 @@ describe.only('when deploying StakeableToken', () => {
       const stakeTime = currentTime + 60 * 60 * 24 * 20
 
       await testStartStake(skt, stakeAmount, stakeTime, { from: staker })
+    })
+
+    it('should claim stake', async () => {
+      const staker = stakers[2]
+      await timeWarpRelativeToLaunchTime(skt, 60 * 60 * 24 * 21, true)
+      await testClaimStake(skt, staker)
     })
   })
 })

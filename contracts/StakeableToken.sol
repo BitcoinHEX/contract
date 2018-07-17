@@ -160,7 +160,7 @@ contract StakeableToken is UTXORedeemableToken {
                 .mul(100) // raise by 100 due to integer division
                 .div(50) // max weeks
                 .mul(10) // max bonus percent
-                .div(100) // lower by 200 after calculations
+                .div(100) // lower by 100 after calculations
             );
 
         return _rewards.mul(_scaler).div(100);
@@ -198,7 +198,7 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 _stakeIndex
     ) 
         public 
-        view 
+        view
         returns (uint256)
     {
         StakeStruct storage _stake = staked[_staker][_stakeIndex];
@@ -206,10 +206,11 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 _interestRateTimesHundred = interestRatePercent.mul(100);
 
         // calculate percent of staked coins vs totalSupply to use for interest rate reduction
-        uint256 _scaler = _stake.totalStakedCoinsAtStart
-            .mul(100)
-            .div(totalSupply_);
-
+        uint256 _scaler = _stake.totalStakedCoinsAtStart != 0 
+            ? _stake.totalStakedCoinsAtStart
+                .mul(100)
+                .div(totalSupply_)
+            : 1;
         /* reduce interest rate by percent of tokens staked against totalSupply */
         _interestRateTimesHundred = _interestRateTimesHundred.div(_scaler);
 
