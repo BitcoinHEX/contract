@@ -51,6 +51,7 @@ This is meant to be a brief explanation of each modifier which is implemented/wi
 
 ## Brief Overview
 **TODO: make sure that 1% is actually an acceptable interest rate**
+
 BitcoinHex is an ERC20 token which will fork Bitcoin UTXOs onto the ethereum blockchain. This is achieved through merkle proofs and eliptic curve recovery. 
 
 Merkle Proofs allow for proving that a specific UTXO does indeed exist on the Bitcoin blockchain. 
