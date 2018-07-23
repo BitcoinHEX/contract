@@ -15,7 +15,7 @@
         "imports-on-top": "error",
         "indentation": [
             "error",
-            4
+            2
         ],
         "lbrace": "error",
         "mixedcase": "warning",

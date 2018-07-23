@@ -2,31 +2,31 @@ pragma solidity ^0.4.23;
 
 
 contract Migrations {
-    address public _originAddress;
-    uint public lastCompletedMigration;
+  address public _originAddress;
+  uint public lastCompletedMigration;
 
-    constructor() public {
-        _originAddress = msg.sender;
-    }
+  constructor() public {
+    _originAddress = msg.sender;
+  }
 
-    modifier restricted() {
-        require(msg.sender == _originAddress);
+  modifier restricted() {
+    require(msg.sender == _originAddress);
 
-        _;
-    }
+    _;
+  }
 
-    function setCompleted(uint completed) 
-      public 
-      restricted 
-    {
-        lastCompletedMigration = completed;
-    }
+  function setCompleted(uint completed) 
+    public 
+    restricted 
+  {
+    lastCompletedMigration = completed;
+  }
 
-    function upgrade(address newAddress) 
-      public 
-      restricted 
-    {
-        Migrations upgraded = Migrations(newAddress);
-        upgraded.setCompleted(lastCompletedMigration);
-    }
+  function upgrade(address newAddress) 
+    public 
+    restricted 
+  {
+    Migrations upgraded = Migrations(newAddress);
+    upgraded.setCompleted(lastCompletedMigration);
+  }
 }

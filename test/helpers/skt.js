@@ -70,6 +70,9 @@ const testStartStake = async (skt, amount, time, config) => {
   const postStaked = await skt.getCurrentStaked(staker)
   const postTotalStakedCoins = await skt.totalStakedCoins()
 
+  console.log('pre stake', preBalance.toString())
+  console.log('post stake', postBalance.toString())
+
   assert.equal(
     preBalance.sub(postBalance).toString(),
     amount.toString(),
@@ -99,6 +102,9 @@ const testClaimStake = async (skt, staker) => {
   const postBalance = await skt.balanceOf(staker)
   const postStaked = await skt.getCurrentStaked(staker)
   const postTotalStakedCoins = await skt.totalStakedCoins()
+
+  console.log('pre claim', preBalance.toString())
+  console.log('post claim', postBalance.toString())
 
   assert.equal(
     postBalance.sub(preBalance).toString(),

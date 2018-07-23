@@ -69,7 +69,7 @@ module.exports = {
         'security/detect-object-injection': 'off',
         'arrow-body-style': 'off',
         'lines-between-class-members': ['error', 'always'],
-        'no-console': ['error', {
+        'no-console': ['warn', {
             allow: ['assert']
         }],
         'no-shadow': 'error',
