@@ -26,7 +26,6 @@ import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
 */
 contract UTXORedeemableToken is StandardToken {
-
   /* Origin Address */
   address public origin;
 
@@ -60,7 +59,7 @@ contract UTXORedeemableToken is StandardToken {
 
     if (_weeksSinceLaunch <= 50 && _weeksSinceLaunch > lastUpdatedWeek) {
       uint256 unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-      unclaimedCoinsByWeek[_weeksSinceLaunch] = unclaimedCoins;
+      unclaimedCoinsByWeek[_weeksSinceLaunch - 1] = unclaimedCoins;
       lastUpdatedWeek = _weeksSinceLaunch;
     }
   }

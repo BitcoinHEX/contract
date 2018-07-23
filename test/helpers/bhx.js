@@ -21,7 +21,7 @@ const defaultMaximumRedeemable = utxos.reduce(
   (total, tx) => total.add(new BigNumber(tx.satoshis).mul(1.1e10)),
   new BigNumber(0)
 )
-const defaultTotalBtcCirculationAtFork = defaultMaximumRedeemable.mul(1e18)
+const defaultTotalBtcCirculationAtFork = defaultMaximumRedeemable
 
 const setupContract = async () => {
   const bhx = await BitcoinHex.new(

@@ -112,6 +112,27 @@ const stripHexifyBase58Address = address =>
 
 const getFormattedLeaf = leafBuffer => '0x' + leafBuffer.toString('hex')
 
+const warpThroughBonusWeeks = async (urt, seconds) => {
+  /* eslint-disable no-console */
+  const weekInSeconds = 60 * 60 * 24 * 7
+  const weeksToWarp = Math.floor(seconds / weekInSeconds)
+  console.log(weeksToWarp)
+  await urt.storeWeekUnclaimed()
+
+  for (let i = 1; i <= weeksToWarp; i++) {
+    await timeWarpRelativeToLaunchTime(urt, weekInSeconds * i, true)
+    await urt.storeWeekUnclaimed()
+    console.log(
+      `warped to week ${i} of ${weeksToWarp} and stored week unclaimd`
+    )
+  }
+
+  await timeWarpRelativeToLaunchTime(urt, seconds, true)
+  await urt.storeWeekUnclaimed()
+  console.log('warped remaining seconds and stored week unclaimed')
+  /* eslint-enable no-console */
+}
+
 const timeWarpRelativeToLaunchTime = async (urt, seconds, moveAhead) => {
   const launchTime = await urt.launchTime()
   const { timestamp: now } = await web3.eth.getBlock(web3.eth.blockNumber)
@@ -460,5 +481,6 @@ module.exports = {
   testRedeemUtxo,
   testRedeemReferredUtxo,
   testWeekIncrement,
-  testGetRedeemAmount
+  testGetRedeemAmount,
+  warpThroughBonusWeeks
 }

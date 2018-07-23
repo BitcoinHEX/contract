@@ -6,6 +6,7 @@ const {
 } = require('./helpers/skt')
 const {
   timeWarpRelativeToLaunchTime,
+  warpThroughBonusWeeks,
   getProofAndComponents,
   bitcoinPrivateKeys,
   testRedeemUtxo
@@ -62,7 +63,7 @@ describe.only('when deploying StakeableToken', () => {
 
     it('should claim stake', async () => {
       const staker = stakers[2]
-      await timeWarpRelativeToLaunchTime(skt, 60 * 60 * 24 * 22, true)
+      await warpThroughBonusWeeks(skt, 60 * 60 * 24 * 22)
       await testClaimStake(skt, staker)
     })
   })
