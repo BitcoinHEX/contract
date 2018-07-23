@@ -16,18 +16,19 @@ const getDefaultLaunchTime = async () => {
   return blockTime + 60 * 60 * 24
 }
 // multiply each by 1e10 and add 10 percent in order to get wei units redeemable
+// 10 percent accounts for speed bonus when claiming
 const defaultMaximumRedeemable = utxos.reduce(
   (total, tx) => total.add(new BigNumber(tx.satoshis).mul(1.1e10)),
   new BigNumber(0)
 )
-const defaultTotalBTCCirculationAtFork = defaultMaximumRedeemable
+const defaultTotalBtcCirculationAtFork = defaultMaximumRedeemable.mul(1e18)
 
 const setupContract = async () => {
   const bhx = await BitcoinHex.new(
     origin,
     defaultRootUtxoMerkleHash,
     defaultMaximumRedeemable,
-    defaultTotalBTCCirculationAtFork
+    defaultTotalBtcCirculationAtFork
   )
   return bhx
 }
@@ -60,9 +61,9 @@ const testInitialization = async bhx => {
     'maximumRedeemable should match defaultMaximumRedeemable'
   )
   assert.equal(
-    defaultTotalBTCCirculationAtFork.toString(),
+    defaultTotalBtcCirculationAtFork.toString(),
     totalBtcCirculationAtFork.toString(),
-    'totalBtcCirculationAtFork should match defaultTotalBTCCirculationAtFork'
+    'totalBtcCirculationAtFork should match defaultTotalBtcCirculationAtFork'
   )
 }
 
@@ -73,5 +74,6 @@ module.exports = {
   defaultSymbol,
   defaultDecimals,
   getDefaultLaunchTime,
-  defaultMaximumRedeemable
+  defaultMaximumRedeemable,
+  defaultTotalBtcCirculationAtFork
 }

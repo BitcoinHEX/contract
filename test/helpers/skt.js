@@ -4,9 +4,11 @@ const BigNumber = require('bignumber.js')
 
 const { origin } = require('./general')
 const { bitcoinRootHash: defaultRootUtxoMerkleHash } = require('./mkl')
-const { defaultMaximumRedeemable } = require('./bhx')
+const {
+  defaultMaximumRedeemable,
+  defaultTotalBtcCirculationAtFork
+} = require('./bhx')
 
-const defaultTotalBtcCirculationAtFork = new BigNumber('1000e8')
 const defaultInterestRatePercent = new BigNumber(1)
 
 const setupStakeableToken = launchTime =>
@@ -15,7 +17,7 @@ const setupStakeableToken = launchTime =>
     launchTime,
     defaultRootUtxoMerkleHash,
     defaultTotalBtcCirculationAtFork,
-    defaultMaximumRedeemable
+    defaultMaximumRedeemable // 2.558493073E19
   )
 
 const testInitializeStakeableToken = async (skt, expectedLaunchTime) => {

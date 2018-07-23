@@ -1,7 +1,7 @@
 const {
   defaultRootUtxoMerkleHash,
   defaultMaximumRedeemable,
-  defaultTotalBTCCirculationAtFork
+  defaultTotalBtcCirculationAtFork
 } = require('./helpers/bhx')
 const { origin, expectRevert } = require('./helpers/general')
 
@@ -16,7 +16,7 @@ describe('when deploying BitcoinHex', () => {
         origin,
         defaultRootUtxoMerkleHash,
         defaultMaximumRedeemable,
-        defaultTotalBTCCirculationAtFork
+        defaultTotalBtcCirculationAtFork
       )
     })
 

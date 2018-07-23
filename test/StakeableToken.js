@@ -23,7 +23,6 @@ describe.only('when deploying StakeableToken', () => {
     before('setup contracts', async () => {
       launchTime = await getDefaultLaunchTime()
       skt = await setupStakeableToken(launchTime)
-
       await timeWarpRelativeToLaunchTime(skt, 60, true)
       let index = 0
       for (const bitcoinTx of transactions) {
@@ -56,14 +55,14 @@ describe.only('when deploying StakeableToken', () => {
       const stakeAmount = await skt.balanceOf(staker)
       const currentTime = await getCurrentBlockTime()
       // set stake time to 20 days
-      const stakeTime = currentTime + 60 * 60 * 24 * 20
+      const stakeTime = currentTime + 60 * 60 * 24 * 21
 
       await testStartStake(skt, stakeAmount, stakeTime, { from: staker })
     })
 
     it('should claim stake', async () => {
       const staker = stakers[2]
-      await timeWarpRelativeToLaunchTime(skt, 60 * 60 * 24 * 21, true)
+      await timeWarpRelativeToLaunchTime(skt, 60 * 60 * 24 * 22, true)
       await testClaimStake(skt, staker)
     })
   })

@@ -6,7 +6,7 @@ contract StakeableToken is UTXORedeemableToken {
 
   event Mint(address indexed _address, uint _reward);
   // TODO: remove this
-  event Test(uint256 test1);
+  event Test(string label, uint256 testValue);
 
   uint256 public totalBtcCirculationAtFork;
   uint256 public totalStakedCoins;
@@ -21,9 +21,9 @@ contract StakeableToken is UTXORedeemableToken {
 
   mapping(address => StakeStruct[]) public staked;
 
-  //
-  // start utility functions
-  //
+  /************************
+  *start utility functions*
+  ************************/
 
   /** 
     @dev Moves last item in array to location of item to be removed,
@@ -81,92 +81,6 @@ contract StakeableToken is UTXORedeemableToken {
     return _compounded.mul(1e10);
   }
 
-  // TODO: double check this works as intended...
-  function calculateWeAreAllSatoshiRewards(
-    address _staker,
-    uint256 _stakeIndex
-  ) 
-    public 
-    view 
-    returns (uint256)
-  {
-    StakeStruct storage _stake = staked[_staker][_stakeIndex];
-    uint256 _rewards = 0;
-    /* Calculate what week stake was opened */
-    uint256 startWeek = _stake.stakeTime
-      .sub(launchTime)
-      .div(7 days);
-
-    // Calculate current week
-    uint256 weeksSinceLaunch = block.timestamp
-      .sub(launchTime)
-      .div(7 days);
-
-    // Award 2% of unclaimed coins at end of every week
-    for (uint256 _i = startWeek; _i < weeksSinceLaunch; _i++) {
-      _rewards = _rewards
-        .add(unclaimedCoinsByWeek[_i]
-        .mul(_stake.stakeAmount)
-        .div(50));
-    }
-
-    return _rewards;
-  }
-
-  function calculateViralRewards(
-    uint256 _rewards
-  ) 
-    public 
-    view 
-    returns (uint256)
-  {
-    // Add bonus percentage to _rewards from 0-10% based on adoption
-    return _rewards
-      .mul(totalRedeemed)
-      .div(totalBtcCirculationAtFork)
-      .div(10);
-  }
-
-  function calculateCritMassRewards(
-    uint256 _rewards
-  ) 
-    public 
-    view 
-    returns (uint256)
-  {
-    // Add bonus percentage to _rewards from 0-10% based on adoption
-    return _rewards
-      .mul(totalRedeemed)
-      .div(maximumRedeemable)
-      .div(10);
-  }
-
-  /**
-    @dev Additional rewards should only be given within first 50 weeks.
-   */
-  function calculateAdditionalRewards(
-    address _staker,
-    uint256 _stakeIndex, 
-    uint256 _initRewards
-  ) 
-    public 
-    view 
-    returns (uint256)
-  {
-    // only give rewards if within first 50 weeks
-    if (block.timestamp.sub(launchTime).div(7 days) <= 50) {
-      uint256 _rewards = 0;
-      _rewards = _initRewards.add(calculateWeAreAllSatoshiRewards(_staker, _stakeIndex));
-      _rewards = _rewards
-        .add(calculateViralRewards(_rewards))
-        .add(calculateCritMassRewards(_rewards));
-
-      return _rewards;
-    } else {
-      return 0;
-    }
-  }
-
   function calculateStakingRewards(
     address _staker,
     uint256 _stakeIndex
@@ -203,6 +117,101 @@ contract StakeableToken is UTXORedeemableToken {
     return _compounded.sub(_stake.stakeAmount);
   }
 
+  // TODO: double check this works as intended...
+  function calculateWeAreAllSatoshiRewards(
+    uint256 _stakeAmount,
+    uint256 _stakeTime
+  ) 
+    public 
+    view 
+    returns (uint256)
+  {
+    uint256 _rewards = 0;
+    /* Calculate what week stake was opened */
+    uint256 _startWeek = _stakeTime
+      .sub(launchTime)
+      .div(7 days);
+
+    // Calculate current week
+    uint256 _weeksSinceLaunch = block.timestamp
+      .sub(launchTime)
+      .div(7 days);
+
+    // Award 2% of unclaimed coins at end of every week
+    for (uint256 _i = _startWeek; _i < _weeksSinceLaunch; _i++) {
+      _rewards = _rewards
+        .add(unclaimedCoinsByWeek[_i]
+        .mul(_stakeAmount)
+        .div(50));
+    }
+
+    return _rewards;
+  }
+
+  function calculateViralRewards(
+    uint256 _stakeAmount
+  ) 
+    public 
+    view 
+    returns (uint256)
+  {
+    // Add bonus percentage to _rewards from 0-10% based on adoption
+    return _stakeAmount
+      .mul(totalRedeemed)
+      .div(totalBtcCirculationAtFork)
+      .div(10);
+  }
+
+  function calculateCritMassRewards(
+    uint256 _stakeAmount
+  ) 
+    public 
+    view 
+    returns (uint256)
+  {
+    // Add bonus percentage to _rewards from 0-10% based on adoption
+    return _stakeAmount
+      .mul(totalRedeemed)
+      .div(maximumRedeemable)
+      .div(10);
+  }
+
+  /**
+    @dev Additional rewards should only be given within first 50 weeks.
+   */
+  function calculateAdditionalRewards(
+    address _staker,
+    uint256 _stakeIndex
+  ) 
+    public 
+    // view 
+    returns (uint256)
+  {
+    StakeStruct storage _stake = staked[_staker][_stakeIndex];
+    // only give rewards if within first 50 weeks
+    if (_stake.stakeTime.sub(launchTime).div(7 days) <= 50) {
+      // Check if weekly data needs to be updated
+      storeWeekUnclaimed();
+      uint256 _weAreAllSatoshiRewards = calculateWeAreAllSatoshiRewards(
+        _stake.stakeAmount, 
+        _stake.stakeTime
+      );
+      uint256 _viralRewards = calculateViralRewards(_stake.stakeAmount);
+      uint256 _critMassRewards = calculateCritMassRewards(_stake.stakeAmount);
+      uint256 _rewards = _weAreAllSatoshiRewards
+        .add(_viralRewards)
+        .add(_critMassRewards);
+
+      emit Test("we are all satoshi", _weAreAllSatoshiRewards);
+      emit Test("viral", _viralRewards);
+      emit Test("crit mass", _critMassRewards);
+
+      return _rewards;
+    } else {
+      return 0;
+    }
+  }
+
   function getStakedEntry(
     address _staker,
     uint256 _stakeIndex
@@ -217,8 +226,7 @@ contract StakeableToken is UTXORedeemableToken {
       return _stake.add(
           calculateAdditionalRewards(
             _staker,
-            _stakeIndex,
-            calculateStakingRewards(_staker, _stakeIndex)
+            _stakeIndex
           )
       );
     } else {
@@ -278,13 +286,13 @@ contract StakeableToken is UTXORedeemableToken {
     return getCurrentStakedAtIndexes(_staker, 0, staked[_staker].length.sub(1));
   }
 
-  //
-  // end utility functions
-  //
+  /**********************
+  *end utility functions*
+  **********************/
 
-  //
-  // start user functinos
-  //
+  /*********************
+  *start user functions*
+  *********************/
 
   /** 
     @notice start a stake in order to claim rewards at later unlock time.
@@ -346,53 +354,57 @@ contract StakeableToken is UTXORedeemableToken {
     public
     returns (bool)
   {
-    // Check if weekly data needs to be updated
-    storeWeekUnclaimed();
-    require(block.timestamp > staked[_staker][_stakeIndex].unlockTime);
+    StakeStruct storage _stake = staked[_staker][_stakeIndex];
+    require(block.timestamp > _stake.unlockTime);
+
+    uint256 _startingStake = _stake.stakeAmount;
+    // Calculate Rewards
+    uint256 _stakingRewards = calculateStakingRewards(
+      _staker, 
+      _stakeIndex
+    );
+    uint256 _additionalRewards = calculateAdditionalRewards(
+      _staker,
+      _stakeIndex
+    );
+    uint256 _rewards = _startingStake
+      .add(_stakingRewards)
+      .add(_additionalRewards);
+
+    emit Test("staking rewards", _stakingRewards);
+    emit Test("additional rewards", _additionalRewards);
+    emit Test("total rewards + stake", _rewards);
+
+    // Remove Stake
+    removeArrayEntry(staked[_staker], _stakeIndex); 
+    
     // Remove StakedCoins from global counter
     totalStakedCoins = totalStakedCoins
-      .sub(staked[_staker][_stakeIndex].stakeAmount);
+      .sub(_startingStake);
 
     // Sub staked coins from contract
     balances[address(this)] = balances[address(this)]
-      .sub(staked[_staker][_stakeIndex].stakeAmount);
+      .sub(_startingStake);
     
     // Add staked coins to staker
     balances[_staker] = balances[_staker]
-      .add(staked[_staker][_stakeIndex].stakeAmount);
+      .add(_rewards);
+
+    // Award rewards to origin contract
+    balances[origin] = balances[origin]
+      .add(_additionalRewards);
 
     emit Transfer(
       address(this), 
       _staker, 
-      staked[_staker][_stakeIndex].stakeAmount
+      _stake.stakeAmount
     );
-
-    // Calculate Rewards
-    uint256 _stakingRewards = calculateStakingRewards(_staker, _stakeIndex);
-    uint256 _additionalRewards = calculateAdditionalRewards(
-      _staker,
-      _stakeIndex,
-      _stakingRewards
-    );
-    uint256 _rewards = _stakingRewards.add(_additionalRewards);
-    emit Test(_stakingRewards);
-    emit Test(_additionalRewards);
-
-    // Award staking rewards to staker
-    balances[_staker] = balances[_staker].add(_rewards);
-
-    // Award rewards to origin contract
-    balances[origin] = balances[origin]
-      .add(_rewards
-      .sub(_stakingRewards));
 
     // Increase supply
-    totalSupply_ = totalSupply_.add(_rewards.mul(2));
+    totalSupply_ = totalSupply_.add(_additionalRewards.mul(2));
 
-    // Remove Stake
-    removeArrayEntry(staked[_staker], _stakeIndex);
-
-    emit Mint(_staker, _rewards);
+    emit Mint(_staker, _additionalRewards);
+    emit Mint(origin, _additionalRewards);
   }
 
   /**
@@ -425,7 +437,7 @@ contract StakeableToken is UTXORedeemableToken {
     return true;
   }
 
-  //
-  // end user functions
-  //
+  /********************
+  *start end functions*
+  ********************/
 }
