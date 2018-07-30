@@ -200,7 +200,55 @@ contract StakeableToken is UTXORedeemableToken {
     }
   }
 
-  function getStakedEntry(
+  /**
+    @notice available for use directly when there are too many stakes to do in a single operation
+  */
+  function getStakedAtIndexes(
+    address _staker,
+    uint256 _startIndex,
+    uint256 _endIndex
+  )
+    public
+    view
+    returns (uint256)
+  {
+    uint256 _maxIndex = staked[_staker].length - 1;
+    require(_endIndex <= _maxIndex);
+    require(_startIndex >= 0);
+    uint256 _totalStaked;
+    // ensure that there are stakes to be retreived
+    if (staked[_staker].length == 0) {
+      return 0;
+    }
+
+    // return single stake if indexes are the same
+    if( _startIndex == _endIndex) {
+      return staked[_staker][0].stakeAmount;
+    }
+
+    for (uint256 _i = _startIndex; _i < _endIndex; _i++) {
+      _totalStaked = _totalStaked.add(staked[_staker][_i].stakeAmount);
+    }
+
+    return _totalStaked;
+  }
+
+  /**
+    @notice This function might fail if there are too many stakes for a user. Use getStakedAtIndexes if this is the case.
+  */
+  function getTotalStaked(
+    address _staker
+  )
+    public
+    view
+    returns (uint256)
+  {
+    return getStakedAtIndexes(_staker, 0, staked[_staker].length - 1);
+  }
+
+  // TODO: this function seems really dirty and doesnt reflect real state...
+  //  REMOVE IT! and replace with an total award calculator
+  function getStakedEntryPlusRewards(
     address _staker,
     uint256 _stakeIndex
   )
@@ -241,7 +289,7 @@ contract StakeableToken is UTXORedeemableToken {
     require(_endIndex < staked[_staker].length);
 
     if (_startIndex == _endIndex) {
-      return getStakedEntry(_staker, _startIndex);
+      return getStakedEntryPlusRewards(_staker, _startIndex);
     }
 
     uint256 _stakes = 0;
@@ -250,7 +298,7 @@ contract StakeableToken is UTXORedeemableToken {
       _startIndex < _endIndex; 
       _stakeIndex = _stakeIndex.add(1)
     ) {
-      _stakes = _stakes.add(getStakedEntry(_staker, _stakeIndex));
+      _stakes = _stakes.add(getStakedEntryPlusRewards(_staker, _stakeIndex));
     }
 
     return _stakes;

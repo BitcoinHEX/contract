@@ -2,7 +2,12 @@ const {
   setupStakeableToken,
   testInitializeStakeableToken,
   testStartStake,
-  testClaimStake
+  testClaimStake,
+  testCalculateStakingRewards,
+  testCalculateSatoshiRewards,
+  testCalculateViralRewards,
+  testCalculateCritMassRewards,
+  testCalculateAdditionalRewards
 } = require('./helpers/skt')
 const {
   timeWarpRelativeToLaunchTime,
@@ -20,6 +25,15 @@ describe.only('when deploying StakeableToken', () => {
   contract('StakeableToken', () => {
     let skt
     let launchTime
+    let stakeAmount
+    let stakeTime
+    let unlockTime
+    let stakeIndex
+    let stakingRewards
+    let satoshiRewards
+    let viralRewards
+    let critMassRewards
+    let additionalRewards
 
     before('setup contracts', async () => {
       launchTime = await getDefaultLaunchTime()
@@ -52,19 +66,60 @@ describe.only('when deploying StakeableToken', () => {
     })
 
     it('should stake', async () => {
-      const staker = stakers[2]
-      const stakeAmount = await skt.balanceOf(staker)
-      const currentTime = await getCurrentBlockTime()
+      const staker = stakers[0]
+      stakeAmount = await skt.balanceOf(staker)
+      stakeTime = await getCurrentBlockTime()
       // set stake time to 20 days
-      const stakeTime = currentTime + 60 * 60 * 24 * 21
+      unlockTime = stakeTime + 60 * 60 * 24 * 21
 
-      await testStartStake(skt, stakeAmount, stakeTime, { from: staker })
+      await testStartStake(skt, stakeAmount, unlockTime, { from: staker })
+      stakeIndex = 0
+    })
+
+    it('should have correct staking rewards at time of maturation', async () => {
+      await warpThroughBonusWeeks(skt, 60 * 60 * 24 * 22)
+      stakingRewards = await testCalculateStakingRewards(
+        skt,
+        stakers[0],
+        stakeIndex
+      )
+    })
+
+    it('should have correct satoshi rewards at time of maturation', async () => {
+      satoshiRewards = await testCalculateSatoshiRewards(
+        skt,
+        stakeTime,
+        unlockTime
+      )
+    })
+
+    it('should have correct viral rewards at time of maturation', async () => {
+      viralRewards = await testCalculateViralRewards(skt, stakeAmount)
+    })
+
+    it('should have correct crit mass rewards at time of maturation', async () => {
+      critMassRewards = await testCalculateCritMassRewards(skt, stakeAmount)
+    })
+
+    it('should calculate correct additionalRewards', async () => {
+      additionalRewards = await testCalculateAdditionalRewards(
+        skt,
+        stakers[0],
+        stakeIndex,
+        satoshiRewards,
+        viralRewards,
+        critMassRewards
+      )
     })
 
     it('should claim stake', async () => {
-      const staker = stakers[2]
-      await warpThroughBonusWeeks(skt, 60 * 60 * 24 * 22)
-      await testClaimStake(skt, staker)
+      await testClaimStake(
+        skt,
+        stakers[0],
+        stakeIndex,
+        stakingRewards,
+        additionalRewards
+      )
     })
   })
 })

@@ -2,7 +2,7 @@ const StakeableTokenStub = artifacts.require('StakeableTokenStub')
 
 const BigNumber = require('bignumber.js')
 
-const { origin } = require('./general')
+const { origin, areInRange } = require('./general')
 const { bitcoinRootHash: defaultRootUtxoMerkleHash } = require('./mkl')
 const {
   defaultMaximumRedeemable,
@@ -10,6 +10,13 @@ const {
 } = require('./bhx')
 
 const defaultInterestRatePercent = new BigNumber(1)
+
+const stakeStructToObj = struct => ({
+  stakeAmount: struct[0],
+  stakeTime: struct[1],
+  unlockTime: struct[2],
+  totalStakedCoinsAtStart: struct[3]
+})
 
 const setupStakeableToken = launchTime =>
   StakeableTokenStub.new(
@@ -72,9 +79,6 @@ const testStartStake = async (skt, amount, time, config) => {
   const postStaked = await skt.getCurrentStaked(staker)
   const postTotalStakedCoins = await skt.totalStakedCoins()
 
-  console.log('pre stake', preBalance.toString())
-  console.log('post stake', postBalance.toString())
-
   assert.equal(
     preBalance.sub(postBalance).toString(),
     amount.toString(),
@@ -92,36 +96,207 @@ const testStartStake = async (skt, amount, time, config) => {
   )
 }
 
-// TODO: it seems that compounded interest is waaaay too high...
-// need to check on this
-const testClaimStake = async (skt, staker) => {
-  const preBalance = await skt.balanceOf(staker)
-  const preStaked = await skt.getCurrentStaked(staker)
-  const preTotalStakedCoins = await skt.totalStakedCoins()
+/*
+  compound interest formula:
+    a = p(1+r)^n
+*/
+const calculateCompounded = (principle, periods, interestRate) => {
+  // lower by 10 decimals in order to mimic smart contract math
+  const loweredPrinciple = principle.div(1e10).floor(0)
+  let compounded = interestRate
+    .add(1)
+    .toPower(periods)
+    .mul(loweredPrinciple)
+    .sub(loweredPrinciple)
 
-  await skt.claimSingleStakingReward(staker, 0)
+  compounded = compounded.mul(1e10)
 
-  const postBalance = await skt.balanceOf(staker)
-  const postStaked = await skt.getCurrentStaked(staker)
-  const postTotalStakedCoins = await skt.totalStakedCoins()
+  return compounded
+}
 
-  console.log('pre claim', preBalance.toString())
-  console.log('post claim', postBalance.toString())
+// TODO: double check that areInRange is satisfactorily accurate
+const testCalculateStakingRewards = async (skt, staker, stakeIndex) => {
+  const stakeStruct = await skt.staked(staker, stakeIndex)
+  const stake = stakeStructToObj(stakeStruct)
+  const periods = stake.unlockTime
+    .sub(stake.stakeTime)
+    .div(60 * 60 * 24 * 10)
+    .floor(0)
+
+  const interestRate = await skt.interestRatePercent()
+  const interestFloat = interestRate.div(100)
+  const expectedCompounded = calculateCompounded(
+    stake.stakeAmount,
+    periods,
+    interestFloat
+  )
+
+  const rewards = await skt.calculateStakingRewards(staker, stakeIndex)
+
+  assert(
+    areInRange(rewards, expectedCompounded, 1e13),
+    'staking rewards should be withing 1e12 of expectedCompounded'
+  )
+
+  return rewards
+}
+
+const calculateSatoshiRewards = async (skt, stakeTime, unlockTime) => {
+  const launchTime = await skt.launchTime()
+  const startWeek = new BigNumber(stakeTime)
+    .sub(launchTime)
+    .div(60 * 60 * 24 * 7)
+    .floor(0)
+  const endWeek = new BigNumber(unlockTime)
+    .sub(launchTime)
+    .div(60 * 60 * 24 * 7)
+    .floor(0)
+
+  const rewardableEndWeek = endWeek > 50 ? 50 : endWeek
+  let expectedRewards = new BigNumber(0)
+  for (let i = startWeek; i < rewardableEndWeek; i++) {
+    const unclaimedCoins = await skt.unclaimedCoinsByWeek(i)
+    const weeklyReward = unclaimedCoins
+      .mul(2)
+      .div(100)
+      .floor(0)
+    expectedRewards = expectedRewards.add(weeklyReward)
+  }
+
+  return expectedRewards
+}
+
+const testCalculateSatoshiRewards = async (skt, stakeTime, unlockTime) => {
+  const expectedRewards = await calculateSatoshiRewards(
+    skt,
+    stakeTime,
+    unlockTime
+  )
+
+  const rewards = await skt.calculateWeAreAllSatoshiRewards(
+    stakeTime,
+    unlockTime
+  )
 
   assert.equal(
-    postBalance.sub(preBalance).toString(),
-    preStaked.toString(),
-    'staker balance should be decremented by stake amount'
+    rewards.toString(),
+    expectedRewards.toString(),
+    'satoshi rewards should match expected rewards'
+  )
+
+  return rewards
+}
+
+const testCalculateViralRewards = async (skt, stakeAmount) => {
+  const totalRedeemed = await skt.totalRedeemed()
+  const totalBtcCirculationAtFork = await skt.totalBtcCirculationAtFork()
+  const expectedViralRewards = stakeAmount
+    .mul(totalRedeemed)
+    .div(totalBtcCirculationAtFork)
+    .mul(10)
+    .div(100)
+    .floor(0)
+
+  const rewards = await skt.calculateViralRewards(stakeAmount)
+
+  assert.equal(
+    rewards.toString(),
+    expectedViralRewards.toString(),
+    'viral rewards should match expectedViralRewards'
+  )
+
+  return rewards
+}
+
+const testCalculateCritMassRewards = async (skt, stakeAmount) => {
+  const totalRedeemed = await skt.totalRedeemed()
+  const maximumRedeemable = await skt.maximumRedeemable()
+  const expectedCritMassRewards = stakeAmount
+    .mul(totalRedeemed)
+    .div(maximumRedeemable)
+    .mul(10)
+    .div(100)
+    .floor(0)
+
+  const rewards = await skt.calculateCritMassRewards(stakeAmount)
+
+  assert.equal(
+    rewards.toString(),
+    expectedCritMassRewards.toString(),
+    'crit mass rewards should match expectedCritMassRewards'
+  )
+
+  return rewards
+}
+
+const testCalculateAdditionalRewards = async (
+  skt,
+  staker,
+  stakeIndex,
+  expectedSatoshiRewards,
+  expectedViralRewards,
+  expectedCritMassRewards
+) => {
+  const expectedRewards = expectedSatoshiRewards
+    .add(expectedViralRewards)
+    .add(expectedCritMassRewards)
+
+  const rewards = await skt.calculateAdditionalRewards(staker, stakeIndex)
+
+  assert.equal(
+    rewards.toString(),
+    expectedRewards.toString(),
+    'rewards should match expected rewards'
+  )
+
+  return rewards
+}
+
+const testClaimStake = async (
+  skt,
+  staker,
+  stakeIndex,
+  stakingRewards,
+  additionalRewards
+) => {
+  const stakeStruct = await skt.staked(staker, stakeIndex)
+  const stake = stakeStructToObj(stakeStruct)
+  const expectedTotalRewards = stake.stakeAmount
+    .add(stakingRewards)
+    .add(additionalRewards)
+
+  const preStakerBalance = await skt.balanceOf(staker)
+  const preStaked = await skt.getTotalStaked(staker)
+  const preTotalStakedCoins = await skt.totalStakedCoins()
+  const preOriginBalance = await skt.balanceOf(origin)
+
+  await skt.claimSingleStakingReward(staker, stakeIndex)
+
+  const postStakerBalance = await skt.balanceOf(staker)
+  const postStaked = await skt.getTotalStaked(staker)
+  const postTotalStakedCoins = await skt.totalStakedCoins()
+  const postOriginBalance = await skt.balanceOf(origin)
+
+  assert.equal(
+    postOriginBalance.sub(preOriginBalance).toString(),
+    additionalRewards.toString(),
+    'origin balance should be incremented by additional rewards amount'
+  )
+
+  assert.equal(
+    postStakerBalance.sub(preStakerBalance).toString(),
+    expectedTotalRewards.toString(),
+    'staker balance should be incremented by stake amount + rewards'
   )
   assert.equal(
     preStaked.sub(postStaked).toString(),
     preStaked.toString(),
-    'staker staked amount should be incremented by stake amount'
+    'staker staked amount should be decremented by stake amount'
   )
   assert.equal(
     preTotalStakedCoins.sub(postTotalStakedCoins).toString(),
     preStaked.toString(),
-    'totalStakedCoins should be incremented by stake amount'
+    'totalStakedCoins should be decremented by stake amount'
   )
 }
 
@@ -130,5 +305,11 @@ module.exports = {
   setupStakeableToken,
   testInitializeStakeableToken,
   testStartStake,
-  testClaimStake
+  testClaimStake,
+  testCalculateStakingRewards,
+  testCalculateSatoshiRewards,
+  testCalculateViralRewards,
+  testCalculateCritMassRewards,
+  testCalculateAdditionalRewards,
+  stakeStructToObj
 }

@@ -116,7 +116,6 @@ const warpThroughBonusWeeks = async (urt, seconds) => {
   /* eslint-disable no-console */
   const weekInSeconds = 60 * 60 * 24 * 7
   const weeksToWarp = Math.floor(seconds / weekInSeconds)
-  console.log(weeksToWarp)
   await urt.storeWeekUnclaimed()
 
   for (let i = 1; i <= weeksToWarp; i++) {

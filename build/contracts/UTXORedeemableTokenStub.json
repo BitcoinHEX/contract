@@ -683,14 +683,14 @@
     "absolutePath": "/Users/tovarishfin/dev/bhx/bhx-contracts/contracts/stubs/UTXORedeemableTokenStub.sol",
     "exportedSymbols": {
       "UTXORedeemableTokenStub": [
-        1883
+        1965
       ]
     },
-    "id": 1884,
+    "id": 1966,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 1851,
+        "id": 1933,
         "literals": [
           "solidity",
           "^",
@@ -703,10 +703,10 @@
       {
         "absolutePath": "/Users/tovarishfin/dev/bhx/bhx-contracts/contracts/UTXORedeemableToken.sol",
         "file": "../UTXORedeemableToken.sol",
-        "id": 1852,
+        "id": 1934,
         "nodeType": "ImportDirective",
-        "scope": 1884,
-        "sourceUnit": 1762,
+        "scope": 1966,
+        "sourceUnit": 1844,
         "src": "26:36:7",
         "symbolAliases": [],
         "unitAlias": ""
@@ -717,64 +717,64 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 1853,
+              "id": 1935,
               "name": "UTXORedeemableToken",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1761,
+              "referencedDeclaration": 1843,
               "src": "101:19:7",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_UTXORedeemableToken_$1761",
+                "typeIdentifier": "t_contract$_UTXORedeemableToken_$1843",
                 "typeString": "contract UTXORedeemableToken"
               }
             },
-            "id": 1854,
+            "id": 1936,
             "nodeType": "InheritanceSpecifier",
             "src": "101:19:7"
           }
         ],
         "contractDependencies": [
-          1761,
-          2136,
-          2179,
-          2211,
-          2458
+          1843,
+          2218,
+          2261,
+          2293,
+          2540
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 1883,
+        "id": 1965,
         "linearizedBaseContracts": [
-          1883,
-          1761,
-          2458,
-          2136,
-          2179,
-          2211
+          1965,
+          1843,
+          2540,
+          2218,
+          2261,
+          2293
         ],
         "name": "UTXORedeemableTokenStub",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 1881,
+              "id": 1963,
               "nodeType": "Block",
               "src": "270:155:7",
               "statements": [
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 1867,
+                    "id": 1949,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 1865,
+                      "id": 1947,
                       "name": "origin",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 984,
+                      "referencedDeclaration": 1066,
                       "src": "276:6:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -785,11 +785,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 1866,
+                      "id": 1948,
                       "name": "_origin",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1856,
+                      "referencedDeclaration": 1938,
                       "src": "285:7:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -802,25 +802,25 @@
                       "typeString": "address"
                     }
                   },
-                  "id": 1868,
+                  "id": 1950,
                   "nodeType": "ExpressionStatement",
                   "src": "276:16:7"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 1871,
+                    "id": 1953,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 1869,
+                      "id": 1951,
                       "name": "launchTime",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 986,
+                      "referencedDeclaration": 1068,
                       "src": "298:10:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -831,11 +831,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 1870,
+                      "id": 1952,
                       "name": "_launchTime",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1858,
+                      "referencedDeclaration": 1940,
                       "src": "311:11:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -848,25 +848,25 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1872,
+                  "id": 1954,
                   "nodeType": "ExpressionStatement",
                   "src": "298:24:7"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 1875,
+                    "id": 1957,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 1873,
+                      "id": 1955,
                       "name": "rootUtxoMerkleTreeHash",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 995,
+                      "referencedDeclaration": 1077,
                       "src": "328:22:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_bytes32",
@@ -877,11 +877,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 1874,
+                      "id": 1956,
                       "name": "_rootUtxoMerkleTreeHash",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1860,
+                      "referencedDeclaration": 1942,
                       "src": "353:23:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_bytes32",
@@ -894,25 +894,25 @@
                       "typeString": "bytes32"
                     }
                   },
-                  "id": 1876,
+                  "id": 1958,
                   "nodeType": "ExpressionStatement",
                   "src": "328:48:7"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 1879,
+                    "id": 1961,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 1877,
+                      "id": 1959,
                       "name": "maximumRedeemable",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1004,
+                      "referencedDeclaration": 1086,
                       "src": "382:17:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -923,11 +923,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 1878,
+                      "id": 1960,
                       "name": "_maximumRedeemable",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1862,
+                      "referencedDeclaration": 1944,
                       "src": "402:18:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -940,14 +940,14 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1880,
+                  "id": 1962,
                   "nodeType": "ExpressionStatement",
                   "src": "382:38:7"
                 }
               ]
             },
             "documentation": null,
-            "id": 1882,
+            "id": 1964,
             "implemented": true,
             "isConstructor": true,
             "isDeclaredConst": false,
@@ -955,15 +955,15 @@
             "name": "",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 1863,
+              "id": 1945,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 1856,
+                  "id": 1938,
                   "name": "_origin",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1882,
+                  "scope": 1964,
                   "src": "142:15:7",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -972,7 +972,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 1855,
+                    "id": 1937,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "142:7:7",
@@ -986,10 +986,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 1858,
+                  "id": 1940,
                   "name": "_launchTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1882,
+                  "scope": 1964,
                   "src": "163:19:7",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -998,7 +998,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 1857,
+                    "id": 1939,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "163:7:7",
@@ -1012,10 +1012,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 1860,
+                  "id": 1942,
                   "name": "_rootUtxoMerkleTreeHash",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1882,
+                  "scope": 1964,
                   "src": "188:31:7",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1024,7 +1024,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 1859,
+                    "id": 1941,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "188:7:7",
@@ -1038,10 +1038,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 1862,
+                  "id": 1944,
                   "name": "_maximumRedeemable",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1882,
+                  "scope": 1964,
                   "src": "225:26:7",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1050,7 +1050,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 1861,
+                    "id": 1943,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "225:7:7",
@@ -1067,19 +1067,19 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 1864,
+              "id": 1946,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "270:0:7"
             },
-            "scope": 1883,
+            "scope": 1965,
             "src": "125:300:7",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 1884,
+        "scope": 1966,
         "src": "65:362:7"
       }
     ],
@@ -1089,14 +1089,14 @@
     "absolutePath": "/Users/tovarishfin/dev/bhx/bhx-contracts/contracts/stubs/UTXORedeemableTokenStub.sol",
     "exportedSymbols": {
       "UTXORedeemableTokenStub": [
-        1883
+        1965
       ]
     },
-    "id": 1884,
+    "id": 1966,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 1851,
+        "id": 1933,
         "literals": [
           "solidity",
           "^",
@@ -1109,10 +1109,10 @@
       {
         "absolutePath": "/Users/tovarishfin/dev/bhx/bhx-contracts/contracts/UTXORedeemableToken.sol",
         "file": "../UTXORedeemableToken.sol",
-        "id": 1852,
+        "id": 1934,
         "nodeType": "ImportDirective",
-        "scope": 1884,
-        "sourceUnit": 1762,
+        "scope": 1966,
+        "sourceUnit": 1844,
         "src": "26:36:7",
         "symbolAliases": [],
         "unitAlias": ""
@@ -1123,64 +1123,64 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 1853,
+              "id": 1935,
               "name": "UTXORedeemableToken",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1761,
+              "referencedDeclaration": 1843,
               "src": "101:19:7",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_UTXORedeemableToken_$1761",
+                "typeIdentifier": "t_contract$_UTXORedeemableToken_$1843",
                 "typeString": "contract UTXORedeemableToken"
               }
             },
-            "id": 1854,
+            "id": 1936,
             "nodeType": "InheritanceSpecifier",
             "src": "101:19:7"
           }
         ],
         "contractDependencies": [
-          1761,
-          2136,
-          2179,
-          2211,
-          2458
+          1843,
+          2218,
+          2261,
+          2293,
+          2540
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 1883,
+        "id": 1965,
         "linearizedBaseContracts": [
-          1883,
-          1761,
-          2458,
-          2136,
-          2179,
-          2211
+          1965,
+          1843,
+          2540,
+          2218,
+          2261,
+          2293
         ],
         "name": "UTXORedeemableTokenStub",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 1881,
+              "id": 1963,
               "nodeType": "Block",
               "src": "270:155:7",
               "statements": [
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 1867,
+                    "id": 1949,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 1865,
+                      "id": 1947,
                       "name": "origin",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 984,
+                      "referencedDeclaration": 1066,
                       "src": "276:6:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -1191,11 +1191,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 1866,
+                      "id": 1948,
                       "name": "_origin",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1856,
+                      "referencedDeclaration": 1938,
                       "src": "285:7:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -1208,25 +1208,25 @@
                       "typeString": "address"
                     }
                   },
-                  "id": 1868,
+                  "id": 1950,
                   "nodeType": "ExpressionStatement",
                   "src": "276:16:7"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 1871,
+                    "id": 1953,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 1869,
+                      "id": 1951,
                       "name": "launchTime",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 986,
+                      "referencedDeclaration": 1068,
                       "src": "298:10:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -1237,11 +1237,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 1870,
+                      "id": 1952,
                       "name": "_launchTime",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1858,
+                      "referencedDeclaration": 1940,
                       "src": "311:11:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -1254,25 +1254,25 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1872,
+                  "id": 1954,
                   "nodeType": "ExpressionStatement",
                   "src": "298:24:7"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 1875,
+                    "id": 1957,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 1873,
+                      "id": 1955,
                       "name": "rootUtxoMerkleTreeHash",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 995,
+                      "referencedDeclaration": 1077,
                       "src": "328:22:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_bytes32",
@@ -1283,11 +1283,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 1874,
+                      "id": 1956,
                       "name": "_rootUtxoMerkleTreeHash",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1860,
+                      "referencedDeclaration": 1942,
                       "src": "353:23:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_bytes32",
@@ -1300,25 +1300,25 @@
                       "typeString": "bytes32"
                     }
                   },
-                  "id": 1876,
+                  "id": 1958,
                   "nodeType": "ExpressionStatement",
                   "src": "328:48:7"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 1879,
+                    "id": 1961,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 1877,
+                      "id": 1959,
                       "name": "maximumRedeemable",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1004,
+                      "referencedDeclaration": 1086,
                       "src": "382:17:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -1329,11 +1329,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 1878,
+                      "id": 1960,
                       "name": "_maximumRedeemable",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1862,
+                      "referencedDeclaration": 1944,
                       "src": "402:18:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -1346,14 +1346,14 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1880,
+                  "id": 1962,
                   "nodeType": "ExpressionStatement",
                   "src": "382:38:7"
                 }
               ]
             },
             "documentation": null,
-            "id": 1882,
+            "id": 1964,
             "implemented": true,
             "isConstructor": true,
             "isDeclaredConst": false,
@@ -1361,15 +1361,15 @@
             "name": "",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 1863,
+              "id": 1945,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 1856,
+                  "id": 1938,
                   "name": "_origin",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1882,
+                  "scope": 1964,
                   "src": "142:15:7",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1378,7 +1378,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 1855,
+                    "id": 1937,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "142:7:7",
@@ -1392,10 +1392,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 1858,
+                  "id": 1940,
                   "name": "_launchTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1882,
+                  "scope": 1964,
                   "src": "163:19:7",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1404,7 +1404,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 1857,
+                    "id": 1939,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "163:7:7",
@@ -1418,10 +1418,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 1860,
+                  "id": 1942,
                   "name": "_rootUtxoMerkleTreeHash",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1882,
+                  "scope": 1964,
                   "src": "188:31:7",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1430,7 +1430,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 1859,
+                    "id": 1941,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "188:7:7",
@@ -1444,10 +1444,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 1862,
+                  "id": 1944,
                   "name": "_maximumRedeemable",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1882,
+                  "scope": 1964,
                   "src": "225:26:7",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1456,7 +1456,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 1861,
+                    "id": 1943,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "225:7:7",
@@ -1473,19 +1473,19 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 1864,
+              "id": 1946,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "270:0:7"
             },
-            "scope": 1883,
+            "scope": 1965,
             "src": "125:300:7",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 1884,
+        "scope": 1966,
         "src": "65:362:7"
       }
     ],
@@ -1497,5 +1497,5 @@
   },
   "networks": {},
   "schemaVersion": "2.0.0",
-  "updatedAt": "2018-07-23T15:54:30.730Z"
+  "updatedAt": "2018-07-30T14:39:22.260Z"
 }

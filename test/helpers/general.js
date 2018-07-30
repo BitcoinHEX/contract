@@ -77,6 +77,13 @@ const expectRevert = async promise => {
   assert(false, "Expected throw wasn't received")
 }
 
+// test to see if numbers are within range range = allowable difference
+const areInRange = (bigNum1, bigNum2, range) =>
+  (bigNum1.greaterThanOrEqualTo(bigNum2) &&
+    bigNum1.sub(range).lessThanOrEqualTo(bigNum2)) ||
+  (bigNum1.lessThanOrEqualTo(bigNum2) &&
+    bigNum1.add(range).greaterThanOrEqualTo(bigNum2))
+
 module.exports = {
   accounts,
   origin,
@@ -92,5 +99,6 @@ module.exports = {
   expectRevert,
   send,
   timeWarp,
-  getCurrentBlockTime
+  getCurrentBlockTime,
+  areInRange
 }
