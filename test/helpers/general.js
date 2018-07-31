@@ -19,6 +19,7 @@ const incorrectProof = [
 ]
 
 const oneBlockWeek = 60 * 60 * 24 * 7
+const oneInterestPeriod = 60 * 60 * 24 * 10 // 10 days
 
 const getCurrentBlockTime = async () => {
   const { timestamp } = await web3.eth.getBlock(web3.eth.blockNumber)
@@ -100,5 +101,6 @@ module.exports = {
   send,
   timeWarp,
   getCurrentBlockTime,
-  areInRange
+  areInRange,
+  oneInterestPeriod
 }

@@ -23,6 +23,28 @@ contract StakeableToken is UTXORedeemableToken {
   *start utility functions*
   ************************/
 
+  function getUserStakes(address _staker)
+    public
+    view
+    returns (uint256[], uint256[], uint256[], uint256[])
+  {
+    uint256 _stakesLength = staked[_staker].length;
+    uint256[] memory _stakeAmount = new uint256[](_stakesLength);
+    uint256[] memory _stakeTime = new uint256[](_stakesLength);
+    uint256[] memory _unlockTime = new uint256[](_stakesLength);
+    uint256[] memory _totalStakedCoinsAtStart = new uint256[](_stakesLength);
+
+    for (uint256 _i = 0; _i < _stakesLength; _i++) {
+      StakeStruct storage stake = staked[_staker][_i];
+      _stakeAmount[_i] = stake.stakeAmount;
+      _stakeTime[_i] = stake.stakeTime;
+      _unlockTime[_i] = stake.unlockTime;
+      _totalStakedCoinsAtStart[_i] = stake.totalStakedCoinsAtStart;
+    }
+
+    return (_stakeAmount, _stakeTime, _unlockTime, _totalStakedCoinsAtStart);
+  }
+
   function getWeeksSinceLaunch()
     public
     view
@@ -222,6 +244,7 @@ contract StakeableToken is UTXORedeemableToken {
     } else {
       return 0;
     }
+    return 0;
   }
 
   /**
@@ -250,7 +273,7 @@ contract StakeableToken is UTXORedeemableToken {
       return staked[_staker][0].stakeAmount;
     }
 
-    for (uint256 _i = _startIndex; _i < _endIndex; _i++) {
+    for (uint256 _i = _startIndex; _i <= _endIndex; _i++) {
       _totalStaked = _totalStaked.add(staked[_staker][_i].stakeAmount);
     }
 
@@ -260,7 +283,7 @@ contract StakeableToken is UTXORedeemableToken {
   /**
     @notice This function might fail if there are too many stakes for a user. Use getStakedAtIndexes if this is the case.
   */
-  function getTotalStaked(
+  function getTotalUserStaked(
     address _staker
   )
     public
@@ -270,9 +293,7 @@ contract StakeableToken is UTXORedeemableToken {
     return getStakedAtIndexes(_staker, 0, staked[_staker].length - 1);
   }
 
-  // TODO: this function seems really dirty and doesnt reflect real state...
-  //  REMOVE IT! and replace with an total award calculator
-  function getStakedEntryPlusRewards(
+  function calculateSingleStakePlusRewards(
     address _staker,
     uint256 _stakeIndex
   )
@@ -312,20 +333,19 @@ contract StakeableToken is UTXORedeemableToken {
     require(_startIndex <= _endIndex);
     require(_endIndex < staked[_staker].length);
 
+    StakeStruct[] storage _stakes = staked[_staker];
     if (_startIndex == _endIndex) {
-      return getStakedEntryPlusRewards(_staker, _startIndex);
+      return _stakes[_startIndex].stakeAmount;
     }
 
-    uint256 _stakes = 0;
-    for (
-      uint256 _stakeIndex = _startIndex; 
-      _startIndex < _endIndex; 
-      _stakeIndex = _stakeIndex.add(1)
-    ) {
-      _stakes = _stakes.add(getStakedEntryPlusRewards(_staker, _stakeIndex));
+    uint256 _totalStaked = 0;
+    uint256 _i = _startIndex;
+    while (_i <= _endIndex) {
+      _totalStaked = _totalStaked.add(_stakes[_i].stakeAmount);
+      _i = _i.add(1);
     }
 
-    return _stakes;
+    return _totalStaked;
   }
 
   /**
@@ -335,7 +355,7 @@ contract StakeableToken is UTXORedeemableToken {
   function getCurrentStaked(
     address _staker
   )
-    external 
+    external
     view 
     returns (uint256)
   {
@@ -374,7 +394,7 @@ contract StakeableToken is UTXORedeemableToken {
     // ensure unlockTime is in the future
     require(_unlockTime >= block.timestamp.add(10 days));
     // ensure that unlock time is not more than approx 10 years
-    require(_unlockTime <= block.timestamp.add(10 days * 3650));
+    require(_unlockTime <= block.timestamp.add(10 * 365 days));
 
     // Check if weekly data needs to be updated
     storeWeekUnclaimed();
@@ -382,7 +402,6 @@ contract StakeableToken is UTXORedeemableToken {
     // Remove balance from sender
     balances[_staker] = balances[_staker].sub(_value);
     balances[address(this)] = balances[address(this)].add(_value);
-    emit Transfer(_staker, address(this), _value);
 
     // Create Stake
     staked[_staker].push(
@@ -400,6 +419,7 @@ contract StakeableToken is UTXORedeemableToken {
     return true;
   }
 
+  event Test(uint value);
   /**
     @notice Used for claiming a single stake. Another user can claim a stake on another 
     user's behalf. All rewards and original stake go to original staker.
@@ -415,7 +435,7 @@ contract StakeableToken is UTXORedeemableToken {
     returns (bool)
   {
     StakeStruct storage _stake = staked[_staker][_stakeIndex];
-    require(block.timestamp > _stake.unlockTime);
+    require(block.timestamp >= _stake.unlockTime);
     // Check if weekly data needs to be updated
     storeWeekUnclaimed();
 
@@ -439,6 +459,7 @@ contract StakeableToken is UTXORedeemableToken {
     // Remove StakedCoins from global counter
     totalStakedCoins = totalStakedCoins
       .sub(_startingStake);
+    emit Test(_startingStake);
 
     // Sub staked coins from contract
     balances[address(this)] = balances[address(this)]

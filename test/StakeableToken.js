@@ -7,7 +7,8 @@ const {
   testCalculateSatoshiRewards,
   testCalculateViralRewards,
   testCalculateCritMassRewards,
-  testCalculateAdditionalRewards
+  testCalculateAdditionalRewards,
+  stakeStructToObj
 } = require('./helpers/skt')
 const {
   timeWarpRelativeToLaunchTime,
@@ -17,12 +18,16 @@ const {
 const { getDefaultLaunchTime } = require('./helpers/bhx')
 const {
   stakers,
+  otherAccount,
   getCurrentBlockTime,
   timeWarp,
-  bigZero
+  bigZero,
+  expectRevert,
+  oneInterestPeriod
 } = require('./helpers/general')
+const BigNumber = require('bignumber.js')
 
-describe('when deploying StakeableToken', () => {
+describe('when using core StakeableToken functionality', () => {
   contract('StakeableToken', () => {
     let skt
     let launchTime
@@ -48,14 +53,59 @@ describe('when deploying StakeableToken', () => {
       await testInitializeStakeableToken(skt, launchTime)
     })
 
+    it('should NOT stake if user has no tokens', async () => {
+      stakeAmount = 1e18
+      stakeTime = await getCurrentBlockTime()
+      unlockTime = stakeTime + 60 * 60 * 24 * 7
+      await expectRevert(
+        testStartStake(skt, stakeAmount, unlockTime, 0, {
+          from: otherAccount
+        })
+      )
+    })
+
+    it('should NOT stake if user stakes for too little time', async () => {
+      stakeTime = await getCurrentBlockTime()
+      const invalidUnlockTime = stakeTime + 60 * 60 * 24 * 9 // 9 days
+      await expectRevert(
+        testStartStake(skt, stakeAmount, invalidUnlockTime, 0, {
+          from: staker
+        })
+      )
+    })
+
+    it('should NOT stake if user stakes for too much time', async () => {
+      stakeTime = await getCurrentBlockTime()
+      const invalidUnlockTime = stakeTime + 60 * 60 * 24 * 3651 // 10 years and 1 day
+      await expectRevert(
+        testStartStake(skt, stakeAmount, invalidUnlockTime, 0, {
+          from: staker
+        })
+      )
+    })
+
     it('should stake', async () => {
       stakeAmount = await skt.balanceOf(staker)
       stakeTime = await getCurrentBlockTime()
       // set stake time to 20 days
       unlockTime = stakeTime + 60 * 60 * 24 * 21
 
-      await testStartStake(skt, stakeAmount, unlockTime, { from: staker })
+      await testStartStake(skt, stakeAmount, unlockTime, 0, { from: staker })
       stakeIndex = 0
+    })
+
+    it('should NOT claim a stake if before maturation date', async () => {
+      const stakingRewardsStub = new BigNumber(0)
+      const additionalRewardsStub = new BigNumber(0)
+      await expectRevert(
+        testClaimStake(
+          skt,
+          staker,
+          stakeIndex,
+          stakingRewardsStub,
+          additionalRewardsStub
+        )
+      )
     })
 
     it('should have correct staking rewards at time of maturation', async () => {
@@ -94,6 +144,20 @@ describe('when deploying StakeableToken', () => {
       )
     })
 
+    it('should NOT claim a stake for a user who has NO stake', async () => {
+      const stakingRewardsStub = new BigNumber(0)
+      const additionalRewardsStub = new BigNumber(0)
+      await expectRevert(
+        testClaimStake(
+          skt,
+          otherAccount,
+          stakeIndex,
+          stakingRewardsStub,
+          additionalRewardsStub
+        )
+      )
+    })
+
     it('should claim stake', async () => {
       await testClaimStake(
         skt,
@@ -106,11 +170,13 @@ describe('when deploying StakeableToken', () => {
   })
 })
 
-describe('when handling multiple stakes', () => {
+describe('when handling multiple users', () => {
   contract('StakeableToken', () => {
-    let skt, launchTime, stakeTime, unlockTime
+    let skt, launchTime
     const stakeIndex = 0
     const activeStakers = stakers.filter(staker => staker != stakers[1])
+    const stakingDataByUser = {}
+    activeStakers.map(staker => (stakingDataByUser[staker] = {}))
     before('setup contract', async () => {
       launchTime = await getDefaultLaunchTime()
       skt = await setupStakeableToken(launchTime)
@@ -119,12 +185,15 @@ describe('when handling multiple stakes', () => {
     })
 
     it('should stake all account balances', async () => {
-      stakeTime = await getCurrentBlockTime()
+      const stakeTime = await getCurrentBlockTime()
       // set stake time to 20 days
-      unlockTime = stakeTime + 60 * 60 * 24 * 21 // 3 weeks
+      const unlockTime = stakeTime + 60 * 60 * 24 * 21 // 3 weeks
       for (const staker of activeStakers) {
         const stakeAmount = await skt.balanceOf(staker)
-        await testStartStake(skt, stakeAmount, unlockTime, {
+
+        stakingDataByUser[staker].stakeAmount = stakeAmount
+
+        await testStartStake(skt, stakeAmount, unlockTime, stakeIndex, {
           from: staker
         })
       }
@@ -133,24 +202,221 @@ describe('when handling multiple stakes', () => {
     it('should have correct staking rewards for all accounts', async () => {
       await warpThroughBonusWeeks(skt, 60 * 60 * 24 * 21 + 60)
       for (const staker of activeStakers) {
-        await testCalculateStakingRewards(skt, staker, stakeIndex)
+        const stakingRewards = await testCalculateStakingRewards(
+          skt,
+          staker,
+          stakeIndex
+        )
+        stakingDataByUser[staker].stakingRewards = stakingRewards
+      }
+    })
+
+    it('should have correct satoshi rewards for all stakers', async () => {
+      for (const staker of activeStakers) {
+        const stakeStruct = await skt.staked(staker, stakeIndex)
+        const { stakeTime, unlockTime } = stakeStructToObj(stakeStruct)
+        const satoshiRewards = await testCalculateSatoshiRewards(
+          skt,
+          stakeTime,
+          unlockTime
+        )
+        stakingDataByUser[staker].satoshiRewards = satoshiRewards
+      }
+    })
+
+    it('should have correct viral rewards for all stakers', async () => {
+      for (const staker of activeStakers) {
+        const stakeStruct = await skt.staked(staker, stakeIndex)
+        const { stakeAmount } = stakeStructToObj(stakeStruct)
+        const viralRewards = await testCalculateViralRewards(skt, stakeAmount)
+        stakingDataByUser[staker].viralRewards = viralRewards
+      }
+    })
+
+    it('should have correct crit mass rewards for all stakers', async () => {
+      for (const staker of activeStakers) {
+        const stakeStruct = await skt.staked(staker, stakeIndex)
+        const { stakeAmount } = stakeStructToObj(stakeStruct)
+        const critMassRewards = await testCalculateCritMassRewards(
+          skt,
+          stakeAmount
+        )
+        stakingDataByUser[staker].critMassRewards = critMassRewards
+      }
+    })
+
+    it('should have correct additional rewards for all users', async () => {
+      for (const staker of activeStakers) {
+        const {
+          satoshiRewards,
+          viralRewards,
+          critMassRewards
+        } = stakingDataByUser[staker]
+        const additionalRewards = await testCalculateAdditionalRewards(
+          skt,
+          staker,
+          stakeIndex,
+          satoshiRewards,
+          viralRewards,
+          critMassRewards
+        )
+
+        stakingDataByUser[staker].additionalRewards = additionalRewards
+      }
+    })
+
+    it('should claim matured stakes for all users', async () => {
+      for (const staker of activeStakers) {
+        const { stakingRewards, additionalRewards } = stakingDataByUser[staker]
+        await testClaimStake(
+          skt,
+          staker,
+          stakeIndex,
+          stakingRewards,
+          additionalRewards
+        )
       }
     })
   })
 })
-/*
-  what do we want to do here???
 
-  NEED TO:
-    check on behavior for different weeks...
+describe.only('when handling multiple stakes', () => {
+  contract('StakeableToken', () => {
+    let skt
+    const staker = stakers[0]
+    const userStakes = []
 
-  NEED TO:
-  handle multiple:
-    redeems
-    stakes
-    claims
-    RANDOMIZE ALL THE THINGS!
-*/
+    before('setup contract', async () => {
+      const launchTime = await getDefaultLaunchTime()
+      skt = await setupStakeableToken(launchTime)
+      await timeWarpRelativeToLaunchTime(skt, 60, true)
+      await redeemAllUtxos(skt)
+    })
+
+    it('should make several stakes', async () => {
+      let stakeAmount = await skt.balanceOf(staker)
+      stakeAmount = stakeAmount.div(3).floor(0)
+      const stakeTime = await getCurrentBlockTime()
+      let unlockTime
+
+      // create 3 stakes for a single user
+      unlockTime = stakeTime + oneInterestPeriod
+      await testStartStake(skt, stakeAmount, unlockTime, 0, {
+        from: staker
+      })
+      userStakes.push({
+        stakeIndex: 0,
+        stakeAmount,
+        stakeTime,
+        unlockTime
+      })
+
+      unlockTime = stakeTime + oneInterestPeriod * 2
+      await testStartStake(skt, stakeAmount, unlockTime, 1, {
+        from: staker
+      })
+      userStakes.push({
+        stakeIndex: 1,
+        stakeAmount,
+        stakeTime,
+        unlockTime
+      })
+
+      unlockTime = stakeTime + oneInterestPeriod * 3
+      await testStartStake(skt, stakeAmount, unlockTime, 2, {
+        from: staker
+      })
+      userStakes.push({
+        stakeIndex: 2,
+        stakeAmount,
+        stakeTime,
+        unlockTime
+      })
+    })
+
+    it('should have correct staking rewards for each stake', async () => {
+      for (const stake of userStakes) {
+        const { stakeIndex } = stake
+        await warpThroughBonusWeeks(skt, oneInterestPeriod * stakeIndex)
+        const stakingRewards = await testCalculateStakingRewards(
+          skt,
+          staker,
+          stakeIndex
+        )
+
+        userStakes[stakeIndex].stakingRewards = stakingRewards
+      }
+    })
+
+    it('should have correct satoshi rewards for each stake', async () => {
+      for (const stake of userStakes) {
+        const { stakeTime, unlockTime, stakeIndex } = stake
+        const satoshiRewards = await testCalculateSatoshiRewards(
+          skt,
+          stakeTime,
+          unlockTime
+        )
+
+        userStakes[stakeIndex].satoshiRewards = satoshiRewards
+      }
+    })
+
+    it('should have correct viral rewards for each stake', async () => {
+      for (const stake of userStakes) {
+        const { stakeAmount, stakeIndex } = stake
+        const viralRewards = await testCalculateViralRewards(skt, stakeAmount)
+
+        userStakes[stakeIndex].viralRewards = viralRewards
+      }
+    })
+
+    it('should have correct crit mass rewards for each stake', async () => {
+      for (const stake of userStakes) {
+        const { stakeAmount, stakeIndex } = stake
+        const critMassRewards = await testCalculateCritMassRewards(
+          skt,
+          stakeAmount
+        )
+
+        userStakes[stakeIndex].critMassRewards = critMassRewards
+      }
+    })
+
+    it('should have correct additional rewards for each stake', async () => {
+      for (const stake of userStakes) {
+        const {
+          stakeIndex,
+          satoshiRewards,
+          viralRewards,
+          critMassRewards
+        } = stake
+        const additionalRewards = await testCalculateAdditionalRewards(
+          skt,
+          staker,
+          stakeIndex,
+          satoshiRewards,
+          viralRewards,
+          critMassRewards
+        )
+
+        userStakes[stakeIndex].additionalRewards = additionalRewards
+      }
+    })
+
+    it('should claim each stake', async () => {
+      for (const stake of userStakes) {
+        const { stakeIndex, stakingRewards, additionalRewards } = stake
+        await testClaimStake(
+          skt,
+          staker,
+          stakeIndex,
+          stakingRewards,
+          additionalRewards
+        )
+      }
+    })
+  })
+})
 
 describe('when staking outside of the bonus weeks', () => {
   contract('StakeableToken', () => {
@@ -178,7 +444,9 @@ describe('when staking outside of the bonus weeks', () => {
       // set stake time to 20 days
       unlockTime = stakeTime + 60 * 60 * 24 * 20
 
-      await testStartStake(skt, stakeAmount, unlockTime, { from: staker })
+      await testStartStake(skt, stakeAmount, unlockTime, stakeIndex, {
+        from: staker
+      })
       stakeIndex = 0
     })
 
@@ -230,3 +498,18 @@ describe('when staking outside of the bonus weeks', () => {
     })
   })
 })
+
+/*
+  what do we want to do here???
+
+  NEED TO:
+    check on behavior for different weeks...
+    fuzzy test different values
+    test multiple stakes
+      test incredibly high stakes until running out of gas
+        getting rewards
+        claiming stakes
+    test compound interest until overflows...
+      take steps to prevent this
+
+*/
