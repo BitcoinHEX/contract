@@ -2,7 +2,7 @@ const StakeableTokenStub = artifacts.require('StakeableTokenStub')
 
 const BigNumber = require('bignumber.js')
 
-const { origin, areInRange } = require('./general')
+const { origin, getCurrentBlockTime } = require('./general')
 const { bitcoinRootHash: defaultRootUtxoMerkleHash } = require('./mkl')
 const {
   defaultMaximumRedeemable,
@@ -17,6 +17,15 @@ const stakeStructToObj = struct => ({
   unlockTime: struct[2],
   totalStakedCoinsAtStart: struct[3]
 })
+
+const getWeeksSinceLaunch = async skt => {
+  const launchTime = await skt.launchTime()
+  const currentBlockTime = await getCurrentBlockTime()
+  return new BigNumber(currentBlockTime)
+    .sub(launchTime)
+    .div(7)
+    .floor(0)
+}
 
 const setupStakeableToken = launchTime =>
   StakeableTokenStub.new(
@@ -67,13 +76,13 @@ const testInitializeStakeableToken = async (skt, expectedLaunchTime) => {
   )
 }
 
-const testStartStake = async (skt, amount, time, config) => {
+const testStartStake = async (skt, amount, unlockTime, config) => {
   const { from: staker } = config
   const preBalance = await skt.balanceOf(staker)
   const preStaked = await skt.getCurrentStaked(staker)
   const preTotalStakedCoins = await skt.totalStakedCoins()
 
-  await skt.startStake(amount, time, config)
+  await skt.startStake(amount, unlockTime, config)
 
   const postBalance = await skt.balanceOf(staker)
   const postStaked = await skt.getCurrentStaked(staker)
@@ -96,20 +105,46 @@ const testStartStake = async (skt, amount, time, config) => {
   )
 }
 
-/*
-  compound interest formula:
-    a = p(1+r)^n
-*/
-const calculateCompounded = (principle, periods, interestRate) => {
-  // lower by 10 decimals in order to mimic smart contract math
-  const loweredPrinciple = principle.div(1e10).floor(0)
-  let compounded = interestRate
-    .add(1)
-    .toPower(periods)
-    .mul(loweredPrinciple)
-    .sub(loweredPrinciple)
+// mimic smart contract function and check for integer overflows which can happen in solidity
+const calculateCompounded = (principle, periods, raisedRate) => {
+  const maxGroupPeriods = 30
+  const remainingPeriods = periods % maxGroupPeriods
+  const groupings = new BigNumber(periods).div(maxGroupPeriods).floor(0)
+  let compounded = principle.div(1e10).floor(0)
+  let raisedRateToPower
+  let raisedByToPower
 
-  compounded = compounded.mul(1e10)
+  for (let i = 0; i < groupings; i++) {
+    raisedRateToPower = raisedRate.toPower(maxGroupPeriods)
+    raisedByToPower = new BigNumber(1e4).toPower(maxGroupPeriods)
+    compounded = compounded.mul(raisedRateToPower).div(raisedByToPower)
+
+    assert(
+      raisedRateToPower.lessThan('2e256'),
+      'raised rate raised to power of periods must be less than 2^256'
+    )
+    assert(
+      raisedByToPower.lessThan('2e256'),
+      'raised amount to power of periods must be less than 2^256'
+    )
+  }
+
+  raisedRateToPower = raisedRate.toPower(remainingPeriods)
+  raisedByToPower = new BigNumber(1e4).toPower(remainingPeriods)
+  compounded = compounded
+    .mul(raisedRateToPower)
+    .div(raisedByToPower)
+    .floor(0)
+    .mul(1e10)
+
+  assert(
+    raisedRateToPower.lessThan('2e256'),
+    'raised rate raised to power of periods must be less than 2^256'
+  )
+  assert(
+    raisedByToPower.lessThan('2e256'),
+    'raised amount to power of periods must be less than 2^256'
+  )
 
   return compounded
 }
@@ -118,24 +153,34 @@ const calculateCompounded = (principle, periods, interestRate) => {
 const testCalculateStakingRewards = async (skt, staker, stakeIndex) => {
   const stakeStruct = await skt.staked(staker, stakeIndex)
   const stake = stakeStructToObj(stakeStruct)
+
   const periods = stake.unlockTime
     .sub(stake.stakeTime)
     .div(60 * 60 * 24 * 10)
     .floor(0)
 
   const interestRate = await skt.interestRatePercent()
-  const interestFloat = interestRate.div(100)
+  const raisedRate = interestRate.mul(100)
+  const totalSupply = await skt.totalSupply()
+  let scaler = stake.totalStakedCoinsAtStart
+    .mul(100)
+    .div(totalSupply)
+    .floor(0)
+  scaler = scaler.equals(0) ? new BigNumber(1) : scaler
+  const scaledRate = raisedRate.div(scaler).floor(0)
+  const reRaisedRate = scaledRate.add(1e4)
   const expectedCompounded = calculateCompounded(
     stake.stakeAmount,
     periods,
-    interestFloat
+    reRaisedRate
   )
 
   const rewards = await skt.calculateStakingRewards(staker, stakeIndex)
 
-  assert(
-    areInRange(rewards, expectedCompounded, 1e13),
-    'staking rewards should be withing 1e12 of expectedCompounded'
+  assert.equal(
+    rewards.toString(),
+    expectedCompounded.sub(stake.stakeAmount).toString(),
+    'rewards should match expectedCompounded'
   )
 
   return rewards
@@ -311,5 +356,6 @@ module.exports = {
   testCalculateViralRewards,
   testCalculateCritMassRewards,
   testCalculateAdditionalRewards,
-  stakeStructToObj
+  stakeStructToObj,
+  getWeeksSinceLaunch
 }

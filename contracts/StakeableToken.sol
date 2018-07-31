@@ -23,6 +23,24 @@ contract StakeableToken is UTXORedeemableToken {
   *start utility functions*
   ************************/
 
+  function getWeeksSinceLaunch()
+    public
+    view
+    returns (uint256)
+  {
+    return block.timestamp > launchTime 
+      ? block.timestamp.sub(launchTime).div(7 days) 
+      : 0;
+  }
+
+  function isDuringBonusPeriod()
+    public
+    view
+    returns (bool)
+  {
+    return getWeeksSinceLaunch() <= 50;
+  }
+
   /** 
     @dev Moves last item in array to location of item to be removed,
     overwriting array item. Shortens array length by 1, removing now
@@ -68,17 +86,18 @@ contract StakeableToken is UTXORedeemableToken {
 
     for(uint256 _i = 0; _i < _groupings; _i = _i.add(1)) {
       _compounded = _compounded
-        .mul(uint256(1).add(_rate) ** _remainingPeriods)
-        .div(100 ** _remainingPeriods);
+        .mul(_rate ** _remainingPeriods)
+        .div(1e4 ** _remainingPeriods);
     }
 
     _compounded = _compounded
-      .mul(uint256(1).add(_rate) ** _remainingPeriods)
-      .div(100 ** _remainingPeriods);
+      .mul(_rate ** _remainingPeriods)
+      .div(1e4 ** _remainingPeriods);
 
     return _compounded.mul(1e10);
   }
 
+  // TODO: HEAVILY test this in order to ensure that there are no integer overflows
   function calculateStakingRewards(
     address _staker,
     uint256 _stakeIndex
@@ -88,7 +107,8 @@ contract StakeableToken is UTXORedeemableToken {
     returns (uint256)
   {
     StakeStruct storage _stake = staked[_staker][_stakeIndex];
-    // Base interest rate
+
+    // raise by 100 in order to adjust with scaler
     uint256 _interestRateTimesHundred = interestRatePercent.mul(100);
 
     // calculate percent of staked coins vs totalSupply to use for interest rate reduction
@@ -97,9 +117,11 @@ contract StakeableToken is UTXORedeemableToken {
         .mul(100)
         .div(totalSupply_)
       : 1;
-    // reduce interest rate by percent of tokens staked against totalSupply
-    _interestRateTimesHundred = _interestRateTimesHundred.div(_scaler);
 
+    // reduce interest rate by scaler
+    uint256 _scaledInterestRate = _interestRateTimesHundred.div(_scaler);
+    // bring up by 1e4 in order to get an accurate percent
+    uint256 _interestRate = _scaledInterestRate.add(1e4);
     // Calculate Periods
     uint256 _periods = _stake.unlockTime
       .sub(_stake.stakeTime)
@@ -108,7 +130,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _compounded = compound(
       _stake.stakeAmount, 
       _periods, 
-      _interestRateTimesHundred
+      _interestRate
     );
 
     // Calculate final staking rewards with time bonus
@@ -142,6 +164,8 @@ contract StakeableToken is UTXORedeemableToken {
     return _rewards;
   }
 
+  // TODO: double check that we want to make this public... if so... is it ok that
+  // it shows non zero amounts for users outside of bonus period?
   function calculateViralRewards(
     uint256 _stakeAmount
   ) 

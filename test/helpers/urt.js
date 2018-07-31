@@ -5,22 +5,48 @@ const { ecsign, publicToAddress } = require('ethereumjs-util')
 const { soliditySha3 } = require('web3-utils')
 const { decode: decode58 } = require('bs58')
 const BigNumber = require('bignumber.js')
-
 const privateKeys = require('../data/privateKeys')
 const dataMerkleTree = require('../data/merkleTree.json')
+const transactions = require('../data/transactions')
+
 const {
   origin,
   bigZero,
   accounts,
+  stakers,
   timeWarp,
   getCurrentBlockTime,
   oneBlockWeek
 } = require('./general')
+
 const { defaultMaximumRedeemable } = require('./bhx')
 const {
   bitcoinRootHash: defaultRootUtxoMerkleHash,
   bitcoinMerkleTree: defaultMerkleTree
 } = require('./mkl')
+
+const redeemAllUtxos = async contract => {
+  let index = 0
+  for (const bitcoinTx of transactions) {
+    // problem with data given at the moment it seems when using account[1]... skip for now
+    // TODO: make sure correct data is used for testing!!!
+    if (index !== 1) {
+      const { proof, satoshis } = getProofAndComponents(bitcoinTx)
+
+      await testRedeemUtxo(
+        contract,
+        proof,
+        satoshis,
+        bitcoinPrivateKeys(index),
+        {
+          from: stakers[index]
+        }
+      )
+    }
+
+    index++
+  }
+}
 
 const setupContract = async launchTime => {
   const urt = await UtxoRedeemableToken.new(
@@ -346,12 +372,12 @@ const testRedeemReferredUtxo = async (
 
 const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
   const preLastUpdatedWeek = await urt.lastUpdatedWeek()
-  const preUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek)
+  const preUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek - 1)
 
   await urt.storeWeekUnclaimed()
 
   const postLastUpdatedWeek = await urt.lastUpdatedWeek()
-  const postUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek)
+  const postUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek - 1)
 
   const maximumRedeemable = await urt.maximumRedeemable()
   const totalRedeemed = await urt.totalRedeemed()
@@ -481,5 +507,6 @@ module.exports = {
   testRedeemReferredUtxo,
   testWeekIncrement,
   testGetRedeemAmount,
-  warpThroughBonusWeeks
+  warpThroughBonusWeeks,
+  redeemAllUtxos
 }

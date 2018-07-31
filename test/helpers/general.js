@@ -39,12 +39,12 @@ const timeWarp = async seconds => {
     await send('evm_increaseTime', [seconds])
     await send('evm_mine')
 
-    // const previousBlock = await web3.eth.getBlock(web3.eth.blockNumber - 1)
-    // const currentBlock = await web3.eth.getBlock(web3.eth.blockNumber)
+    const previousBlock = await web3.eth.getBlock(web3.eth.blockNumber - 1)
+    const currentBlock = await web3.eth.getBlock(web3.eth.blockNumber)
     // /* eslint-disable no-console */
-    // console.log(`🏳️‍🌈🏳️‍🌈🏳️‍🌈🏳️‍🌈🏳️‍🌈🏳️‍🌈🛸  Warped ${seconds} seconds at new block`)
-    // console.log(`⏰  previous block timestamp: ${previousBlock.timestamp}`)
-    // console.log(`⏱  current block timestamp: ${currentBlock.timestamp}`)
+    console.log(`🏳️‍🌈🏳️‍🌈🏳️‍🌈🏳️‍🌈🏳️‍🌈🏳️‍🌈🛸  Warped ${seconds} seconds at new block`)
+    console.log(`⏰  previous block timestamp: ${previousBlock.timestamp}`)
+    console.log(`⏱  current block timestamp: ${currentBlock.timestamp}`)
     /* eslint-enable no-console */
   } else {
     // eslint-disable-next-line
