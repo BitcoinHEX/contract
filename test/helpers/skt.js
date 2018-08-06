@@ -27,6 +27,13 @@ const getWeeksSinceLaunch = async skt => {
     .floor(0)
 }
 
+// needed in order to keep array items in correct order during tests
+const reorgStakesAfterRemoval = (stakeArray, removedIndex) => {
+  stakeArray[removedIndex] = stakeArray[stakeArray.length - 1]
+  stakeArray[removedIndex].stakeIndex = removedIndex
+  return stakeArray.pop()
+}
+
 const setupStakeableToken = launchTime =>
   StakeableTokenStub.new(
     origin,
@@ -85,13 +92,13 @@ const testStartStake = async (
 ) => {
   const { from: staker } = config
   const preBalance = await skt.balanceOf(staker)
-  const preStaked = await skt.getCurrentStaked(staker)
+  const preStaked = await skt.getTotalUserStaked(staker)
   const preTotalStakedCoins = await skt.totalStakedCoins()
 
   await skt.startStake(amount, unlockTime, config)
 
   const postBalance = await skt.balanceOf(staker)
-  const postStaked = await skt.getCurrentStaked(staker)
+  const postStaked = await skt.getTotalUserStaked(staker)
   const postTotalStakedCoins = await skt.totalStakedCoins()
 
   assert.equal(
@@ -113,7 +120,8 @@ const testStartStake = async (
 
 // mimic smart contract function and check for integer overflows which can happen in solidity
 const calculateCompounded = (principle, periods, raisedRate) => {
-  const maxGroupPeriods = 30
+  console.log(periods.toString())
+  const maxGroupPeriods = 10
   const remainingPeriods = periods % maxGroupPeriods
   const groupings = new BigNumber(periods).div(maxGroupPeriods).floor(0)
   let compounded = principle.div(1e10).floor(0)
@@ -123,7 +131,10 @@ const calculateCompounded = (principle, periods, raisedRate) => {
   for (let i = 0; i < groupings; i++) {
     raisedRateToPower = raisedRate.toPower(maxGroupPeriods)
     raisedByToPower = new BigNumber(1e4).toPower(maxGroupPeriods)
-    compounded = compounded.mul(raisedRateToPower).div(raisedByToPower)
+    compounded = compounded
+      .mul(raisedRateToPower)
+      .div(raisedByToPower)
+      .floor(0)
 
     assert(
       raisedRateToPower.lessThan('2e256'),
@@ -244,6 +255,7 @@ const testCalculateViralRewards = async (skt, stakeAmount) => {
   const expectedViralRewards = stakeAmount
     .mul(totalRedeemed)
     .div(totalBtcCirculationAtFork)
+    .floor(0)
     .mul(10)
     .div(100)
     .floor(0)
@@ -265,6 +277,7 @@ const testCalculateCritMassRewards = async (skt, stakeAmount) => {
   const expectedCritMassRewards = stakeAmount
     .mul(totalRedeemed)
     .div(maximumRedeemable)
+    .floor(0)
     .mul(10)
     .div(100)
     .floor(0)
@@ -322,19 +335,12 @@ const testClaimStake = async (
   const preTotalStakedCoins = await skt.totalStakedCoins()
   const preOriginBalance = await skt.balanceOf(origin)
 
-  // messing about
-
-  // messing about
-
   await skt.claimSingleStakingReward(staker, stakeIndex)
 
   const postStakerBalance = await skt.balanceOf(staker)
   const postStaked = await skt.getTotalUserStaked(staker)
   const postTotalStakedCoins = await skt.totalStakedCoins()
   const postOriginBalance = await skt.balanceOf(origin)
-
-  console.log('preStaked', preStaked.toString())
-  console.log('postStaked', postStaked.toString())
 
   assert.equal(
     postOriginBalance.sub(preOriginBalance).toString(),
@@ -347,15 +353,63 @@ const testClaimStake = async (
     expectedTotalRewards.toString(),
     'staker balance should be incremented by stake amount + rewards'
   )
-  // assert.equal(
-  //   preStaked.sub(postStaked).toString(),
-  //   preStaked.toString(),
-  //   'staker staked amount should be decremented by stake amount'
-  // )
+  assert.equal(
+    preStaked.sub(postStaked).toString(),
+    stake.stakeAmount.toString(),
+    'staker staked amount should be decremented by stake amount'
+  )
   assert.equal(
     preTotalStakedCoins.sub(postTotalStakedCoins).toString(),
-    preStaked.toString(),
+    stake.stakeAmount.toString(),
     'totalStakedCoins should be decremented by stake amount'
+  )
+}
+
+const testClaimAllStakes = async (skt, staker, stakeCount) => {
+  let totalStaked = new BigNumber(0)
+  let expectedTotalRewards = new BigNumber(0)
+  for (let i = 0; i < stakeCount; i++) {
+    const stakeStruct = await skt.staked(staker, i)
+    const stake = stakeStructToObj(stakeStruct)
+    const { stakeTime, unlockTime, stakeAmount } = stake
+    const stakingRewards = await testCalculateStakingRewards(skt, staker, i)
+    const satoshiRewards = await testCalculateSatoshiRewards(
+      skt,
+      stakeTime,
+      unlockTime
+    )
+    const viralRewards = await testCalculateViralRewards(skt, stakeAmount)
+    const critMassRewards = await testCalculateCritMassRewards(skt, stakeAmount)
+
+    totalStaked = totalStaked.add(stakeAmount)
+    expectedTotalRewards = expectedTotalRewards
+      .add(stakingRewards)
+      .add(satoshiRewards)
+      .add(viralRewards)
+      .add(critMassRewards)
+  }
+
+  const preStakerBalance = await skt.balanceOf(staker)
+  const preStaked = await skt.getTotalUserStaked(staker)
+  console.log('pre staker staked', preStaked.toString())
+  console.log('pre staker balance', preStakerBalance.toString())
+
+  await skt.claimAllStakingRewards(staker)
+
+  const postStakerBalance = await skt.balanceOf(staker)
+  const postStaked = await skt.getTotalUserStaked(staker)
+  console.log('post staker staked', postStaked.toString())
+  console.log('post staker balance', postStakerBalance.toString())
+
+  assert.equal(
+    postStakerBalance.sub(preStakerBalance).toString(),
+    expectedTotalRewards.toString(),
+    'staker balance should be incremented by expectedTotalRewards'
+  )
+  assert.equal(
+    preStaked.sub(postStaked).toString(),
+    totalStaked.toString(),
+    'user staked should be decremented by totalStaked'
   )
 }
 
@@ -371,5 +425,7 @@ module.exports = {
   testCalculateCritMassRewards,
   testCalculateAdditionalRewards,
   stakeStructToObj,
-  getWeeksSinceLaunch
+  getWeeksSinceLaunch,
+  reorgStakesAfterRemoval,
+  testClaimAllStakes
 }

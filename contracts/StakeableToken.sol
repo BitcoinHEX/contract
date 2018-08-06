@@ -67,21 +67,23 @@ contract StakeableToken is UTXORedeemableToken {
     @dev Moves last item in array to location of item to be removed,
     overwriting array item. Shortens array length by 1, removing now
     duplicate item at end of array.
-    @param _array an array of StakeStructs
-    @param _index index of the item to delete
+    @param _staker staker address for accessing array
+    @param _stakeIndex index of the item to delete
   */
   function removeArrayEntry(
-    StakeStruct[] storage _array,
-    uint256 _index
+    address _staker,
+    uint256 _stakeIndex
   )
-    internal
+    public
   {
+    StakeStruct[] storage _stakedArray = staked[_staker];
     // set last item to index of item we want to get rid of
-    _array[_index] = _array[_array.length.sub(1)];
+    _stakedArray[_stakeIndex] = _stakedArray[_stakedArray.length.sub(1)];
     // remove last item in array now that safely copied to index of deleted item
-    _array.length = _array.length.sub(1);
+    _stakedArray.length = _stakedArray.length.sub(1);
   }
 
+  // TODO: HEAVILY test this in order to ensure that there are no integer overflows
   /**
     @dev compound groups up compounding periods by 30 in order to avoid  
     uint overflows when taking (100 + rate) ** periods. Accuracy is also brought by
@@ -101,25 +103,26 @@ contract StakeableToken is UTXORedeemableToken {
     pure
     returns (uint256)
   {
-    uint256 _maxGroupPeriods = 30;
+    uint256 _maxGroupPeriods = 10;
     uint256 _remainingPeriods = _periods % _maxGroupPeriods;
     uint256 _groupings = _periods.div(_maxGroupPeriods);
     uint256 _compounded = _principle.div(1e10);
 
     for(uint256 _i = 0; _i < _groupings; _i = _i.add(1)) {
       _compounded = _compounded
+        .mul(_rate ** _maxGroupPeriods)
+        .div(1e4 ** _maxGroupPeriods);
+    }
+
+    if (_remainingPeriods != 0) {
+      _compounded = _compounded
         .mul(_rate ** _remainingPeriods)
         .div(1e4 ** _remainingPeriods);
     }
 
-    _compounded = _compounded
-      .mul(_rate ** _remainingPeriods)
-      .div(1e4 ** _remainingPeriods);
-
     return _compounded.mul(1e10);
   }
 
-  // TODO: HEAVILY test this in order to ensure that there are no integer overflows
   function calculateStakingRewards(
     address _staker,
     uint256 _stakeIndex
@@ -133,12 +136,16 @@ contract StakeableToken is UTXORedeemableToken {
     // raise by 100 in order to adjust with scaler
     uint256 _interestRateTimesHundred = interestRatePercent.mul(100);
 
+    // default _scaler to 1
+    uint256 _scaler = 1;
     // calculate percent of staked coins vs totalSupply to use for interest rate reduction
-    uint256 _scaler = _stake.totalStakedCoinsAtStart != 0 
-      ? _stake.totalStakedCoinsAtStart
+    if (_stake.totalStakedCoinsAtStart != 0) {
+      uint256 _scalerCandidate = _stake.totalStakedCoinsAtStart
         .mul(100)
-        .div(totalSupply_)
-      : 1;
+        .div(totalSupply_);
+      
+      _scalerCandidate = _scalerCandidate > 0 ? _scalerCandidate : 1;
+    }
 
     // reduce interest rate by scaler
     uint256 _scaledInterestRate = _interestRateTimesHundred.div(_scaler);
@@ -244,6 +251,7 @@ contract StakeableToken is UTXORedeemableToken {
     } else {
       return 0;
     }
+
     return 0;
   }
 
@@ -315,57 +323,6 @@ contract StakeableToken is UTXORedeemableToken {
     }
   }
 
-  /**
-    @notice Used in case user creates excessive stakes and array iteration hits gasLimit.
-    @param _staker user for which to check stakes
-    @param _startIndex get stakes from location
-    @param _endIndex get stakes up to location
-  */
-  function getCurrentStakedAtIndexes(
-    address _staker,
-    uint256 _startIndex,
-    uint256 _endIndex
-  )
-    public
-    view
-    returns (uint256)
-  {
-    require(_startIndex <= _endIndex);
-    require(_endIndex < staked[_staker].length);
-
-    StakeStruct[] storage _stakes = staked[_staker];
-    if (_startIndex == _endIndex) {
-      return _stakes[_startIndex].stakeAmount;
-    }
-
-    uint256 _totalStaked = 0;
-    uint256 _i = _startIndex;
-    while (_i <= _endIndex) {
-      _totalStaked = _totalStaked.add(_stakes[_i].stakeAmount);
-      _i = _i.add(1);
-    }
-
-    return _totalStaked;
-  }
-
-  /**
-    @notice Safe for users who have no placed excessive amounts of stakes.
-    @param _staker the user address for which to check current staked
-  */
-  function getCurrentStaked(
-    address _staker
-  )
-    external
-    view 
-    returns (uint256)
-  {
-    if (staked[_staker].length == 0) {
-      return 0;
-    }
-
-    return getCurrentStakedAtIndexes(_staker, 0, staked[_staker].length.sub(1));
-  }
-
   /**********************
   *end utility functions*
   **********************/
@@ -394,8 +351,7 @@ contract StakeableToken is UTXORedeemableToken {
     // ensure unlockTime is in the future
     require(_unlockTime >= block.timestamp.add(10 days));
     // ensure that unlock time is not more than approx 10 years
-    require(_unlockTime <= block.timestamp.add(10 * 365 days));
-
+    require(_unlockTime < block.timestamp.add(10 * 366 days));
     // Check if weekly data needs to be updated
     storeWeekUnclaimed();
 
@@ -413,13 +369,15 @@ contract StakeableToken is UTXORedeemableToken {
       )
     );
 
+    // ensure that the new stake will return interest
+    require(calculateStakingRewards(_staker, staked[_staker].length.sub(1)) > 0);
+
     // Add staked coins to global stake counter
     totalStakedCoins = totalStakedCoins.add(_value);
 
     return true;
   }
-
-  event Test(uint value);
+  
   /**
     @notice Used for claiming a single stake. Another user can claim a stake on another 
     user's behalf. All rewards and original stake go to original staker.
@@ -434,7 +392,7 @@ contract StakeableToken is UTXORedeemableToken {
     public
     returns (bool)
   {
-    StakeStruct storage _stake = staked[_staker][_stakeIndex];
+    StakeStruct memory _stake = staked[_staker][_stakeIndex]; 
     require(block.timestamp >= _stake.unlockTime);
     // Check if weekly data needs to be updated
     storeWeekUnclaimed();
@@ -452,14 +410,10 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _rewards = _startingStake
       .add(_stakingRewards)
       .add(_additionalRewards);
-
-    // Remove Stake
-    removeArrayEntry(staked[_staker], _stakeIndex); 
     
     // Remove StakedCoins from global counter
     totalStakedCoins = totalStakedCoins
       .sub(_startingStake);
-    emit Test(_startingStake);
 
     // Sub staked coins from contract
     balances[address(this)] = balances[address(this)]
@@ -484,8 +438,14 @@ contract StakeableToken is UTXORedeemableToken {
 
     emit Mint(_staker, _additionalRewards);
     emit Mint(origin, _additionalRewards);
+
+    // Remove Stake
+    removeArrayEntry(_staker, _stakeIndex);
+
+    return true;
   }
 
+  // TODO: make this private
   /**
     @notice Used for claiming multiple stakes. Another user can 
     claim a stake on another user's behalf. All rewards and original stake go to original staker.
@@ -494,23 +454,55 @@ contract StakeableToken is UTXORedeemableToken {
     @param _startIndex claim stakes from this location
     @param _endIndex claim stakes up to this location
   */
-  function claimMultipleStakingRewards(
+  function claimMultipleStakingRewards( // this is no longer truthful when using removeArrayEntry... hm....
     address _staker,
     uint256 _startIndex,
     uint256 _endIndex
   ) 
-    external 
+    public 
     returns (bool)
   {
     // ensure that indexes are in array bounds
     require(_startIndex <= _endIndex);
-    require(_endIndex <= staked[_staker].length);
+    require(_endIndex < staked[_staker].length);
 
-    for (uint256 _i = _startIndex; _i < _endIndex; _i++) {
+    uint256 _i = _startIndex;
+    while (_i <= _endIndex) {
       // Check if stake has matured
-      if (block.timestamp > staked[_staker][_i].unlockTime) {
-        claimSingleStakingReward(_staker, _i);
+      // all stakes can be claimed using 0 index due to arrays reorganizing every time one is removed
+      if (block.timestamp >= staked[_staker][0].unlockTime) {
+        claimSingleStakingReward(_staker, 0);
+        _i = _i.add(1);
       }
+    }
+
+    return true;
+  }
+
+  function claimAllStakingRewards(
+    address _staker
+  )
+    external
+    returns (bool)
+  {
+    uint256 _stakeArrayLength = staked[_staker].length;
+    uint256 _processedCount = 0;
+    uint256 _cursor = 0;
+    if (_stakeArrayLength == 0) {
+      return false;
+    }
+
+    while (_processedCount < _stakeArrayLength) {
+      _cursor = _cursor.add(1) > staked[_staker].length
+        ? 0
+        : _cursor;
+
+      if (block.timestamp >= staked[_staker][_cursor].unlockTime) {
+        claimSingleStakingReward(_staker, _cursor);
+      }
+
+      _processedCount = _processedCount.add(1);
+      _cursor = _cursor.add(1);
     }
 
     return true;

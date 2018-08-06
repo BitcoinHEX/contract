@@ -139,16 +139,32 @@ const stripHexifyBase58Address = address =>
 const getFormattedLeaf = leafBuffer => '0x' + leafBuffer.toString('hex')
 
 const warpThroughBonusWeeks = async (urt, seconds) => {
+  const weekInSeconds = new BigNumber(60 * 60 * 24 * 7)
+  const launchTime = await urt.launchTime()
+  const endOfBonus = launchTime.add(weekInSeconds.mul(50))
+  const currentBlockTime = await getCurrentBlockTime()
+  let bonusWeeksToWarp
+  if (launchTime.add(seconds).gt(endOfBonus)) {
+    if (endOfBonus.gt(currentBlockTime)) {
+      bonusWeeksToWarp = endOfBonus
+        .sub(currentBlockTime)
+        .div(weekInSeconds)
+        .floor(0)
+    } else {
+      bonusWeeksToWarp = 0
+    }
+  } else {
+    bonusWeeksToWarp = new BigNumber(seconds).div(weekInSeconds).floor(0)
+  }
+
   /* eslint-disable no-console */
-  const weekInSeconds = 60 * 60 * 24 * 7
-  const weeksToWarp = Math.floor(seconds / weekInSeconds)
   await urt.storeWeekUnclaimed()
 
-  for (let i = 1; i <= weeksToWarp; i++) {
+  for (let i = 1; i <= bonusWeeksToWarp; i++) {
     await timeWarpRelativeToLaunchTime(urt, weekInSeconds * i, true)
     await urt.storeWeekUnclaimed()
     console.log(
-      `warped to week ${i} of ${weeksToWarp} and stored week unclaimd`
+      `warped to week ${i} of ${bonusWeeksToWarp} and stored week unclaimd`
     )
   }
 
@@ -165,14 +181,14 @@ const timeWarpRelativeToLaunchTime = async (urt, seconds, moveAhead) => {
 
   if (moveAhead) {
     // eslint-disable-next-line no-console
-    console.log(`warping to ${seconds} seconds ahead of bet launchTime...`)
+    console.log(`warping to ${seconds} seconds ahead of launchTime...`)
     targetSeconds = launchTime
       .sub(now)
       .add(seconds)
       .toNumber()
   } else {
     // eslint-disable-next-line no-console
-    console.log(`warping to ${seconds} seconds before bet launchTime...`)
+    console.log(`warping to ${seconds} seconds before launchTime...`)
     targetSeconds = launchTime
       .sub(now)
       .sub(seconds)

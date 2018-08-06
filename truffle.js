@@ -32,5 +32,12 @@ module.exports = {
       network_id: '1',
       gas: 7500000
     }
+  },
+  mocha: {
+    reporter: 'eth-gas-reporter',
+    reporterOptions: {
+      currency: 'USD',
+      gasPrice: 21
+    }
   }
 }

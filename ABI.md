@@ -50,7 +50,7 @@ BitcoinHEX conforms to the [ERC20](https://github.com/ethereum/EIPs/issues/20) s
 * @dev Redeems all stakes that have matured for a given address
 * @param staker Address to redeem stakes for
 
-### function getCurrentStaked(address staker)
+### function getTotalUserStaked(address staker)
 #### View
 * @dev Calculate total number of coins in stake, including accrued rewards
 * @param staker address to check

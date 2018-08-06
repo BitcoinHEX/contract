@@ -8,7 +8,9 @@ const {
   testCalculateViralRewards,
   testCalculateCritMassRewards,
   testCalculateAdditionalRewards,
-  stakeStructToObj
+  stakeStructToObj,
+  reorgStakesAfterRemoval,
+  testClaimAllStakes
 } = require('./helpers/skt')
 const {
   timeWarpRelativeToLaunchTime,
@@ -280,7 +282,7 @@ describe('when handling multiple users', () => {
   })
 })
 
-describe.only('when handling multiple stakes', () => {
+describe('when handling multiple stakes', () => {
   contract('StakeableToken', () => {
     let skt
     const staker = stakers[0]
@@ -296,11 +298,11 @@ describe.only('when handling multiple stakes', () => {
     it('should make several stakes', async () => {
       let stakeAmount = await skt.balanceOf(staker)
       stakeAmount = stakeAmount.div(3).floor(0)
-      const stakeTime = await getCurrentBlockTime()
-      let unlockTime
+      let stakeTime, unlockTime
 
       // create 3 stakes for a single user
-      unlockTime = stakeTime + oneInterestPeriod
+      stakeTime = await getCurrentBlockTime()
+      unlockTime = stakeTime + oneInterestPeriod + 60
       await testStartStake(skt, stakeAmount, unlockTime, 0, {
         from: staker
       })
@@ -311,7 +313,8 @@ describe.only('when handling multiple stakes', () => {
         unlockTime
       })
 
-      unlockTime = stakeTime + oneInterestPeriod * 2
+      stakeTime = await getCurrentBlockTime()
+      unlockTime = stakeTime + oneInterestPeriod + 60
       await testStartStake(skt, stakeAmount, unlockTime, 1, {
         from: staker
       })
@@ -322,7 +325,8 @@ describe.only('when handling multiple stakes', () => {
         unlockTime
       })
 
-      unlockTime = stakeTime + oneInterestPeriod * 3
+      stakeTime = await getCurrentBlockTime()
+      unlockTime = stakeTime + oneInterestPeriod + 60
       await testStartStake(skt, stakeAmount, unlockTime, 2, {
         from: staker
       })
@@ -335,9 +339,9 @@ describe.only('when handling multiple stakes', () => {
     })
 
     it('should have correct staking rewards for each stake', async () => {
+      await warpThroughBonusWeeks(skt, oneInterestPeriod * 3 + 200)
       for (const stake of userStakes) {
         const { stakeIndex } = stake
-        await warpThroughBonusWeeks(skt, oneInterestPeriod * stakeIndex)
         const stakingRewards = await testCalculateStakingRewards(
           skt,
           staker,
@@ -404,16 +408,43 @@ describe.only('when handling multiple stakes', () => {
     })
 
     it('should claim each stake', async () => {
-      for (const stake of userStakes) {
-        const { stakeIndex, stakingRewards, additionalRewards } = stake
-        await testClaimStake(
-          skt,
-          staker,
-          stakeIndex,
-          stakingRewards,
-          additionalRewards
-        )
-      }
+      let stakingRewards, additionalRewards
+      const stakeIndex = 0
+      stakingRewards = userStakes[0].stakingRewards
+      additionalRewards = userStakes[0].additionalRewards
+
+      await testClaimStake(
+        skt,
+        staker,
+        stakeIndex,
+        stakingRewards,
+        additionalRewards
+      )
+      reorgStakesAfterRemoval(userStakes, stakeIndex)
+
+      stakingRewards = userStakes[0].stakingRewards
+      additionalRewards = userStakes[0].additionalRewards
+
+      await testClaimStake(
+        skt,
+        staker,
+        stakeIndex,
+        stakingRewards,
+        additionalRewards
+      )
+      reorgStakesAfterRemoval(userStakes, stakeIndex)
+
+      stakingRewards = userStakes[0].stakingRewards
+      additionalRewards = userStakes[0].additionalRewards
+
+      await testClaimStake(
+        skt,
+        staker,
+        stakeIndex,
+        stakingRewards,
+        additionalRewards
+      )
+      reorgStakesAfterRemoval(userStakes, stakeIndex)
     })
   })
 })
@@ -495,6 +526,56 @@ describe('when staking outside of the bonus weeks', () => {
         stakingRewards,
         additionalRewards // this is set to 0 at top of test block
       )
+    })
+  })
+})
+
+describe.only('when stress testing for overflows and gas limits', async () => {
+  contract('StakeableToken', () => {
+    let skt, stakeTime, unlockTime, launchTime
+    const staker = stakers[0]
+
+    beforeEach('setup contract', async () => {
+      launchTime = await getDefaultLaunchTime()
+      skt = await setupStakeableToken(launchTime)
+      await timeWarpRelativeToLaunchTime(skt, 60, true)
+      await redeemAllUtxos(skt)
+    })
+
+    it.only('should successfully claim all user stakes when less than 48', async () => {
+      await skt.mintTokens(staker, '50e18')
+      const desiredStakes = 47
+      const stakeAmount = new BigNumber(1e18)
+
+      for (let i = 0; i < desiredStakes; i++) {
+        stakeTime = await getCurrentBlockTime()
+        unlockTime = stakeTime + oneInterestPeriod * 365
+        await skt.startStake(stakeAmount, unlockTime, {
+          from: staker
+        })
+      }
+
+      await warpThroughBonusWeeks(skt, oneInterestPeriod * 366)
+
+      await testClaimAllStakes(skt, staker, desiredStakes)
+    })
+
+    it('should run out of gas when trying to claim 48 or more stakes', async () => {
+      await skt.mintTokens(staker, '50e18')
+      const desiredStakes = 48
+      const stakeAmount = new BigNumber(1e18)
+
+      for (let i = 0; i < desiredStakes; i++) {
+        stakeTime = await getCurrentBlockTime()
+        unlockTime = stakeTime + oneInterestPeriod * 365
+        await skt.startStake(stakeAmount, unlockTime, {
+          from: staker
+        })
+      }
+
+      await warpThroughBonusWeeks(skt, oneInterestPeriod * 366)
+
+      await expectRevert(testClaimAllStakes(skt, staker))
     })
   })
 })
