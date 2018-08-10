@@ -15,7 +15,8 @@ const stakeStructToObj = struct => ({
   stakeAmount: struct[0],
   stakeTime: struct[1],
   unlockTime: struct[2],
-  totalStakedCoinsAtStart: struct[3]
+  totalStakedCoinsAtStart: struct[3],
+  totalSupplyAtStart: struct[4]
 })
 
 const getWeeksSinceLaunch = async skt => {
@@ -167,13 +168,7 @@ const calculateCompounded = (principle, periods, raisedRate) => {
 
 // TODO: double check that areInRange is satisfactorily accurate
 const testCalculateStakingRewards = async (skt, staker, stakeIndex) => {
-  const totalSupply = await skt.totalSupply()
-  const expectedRewards = await calculateStakingRewards(
-    skt,
-    staker,
-    stakeIndex,
-    totalSupply
-  )
+  const expectedRewards = await calculateStakingRewards(skt, staker, stakeIndex)
 
   const rewards = await skt.calculateStakingRewards(staker, stakeIndex)
 
@@ -186,12 +181,7 @@ const testCalculateStakingRewards = async (skt, staker, stakeIndex) => {
   return rewards
 }
 
-const calculateStakingRewards = async (
-  skt,
-  staker,
-  stakeIndex,
-  expectedTotalSupply
-) => {
+const calculateStakingRewards = async (skt, staker, stakeIndex) => {
   const stakeStruct = await skt.staked(staker, stakeIndex)
   const stake = stakeStructToObj(stakeStruct)
 
@@ -205,7 +195,7 @@ const calculateStakingRewards = async (
 
   let scaler = stake.totalStakedCoinsAtStart
     .mul(100)
-    .div(expectedTotalSupply)
+    .div(stake.totalSupplyAtStart)
     .floor(0)
   scaler = scaler.equals(0) ? new BigNumber(1) : scaler
   const scaledRate = raisedRate.div(scaler).floor(0)
@@ -341,7 +331,6 @@ const testClaimStake = async (
 ) => {
   const stakeStruct = await skt.staked(staker, stakeIndex)
   const stake = stakeStructToObj(stakeStruct)
-  console.log(stake)
 
   const expectedTotalRewards = stake.stakeAmount
     .add(stakingRewards)
@@ -395,12 +384,7 @@ const testClaimAllStakes = async (skt, staker, stakeCount) => {
     const stake = stakeStructToObj(stakeStruct)
     const { stakeTime, unlockTime, stakeAmount } = stake
 
-    const stakingRewards = await calculateStakingRewards(
-      skt,
-      staker,
-      i,
-      expectedTotalSupply
-    )
+    const stakingRewards = await calculateStakingRewards(skt, staker, i)
     const satoshiRewards = await testCalculateSatoshiRewards(
       skt,
       stakeTime,
@@ -424,24 +408,24 @@ const testClaimAllStakes = async (skt, staker, stakeCount) => {
       .add(additionalRewards)
   }
 
-  // const preStakerBalance = await skt.balanceOf(staker)
-  // const preStaked = await skt.getTotalUserStaked(staker)
+  const preStakerBalance = await skt.balanceOf(staker)
+  const preStaked = await skt.getTotalUserStaked(staker)
 
   await skt.claimAllStakingRewards(staker)
 
-  // const postStakerBalance = await skt.balanceOf(staker)
-  // const postStaked = await skt.getTotalUserStaked(staker)
+  const postStakerBalance = await skt.balanceOf(staker)
+  const postStaked = await skt.getTotalUserStaked(staker)
 
-  // assert.equal(
-  //   postStakerBalance.sub(preStakerBalance).toString(),
-  //   expectedTotalRewards.add(preStaked).toString(),
-  //   'staker balance should be incremented by expectedTotalRewards + preStaked'
-  // )
-  // assert.equal(
-  //   preStaked.sub(postStaked).toString(),
-  //   totalStaked.toString(),
-  //   'user staked should be decremented by totalStaked'
-  // )
+  assert.equal(
+    postStakerBalance.sub(preStakerBalance).toString(),
+    expectedTotalRewards.add(preStaked).toString(),
+    'staker balance should be incremented by expectedTotalRewards + preStaked'
+  )
+  assert.equal(
+    preStaked.sub(postStaked).toString(),
+    totalStaked.toString(),
+    'user staked should be decremented by totalStaked'
+  )
 }
 
 module.exports = {

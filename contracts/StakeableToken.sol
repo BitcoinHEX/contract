@@ -15,6 +15,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 stakeTime;
     uint256 unlockTime;
     uint256 totalStakedCoinsAtStart;
+    uint256 totalSupplyAtStart;
   }
 
   mapping(address => StakeStruct[]) public staked;
@@ -142,7 +143,7 @@ contract StakeableToken is UTXORedeemableToken {
     if (_stake.totalStakedCoinsAtStart != 0) {
       uint256 _scalerCandidate = _stake.totalStakedCoinsAtStart
         .mul(100)
-        .div(totalSupply_);
+        .div(_stake.totalSupplyAtStart);
       
       _scaler = _scalerCandidate > 0 ? _scalerCandidate : 1;
     }
@@ -365,7 +366,8 @@ contract StakeableToken is UTXORedeemableToken {
         _value, 
         block.timestamp, 
         _unlockTime, 
-        totalStakedCoins
+        totalStakedCoins,
+        totalSupply_
       )
     );
 
