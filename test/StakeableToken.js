@@ -25,7 +25,10 @@ const {
   timeWarp,
   bigZero,
   expectRevert,
-  oneInterestPeriod
+  oneInterestPeriod,
+  oneBlockWeek,
+  stakeBufferTime,
+  warpBufferTime
 } = require('./helpers/general')
 const BigNumber = require('bignumber.js')
 
@@ -58,7 +61,7 @@ describe('when using core StakeableToken functionality', () => {
     it('should NOT stake if user has no tokens', async () => {
       stakeAmount = 1e18
       stakeTime = await getCurrentBlockTime()
-      unlockTime = stakeTime + 60 * 60 * 24 * 7
+      unlockTime = stakeTime + oneInterestPeriod
       await expectRevert(
         testStartStake(skt, stakeAmount, unlockTime, 0, {
           from: otherAccount
@@ -68,7 +71,7 @@ describe('when using core StakeableToken functionality', () => {
 
     it('should NOT stake if user stakes for too little time', async () => {
       stakeTime = await getCurrentBlockTime()
-      const invalidUnlockTime = stakeTime + 60 * 60 * 24 * 9 // 9 days
+      const invalidUnlockTime = stakeTime + oneInterestPeriod - 1
       await expectRevert(
         testStartStake(skt, stakeAmount, invalidUnlockTime, 0, {
           from: staker
@@ -76,9 +79,21 @@ describe('when using core StakeableToken functionality', () => {
       )
     })
 
+    it('should NOT stake if user stakes 1e10 or less', async () => {
+      stakeTime = await getCurrentBlockTime()
+      const invalidUnlockTime =
+        stakeTime + oneInterestPeriod * 2 + stakeBufferTime
+      await expectRevert(
+        testStartStake(skt, 1e10, invalidUnlockTime, 0, {
+          from: staker
+        })
+      )
+    })
+
     it('should NOT stake if user stakes for too much time', async () => {
       stakeTime = await getCurrentBlockTime()
-      const invalidUnlockTime = stakeTime + 60 * 60 * 24 * 3651 // 10 years and 1 day
+      const invalidUnlockTime =
+        stakeTime + oneInterestPeriod * 365 + stakeBufferTime
       await expectRevert(
         testStartStake(skt, stakeAmount, invalidUnlockTime, 0, {
           from: staker
@@ -89,8 +104,7 @@ describe('when using core StakeableToken functionality', () => {
     it('should stake', async () => {
       stakeAmount = await skt.balanceOf(staker)
       stakeTime = await getCurrentBlockTime()
-      // set stake time to 20 days
-      unlockTime = stakeTime + 60 * 60 * 24 * 21
+      unlockTime = stakeTime + oneInterestPeriod * 2 + stakeBufferTime
 
       await testStartStake(skt, stakeAmount, unlockTime, 0, { from: staker })
       stakeIndex = 0
@@ -111,7 +125,7 @@ describe('when using core StakeableToken functionality', () => {
     })
 
     it('should have correct staking rewards at time of maturation', async () => {
-      await warpThroughBonusWeeks(skt, 60 * 60 * 24 * 22)
+      await warpThroughBonusWeeks(skt, oneInterestPeriod * 2 + warpBufferTime)
       stakingRewards = await testCalculateStakingRewards(
         skt,
         staker,
@@ -189,7 +203,7 @@ describe('when handling multiple users', () => {
     it('should stake all account balances', async () => {
       const stakeTime = await getCurrentBlockTime()
       // set stake time to 20 days
-      const unlockTime = stakeTime + 60 * 60 * 24 * 21 // 3 weeks
+      const unlockTime = stakeTime + oneInterestPeriod * 2 + stakeBufferTime
       for (const staker of activeStakers) {
         const stakeAmount = await skt.balanceOf(staker)
 
@@ -202,7 +216,7 @@ describe('when handling multiple users', () => {
     })
 
     it('should have correct staking rewards for all accounts', async () => {
-      await warpThroughBonusWeeks(skt, 60 * 60 * 24 * 21 + 60)
+      await warpThroughBonusWeeks(skt, oneInterestPeriod * 2 + warpBufferTime)
       for (const staker of activeStakers) {
         const stakingRewards = await testCalculateStakingRewards(
           skt,
@@ -302,7 +316,7 @@ describe('when handling multiple stakes', () => {
 
       // create 3 stakes for a single user
       stakeTime = await getCurrentBlockTime()
-      unlockTime = stakeTime + oneInterestPeriod + 60
+      unlockTime = stakeTime + oneInterestPeriod + stakeBufferTime
       await testStartStake(skt, stakeAmount, unlockTime, 0, {
         from: staker
       })
@@ -314,7 +328,7 @@ describe('when handling multiple stakes', () => {
       })
 
       stakeTime = await getCurrentBlockTime()
-      unlockTime = stakeTime + oneInterestPeriod + 60
+      unlockTime = stakeTime + oneInterestPeriod + stakeBufferTime
       await testStartStake(skt, stakeAmount, unlockTime, 1, {
         from: staker
       })
@@ -326,7 +340,7 @@ describe('when handling multiple stakes', () => {
       })
 
       stakeTime = await getCurrentBlockTime()
-      unlockTime = stakeTime + oneInterestPeriod + 60
+      unlockTime = stakeTime + oneInterestPeriod + stakeBufferTime
       await testStartStake(skt, stakeAmount, unlockTime, 2, {
         from: staker
       })
@@ -339,7 +353,7 @@ describe('when handling multiple stakes', () => {
     })
 
     it('should have correct staking rewards for each stake', async () => {
-      await warpThroughBonusWeeks(skt, oneInterestPeriod * 3 + 200)
+      await warpThroughBonusWeeks(skt, oneInterestPeriod * 3 + warpBufferTime)
       for (const stake of userStakes) {
         const { stakeIndex } = stake
         const stakingRewards = await testCalculateStakingRewards(
@@ -469,11 +483,10 @@ describe('when staking outside of the bonus weeks', () => {
     })
 
     it('should stake after bonus period', async () => {
-      await warpThroughBonusWeeks(skt, 60 * 60 * 24 * 7 * 51)
+      await warpThroughBonusWeeks(skt, oneBlockWeek * 51 + warpBufferTime)
       stakeAmount = await skt.balanceOf(staker)
       stakeTime = await getCurrentBlockTime()
-      // set stake time to 20 days
-      unlockTime = stakeTime + 60 * 60 * 24 * 20
+      unlockTime = stakeTime + oneInterestPeriod * 2 + stakeBufferTime
 
       await testStartStake(skt, stakeAmount, unlockTime, stakeIndex, {
         from: staker
@@ -518,7 +531,7 @@ describe('when staking outside of the bonus weeks', () => {
     })
 
     it('should claim staking rewards during post bonus period with NO additional rewards', async () => {
-      await timeWarp(60 * 60 * 24 * 20)
+      await timeWarp(oneInterestPeriod * 2 + warpBufferTime)
       await testClaimStake(
         skt,
         staker,
@@ -555,7 +568,7 @@ describe('when stress testing for overflows and gas limits', async () => {
         })
       }
 
-      await warpThroughBonusWeeks(skt, oneInterestPeriod * 366)
+      await warpThroughBonusWeeks(skt, oneInterestPeriod * 365 + warpBufferTime)
 
       await testClaimAllStakes(skt, staker, desiredStakes)
     })
@@ -573,7 +586,7 @@ describe('when stress testing for overflows and gas limits', async () => {
         })
       }
 
-      await warpThroughBonusWeeks(skt, oneInterestPeriod * 366)
+      await warpThroughBonusWeeks(skt, oneInterestPeriod * 365 + warpBufferTime)
       await expectRevert(testClaimAllStakes(skt, staker))
     })
   })

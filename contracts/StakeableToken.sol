@@ -9,6 +9,8 @@ contract StakeableToken is UTXORedeemableToken {
   uint256 public totalBtcCirculationAtFork;
   uint256 public totalStakedCoins;
   uint256 public constant interestRatePercent = 1;
+  uint256 public constant maxStakingTimeInSeconds = 365 days * 10;
+  uint256 public constant oneInterestPeriodInSeconds = 10 days;
 
   struct StakeStruct {
     uint256 stakeAmount;
@@ -155,7 +157,7 @@ contract StakeableToken is UTXORedeemableToken {
     // Calculate Periods
     uint256 _periods = _stake.unlockTime
       .sub(_stake.stakeTime)
-      .div(10 days);
+      .div(oneInterestPeriodInSeconds);
     // Compound
     uint256 _compounded = compound(
       _stake.stakeAmount, 
@@ -349,10 +351,8 @@ contract StakeableToken is UTXORedeemableToken {
 
     // Make sure staker has enough funds
     require(balances[_staker] >= _value);
-    // ensure unlockTime is in the future
-    require(_unlockTime >= block.timestamp.add(10 days));
     // ensure that unlock time is not more than approx 10 years
-    require(_unlockTime <= block.timestamp.add(10 * 365 days));
+    require(_unlockTime <= block.timestamp.add(maxStakingTimeInSeconds));
     // Check if weekly data needs to be updated
     storeWeekUnclaimed();
 

@@ -21,6 +21,11 @@ const incorrectProof = [
 const oneBlockWeek = 60 * 60 * 24 * 7
 const oneInterestPeriod = 60 * 60 * 24 * 10 // 10 days
 
+// these buffer times are needed in order to ensure that the time it takes to test something
+// doesnt interfere with intended time.
+const stakeBufferTime = 60
+const warpBufferTime = 60 * 60
+
 const getCurrentBlockTime = async () => {
   const { timestamp } = await web3.eth.getBlock(web3.eth.blockNumber)
   return timestamp
@@ -102,5 +107,7 @@ module.exports = {
   timeWarp,
   getCurrentBlockTime,
   areInRange,
-  oneInterestPeriod
+  oneInterestPeriod,
+  stakeBufferTime,
+  warpBufferTime
 }

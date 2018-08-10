@@ -170,7 +170,10 @@ const warpThroughBonusWeeks = async (urt, seconds) => {
 
   await timeWarpRelativeToLaunchTime(urt, seconds, true)
   await urt.storeWeekUnclaimed()
-  console.log('warped remaining seconds and stored week unclaimed')
+  console.log(
+    `warped remaining ${seconds -
+      bonusWeeksToWarp * weekInSeconds} seconds and stored week unclaimed`
+  )
   /* eslint-enable no-console */
 }
 

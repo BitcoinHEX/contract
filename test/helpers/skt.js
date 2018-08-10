@@ -331,7 +331,6 @@ const testClaimStake = async (
 ) => {
   const stakeStruct = await skt.staked(staker, stakeIndex)
   const stake = stakeStructToObj(stakeStruct)
-
   const expectedTotalRewards = stake.stakeAmount
     .add(stakingRewards)
     .add(additionalRewards)
