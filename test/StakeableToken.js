@@ -530,7 +530,7 @@ describe('when staking outside of the bonus weeks', () => {
   })
 })
 
-describe.only('when stress testing for overflows and gas limits', async () => {
+describe('when stress testing for overflows and gas limits', async () => {
   contract('StakeableToken', () => {
     let skt, stakeTime, unlockTime, launchTime
     const staker = stakers[0]
@@ -542,7 +542,7 @@ describe.only('when stress testing for overflows and gas limits', async () => {
       await redeemAllUtxos(skt)
     })
 
-    it.only('should successfully claim all user stakes when less than 48', async () => {
+    it('should successfully claim all user stakes when less than 48', async () => {
       await skt.mintTokens(staker, '50e18')
       const desiredStakes = 47
       const stakeAmount = new BigNumber(1e18)
@@ -574,7 +574,6 @@ describe.only('when stress testing for overflows and gas limits', async () => {
       }
 
       await warpThroughBonusWeeks(skt, oneInterestPeriod * 366)
-
       await expectRevert(testClaimAllStakes(skt, staker))
     })
   })

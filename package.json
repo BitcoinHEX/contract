@@ -34,6 +34,7 @@
     "clean:contracts": "rimraf build && yarn run compile",
     "lint": "yarn run lint:sol && yarn run lint:js",
     "test": "yarn run clean:contracts && truffle test",
+    "test:gas": "yarn run clean:contracts && GAS_REPORTER=true truffle test",
     "lint:sol": "solium --dir ./contracts",
     "lint:js": "prettier migrations/* test/* --write"
   },

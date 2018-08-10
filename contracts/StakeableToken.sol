@@ -144,7 +144,7 @@ contract StakeableToken is UTXORedeemableToken {
         .mul(100)
         .div(totalSupply_);
       
-      _scalerCandidate = _scalerCandidate > 0 ? _scalerCandidate : 1;
+      _scaler = _scalerCandidate > 0 ? _scalerCandidate : 1;
     }
 
     // reduce interest rate by scaler
@@ -351,7 +351,7 @@ contract StakeableToken is UTXORedeemableToken {
     // ensure unlockTime is in the future
     require(_unlockTime >= block.timestamp.add(10 days));
     // ensure that unlock time is not more than approx 10 years
-    require(_unlockTime < block.timestamp.add(10 * 366 days));
+    require(_unlockTime <= block.timestamp.add(10 * 365 days));
     // Check if weekly data needs to be updated
     storeWeekUnclaimed();
 
