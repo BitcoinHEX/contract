@@ -35,4 +35,22 @@ contract StakeableTokenStub is StakeableToken {
 
     return true;
   }
+
+  function setRedeemedCount(
+    uint256 _count
+  )
+    public
+    returns (bool)
+  {
+    redeemedCount = _count;
+  }
+
+  function setMaximumRedeemable(
+    uint256 _maxRedeemable
+  )
+    public
+    returns (bool)
+  {
+    maximumRedeemable = _maxRedeemable;
+  }
 }

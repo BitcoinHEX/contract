@@ -221,7 +221,7 @@ contract StakeableToken is UTXORedeemableToken {
   {
     // Add bonus percentage to _rewards from 0-10% based on adoption
     return _stakeAmount
-      .mul(totalRedeemed)
+      .mul(redeemedCount)
       .div(maximumRedeemable)
       .div(10);
   }

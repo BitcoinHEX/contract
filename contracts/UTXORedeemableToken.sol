@@ -46,6 +46,7 @@ contract UTXORedeemableToken is StandardToken {
 
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
+  uint256 public redeemedCount = 0;
 
   /* Maximum redeemable tokens, must be initialized by token constructor. */
   uint256 public maximumRedeemable;
@@ -435,6 +436,9 @@ contract UTXORedeemableToken is StandardToken {
 
     /* Increase supply */
     totalSupply_ = totalSupply_.add(_tokensRedeemed);
+
+    /* Increment Redeem Count to track viral rewards */
+    redeemedCount = redeemedCount.add(1);
 
     /* Mark the transfer event. */
     emit Transfer(address(0), msg.sender, _tokensRedeemed);
