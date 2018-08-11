@@ -279,10 +279,10 @@ const testCalculateSatoshiRewards = async (skt, stakeTime, unlockTime) => {
 }
 
 const testCalculateViralRewards = async (skt, stakeAmount) => {
-  const totalRedeemed = await skt.totalRedeemed()
+  const redeemedCount = await skt.redeemedCount()
   const totalBtcCirculationAtFork = await skt.totalBtcCirculationAtFork()
   const expectedViralRewards = stakeAmount
-    .mul(totalRedeemed)
+    .mul(redeemedCount)
     .div(totalBtcCirculationAtFork)
     .floor(0)
     .mul(10)

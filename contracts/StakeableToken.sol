@@ -207,7 +207,7 @@ contract StakeableToken is UTXORedeemableToken {
   {
     // Add bonus percentage to _rewards from 0-10% based on adoption
     return _stakeAmount
-      .mul(totalRedeemed)
+      .mul(redeemedCount)
       .div(totalBtcCirculationAtFork)
       .div(10);
   }
@@ -221,7 +221,7 @@ contract StakeableToken is UTXORedeemableToken {
   {
     // Add bonus percentage to _rewards from 0-10% based on adoption
     return _stakeAmount
-      .mul(redeemedCount)
+      .mul(totalRedeemed)
       .div(maximumRedeemable)
       .div(10);
   }

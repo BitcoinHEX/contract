@@ -336,16 +336,23 @@ const testRedeemUtxo = async (
   const pubKey = retrievePubKey(bitcoinPrivateKey)
   const { v, r, s } = signEthAddress(bitcoinPrivateKey, config.from)
   const preRedeemerBalance = await urt.balanceOf(config.from)
+  const preRedeemedCount = await urt.redeemedCount()
 
   await urt.redeemUtxo(satoshis, proof, pubKey, true, v, r, s, config)
 
   const postRedeemerBalance = await urt.balanceOf(config.from)
   const expectedRedeemAmount = await urt.getRedeemAmount(satoshis)
+  const postRedeemedCount = await urt.redeemedCount()
 
   assert.equal(
     postRedeemerBalance.sub(preRedeemerBalance).toString(),
     expectedRedeemAmount.toString(),
     'redeemer token balance should be incremented by expectedRedeemAmount'
+  )
+  assert.equal(
+    preRedeemedCount.add(1).toString(),
+    postRedeemedCount.toString(),
+    'redeemCount should be incremented by 1'
   )
 }
 
