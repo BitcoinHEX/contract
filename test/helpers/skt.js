@@ -121,33 +121,41 @@ const testStartStake = async (
 
 // mimic smart contract function and check for integer overflows which can happen in solidity
 const calculateCompounded = (principle, periods, raisedRate) => {
+  const overflowLimit = new BigNumber(2).toPower(256)
   const maxGroupPeriods = 10
   const remainingPeriods = periods % maxGroupPeriods
   const groupings = new BigNumber(periods).div(maxGroupPeriods).floor(0)
   let compounded = principle.div(1e10).floor(0)
   let raisedRateToPower
   let raisedByToPower
+  let checkMul
 
   for (let i = 0; i < groupings; i++) {
     raisedRateToPower = raisedRate.toPower(maxGroupPeriods)
     raisedByToPower = new BigNumber(1e4).toPower(maxGroupPeriods)
+    checkMul = compounded.mul(raisedRateToPower)
     compounded = compounded
       .mul(raisedRateToPower)
       .div(raisedByToPower)
       .floor(0)
 
     assert(
-      raisedRateToPower.lessThan('2e256'),
-      'raised rate raised to power of periods must be less than 2^256'
+      raisedRateToPower.lessThan(overflowLimit),
+      'raised rate raised to power of periods must be less than overflowLimit'
     )
     assert(
-      raisedByToPower.lessThan('2e256'),
-      'raised amount to power of periods must be less than 2^256'
+      raisedByToPower.lessThan(overflowLimit),
+      'raised amount to power of periods must be less than overflowLimit'
+    )
+    assert(
+      checkMul.lessThan(overflowLimit),
+      'checkMul must be less than overflowLimit'
     )
   }
 
   raisedRateToPower = raisedRate.toPower(remainingPeriods)
   raisedByToPower = new BigNumber(1e4).toPower(remainingPeriods)
+
   compounded = compounded
     .mul(raisedRateToPower)
     .div(raisedByToPower)
@@ -155,18 +163,33 @@ const calculateCompounded = (principle, periods, raisedRate) => {
     .mul(1e10)
 
   assert(
-    raisedRateToPower.lessThan('2e256'),
-    'raised rate raised to power of periods must be less than 2^256'
+    raisedRateToPower.lessThan(overflowLimit),
+    'raised rate raised to power of periods must be less than overflowLimit'
   )
   assert(
-    raisedByToPower.lessThan('2e256'),
-    'raised amount to power of periods must be less than 2^256'
+    raisedByToPower.lessThan(overflowLimit),
+    'raised amount to power of periods must be less than overflowLimit'
+  )
+  assert(
+    compounded.lessThan(overflowLimit),
+    'compounded must be less than overflowLimit'
   )
 
   return compounded
 }
 
-// TODO: double check that areInRange is satisfactorily accurate
+const testCompound = async (skt, principle, periods, rate) => {
+  const raisedRate = new BigNumber(rate).mul(100).add(10000)
+  const expectedCompounded = calculateCompounded(principle, periods, raisedRate)
+  const compounded = await skt.compound(principle, periods, raisedRate)
+
+  assert.equal(
+    compounded.toString(),
+    expectedCompounded.toString(),
+    'compounded should match expectedCompounded'
+  )
+}
+
 const testCalculateStakingRewards = async (skt, staker, stakeIndex) => {
   const expectedRewards = await calculateStakingRewards(skt, staker, stakeIndex)
 
@@ -433,6 +456,7 @@ module.exports = {
   testInitializeStakeableToken,
   testStartStake,
   testClaimStake,
+  testCompound,
   testCalculateStakingRewards,
   testCalculateSatoshiRewards,
   testCalculateViralRewards,

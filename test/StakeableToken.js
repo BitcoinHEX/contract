@@ -10,7 +10,8 @@ const {
   testCalculateAdditionalRewards,
   stakeStructToObj,
   reorgStakesAfterRemoval,
-  testClaimAllStakes
+  testClaimAllStakes,
+  testCompound
 } = require('./helpers/skt')
 const {
   timeWarpRelativeToLaunchTime,
@@ -588,6 +589,25 @@ describe('when stress testing for overflows and gas limits', async () => {
 
       await warpThroughBonusWeeks(skt, oneInterestPeriod * 365 + warpBufferTime)
       await expectRevert(testClaimAllStakes(skt, staker))
+    })
+
+    it('should run into overflow issues when stakes are too high', async () => {
+      let zeros = 18
+      let limitReached = false
+      while (!limitReached) {
+        try {
+          await testCompound(skt, new BigNumber(`1e${zeros}`), 365, 1)
+          zeros++
+        } catch (err) {
+          assert(/checkMul must be less than overflowLimit/.test(err.message))
+          // eslint-disable-next-line no-console
+          console.log(
+            `⚠️  approximate principle limit for compounding is 1e${zeros -
+              1} ⚠️`
+          )
+          limitReached = true
+        }
+      }
     })
   })
 })
