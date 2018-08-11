@@ -611,18 +611,3 @@ describe('when stress testing for overflows and gas limits', async () => {
     })
   })
 })
-
-/*
-  what do we want to do here???
-
-  NEED TO:
-    check on behavior for different weeks...
-    fuzzy test different values
-    test multiple stakes
-      test incredibly high stakes until running out of gas
-        getting rewards
-        claiming stakes
-    test compound interest until overflows...
-      take steps to prevent this
-
-*/

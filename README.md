@@ -236,3 +236,9 @@ w > 18 && w < 24 | 3%
 w > 24 && w < 32 | 2%
 w > 32 && w < 45 | 1%
 w > 45 | 0%
+
+# TODOS
+
+- [ ] find point in time where overflows from interest occur
+- [ ] simulate different situations
+- [ ] fuzzy test stakes
