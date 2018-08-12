@@ -126,11 +126,6 @@ contract StakeableToken is UTXORedeemableToken {
     return _compounded.mul(1e10);
   }
 
-  event Scaler(uint _test);
-  event ScaledRate(uint _test);
-  event Rate(uint _test);
-  event TotalSupply(uint _test);
-  event Staked(uint _test);
   function calculateStakingRewards(
     address _staker,
     uint256 _stakeIndex
@@ -176,12 +171,6 @@ contract StakeableToken is UTXORedeemableToken {
       _periods, 
       _interestRate
     );
-
-    emit TotalSupply(_stake.totalSupplyAtStart);
-    emit Staked(_stake.totalStakedCoinsAtStart);
-    emit Scaler(_scaler);
-    emit ScaledRate(_scaledInterestRate);
-    emit Rate(_interestRate);
 
     // Calculate final staking rewards with time bonus
     return _compounded.sub(_stake.stakeAmount);
