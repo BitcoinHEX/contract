@@ -190,20 +190,6 @@ const testCompound = async (skt, principle, periods, rate) => {
   )
 }
 
-const testCalculateStakingRewards = async (skt, staker, stakeIndex) => {
-  const expectedRewards = await calculateStakingRewards(skt, staker, stakeIndex)
-
-  const rewards = await skt.calculateStakingRewards(staker, stakeIndex)
-
-  assert.equal(
-    rewards.toString(),
-    expectedRewards.toString(),
-    'rewards should match expectedCompounded'
-  )
-
-  return rewards
-}
-
 const calculateStakingRewards = async (skt, staker, stakeIndex) => {
   const stakeStruct = await skt.staked(staker, stakeIndex)
   const stake = stakeStructToObj(stakeStruct)
@@ -220,8 +206,9 @@ const calculateStakingRewards = async (skt, staker, stakeIndex) => {
     .mul(100)
     .div(stake.totalSupplyAtStart)
     .floor(0)
-  scaler = scaler.equals(0) ? new BigNumber(1) : scaler
-  const scaledRate = raisedRate.div(scaler).floor(0)
+  scaler = scaler.gt(0) ? scaler : new BigNumber(1)
+  let scaledRate = raisedRate.div(scaler).floor(0)
+  scaledRate = scaledRate.gt(0) ? scaledRate : new BigNumber(1)
   const reRaisedRate = scaledRate.add(1e4)
   const expectedCompounded = calculateCompounded(
     stake.stakeAmount,
@@ -230,6 +217,19 @@ const calculateStakingRewards = async (skt, staker, stakeIndex) => {
   )
 
   return expectedCompounded.sub(stake.stakeAmount)
+}
+
+const testCalculateStakingRewards = async (skt, staker, stakeIndex) => {
+  const expectedRewards = await calculateStakingRewards(skt, staker, stakeIndex)
+  const rewards = await skt.calculateStakingRewards(staker, stakeIndex)
+
+  assert.equal(
+    rewards.toString(),
+    expectedRewards.toString(),
+    'rewards should match expectedCompounded'
+  )
+
+  return rewards
 }
 
 const calculateSatoshiRewards = async (skt, stakeTime, unlockTime) => {

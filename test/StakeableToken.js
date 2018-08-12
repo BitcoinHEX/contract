@@ -556,9 +556,9 @@ describe('when stress testing for overflows and gas limits', async () => {
       await redeemAllUtxos(skt)
     })
 
-    it('should successfully claim all user stakes when less than 45', async () => {
+    it('should successfully claim all user stakes when less than 43', async () => {
       await skt.mintTokens(staker, '50e18')
-      const desiredStakes = 44
+      const desiredStakes = 42
       const stakeAmount = new BigNumber(1e18)
 
       for (let i = 0; i < desiredStakes; i++) {
@@ -574,9 +574,9 @@ describe('when stress testing for overflows and gas limits', async () => {
       await testClaimAllStakes(skt, staker, desiredStakes)
     })
 
-    it('should run out of gas when trying to claim 45 or more stakes', async () => {
+    it('should run out of gas when trying to claim 43 or more stakes', async () => {
       await skt.mintTokens(staker, '50e18')
-      const desiredStakes = 45
+      const desiredStakes = 43
       const stakeAmount = new BigNumber(1e18)
 
       for (let i = 0; i < desiredStakes; i++) {

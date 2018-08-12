@@ -131,7 +131,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _stakeIndex
   ) 
     public 
-    // view
+    view
     returns (uint256)
   {
     StakeStruct storage _stake = staked[_staker][_stakeIndex];
@@ -379,7 +379,7 @@ contract StakeableToken is UTXORedeemableToken {
     );
 
     // ensure that the new stake will return interest
-    // require(calculateStakingRewards(_staker, staked[_staker].length.sub(1)) > 0);
+    require(calculateStakingRewards(_staker, staked[_staker].length.sub(1)) > 0);
 
     // Add staked coins to global stake counter
     totalStakedCoins = totalStakedCoins.add(_value);

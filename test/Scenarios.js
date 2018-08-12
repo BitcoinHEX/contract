@@ -80,7 +80,6 @@ describe('when running different scenarios', () => {
         } catch (err) {
           overflowed = true
         }
-
       }
     })
   })
