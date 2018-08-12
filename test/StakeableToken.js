@@ -9,9 +9,7 @@ const {
   testCalculateCritMassRewards,
   testCalculateAdditionalRewards,
   stakeStructToObj,
-  reorgStakesAfterRemoval,
-  testClaimAllStakes,
-  testCompound
+  reorgStakesAfterRemoval
 } = require('./helpers/skt')
 const {
   timeWarpRelativeToLaunchTime,
@@ -540,74 +538,6 @@ describe('when staking outside of the bonus weeks', () => {
         stakingRewards,
         additionalRewards // this is set to 0 at top of test block
       )
-    })
-  })
-})
-
-describe('when stress testing for overflows and gas limits', async () => {
-  contract('StakeableToken', () => {
-    let skt, stakeTime, unlockTime, launchTime
-    const staker = stakers[0]
-
-    beforeEach('setup contract', async () => {
-      launchTime = await getDefaultLaunchTime()
-      skt = await setupStakeableToken(launchTime)
-      await timeWarpRelativeToLaunchTime(skt, 60, true)
-      await redeemAllUtxos(skt)
-    })
-
-    it('should successfully claim all user stakes when less than 43', async () => {
-      await skt.mintTokens(staker, '50e18')
-      const desiredStakes = 42
-      const stakeAmount = new BigNumber(1e18)
-
-      for (let i = 0; i < desiredStakes; i++) {
-        stakeTime = await getCurrentBlockTime()
-        unlockTime = stakeTime + oneInterestPeriod * 365
-        await skt.startStake(stakeAmount, unlockTime, {
-          from: staker
-        })
-      }
-
-      await warpThroughBonusWeeks(skt, oneInterestPeriod * 365 + warpBufferTime)
-
-      await testClaimAllStakes(skt, staker, desiredStakes)
-    })
-
-    it('should run out of gas when trying to claim 43 or more stakes', async () => {
-      await skt.mintTokens(staker, '50e18')
-      const desiredStakes = 43
-      const stakeAmount = new BigNumber(1e18)
-
-      for (let i = 0; i < desiredStakes; i++) {
-        stakeTime = await getCurrentBlockTime()
-        unlockTime = stakeTime + oneInterestPeriod * 365
-        await skt.startStake(stakeAmount, unlockTime, {
-          from: staker
-        })
-      }
-
-      await warpThroughBonusWeeks(skt, oneInterestPeriod * 365 + warpBufferTime)
-      await expectRevert(testClaimAllStakes(skt, staker))
-    })
-
-    it('should run into overflow issues when stakes are too high', async () => {
-      let zeros = 18
-      let limitReached = false
-      while (!limitReached) {
-        try {
-          await testCompound(skt, new BigNumber(`1e${zeros}`), 365, 1)
-          zeros++
-        } catch (err) {
-          assert(/checkMul must be less than overflowLimit/.test(err.message))
-          // eslint-disable-next-line no-console
-          console.log(
-            `⚠️  approximate principle limit for compounding is 1e${zeros -
-              1} ⚠️`
-          )
-          limitReached = true
-        }
-      }
     })
   })
 })

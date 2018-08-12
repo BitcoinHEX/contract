@@ -22,6 +22,11 @@ const ropstenProvider = new WalletProvider(
 
 module.exports = {
   networks: {
+    dev: {
+      host: 'localhost',
+      port: 9545,
+      network_id: '*'
+    },
     ropsten: {
       provider: ropstenProvider,
       network_id: '3',
@@ -34,6 +39,7 @@ module.exports = {
     }
   },
   mocha: {
+    timeout: 600000,
     reporter: process.env.GAS_REPORTER ? 'eth-gas-reporter' : 'spec',
     reporterOptions: {
       currency: 'USD',
