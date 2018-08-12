@@ -126,12 +126,17 @@ contract StakeableToken is UTXORedeemableToken {
     return _compounded.mul(1e10);
   }
 
+  event Scaler(uint _test);
+  event ScaledRate(uint _test);
+  event Rate(uint _test);
+  event TotalSupply(uint _test);
+  event Staked(uint _test);
   function calculateStakingRewards(
     address _staker,
     uint256 _stakeIndex
   ) 
     public 
-    view
+    // view
     returns (uint256)
   {
     StakeStruct storage _stake = staked[_staker][_stakeIndex];
@@ -141,6 +146,8 @@ contract StakeableToken is UTXORedeemableToken {
 
     // default _scaler to 1
     uint256 _scaler = 1;
+    // default _scaledInterestRate to 100
+    uint256 _scaledInterestRate = 100;
     // calculate percent of staked coins vs totalSupply to use for interest rate reduction
     if (_stake.totalStakedCoinsAtStart != 0) {
       uint256 _scalerCandidate = _stake.totalStakedCoinsAtStart
@@ -148,10 +155,15 @@ contract StakeableToken is UTXORedeemableToken {
         .div(_stake.totalSupplyAtStart);
       
       _scaler = _scalerCandidate > 0 ? _scalerCandidate : 1;
+
+      // reduce interest rate by scaler
+      uint256 _scaledInterestRateCandidate = _interestRateTimesHundred.div(_scaler);
+
+      _scaledInterestRate = _scaledInterestRateCandidate > 0 
+        ? _scaledInterestRateCandidate 
+        : 1;
     }
 
-    // reduce interest rate by scaler
-    uint256 _scaledInterestRate = _interestRateTimesHundred.div(_scaler);
     // bring up by 1e4 in order to get an accurate percent
     uint256 _interestRate = _scaledInterestRate.add(1e4);
     // Calculate Periods
@@ -164,6 +176,12 @@ contract StakeableToken is UTXORedeemableToken {
       _periods, 
       _interestRate
     );
+
+    emit TotalSupply(_stake.totalSupplyAtStart);
+    emit Staked(_stake.totalStakedCoinsAtStart);
+    emit Scaler(_scaler);
+    emit ScaledRate(_scaledInterestRate);
+    emit Rate(_interestRate);
 
     // Calculate final staking rewards with time bonus
     return _compounded.sub(_stake.stakeAmount);
@@ -372,7 +390,7 @@ contract StakeableToken is UTXORedeemableToken {
     );
 
     // ensure that the new stake will return interest
-    require(calculateStakingRewards(_staker, staked[_staker].length.sub(1)) > 0);
+    // require(calculateStakingRewards(_staker, staked[_staker].length.sub(1)) > 0);
 
     // Add staked coins to global stake counter
     totalStakedCoins = totalStakedCoins.add(_value);
@@ -436,9 +454,10 @@ contract StakeableToken is UTXORedeemableToken {
     );
 
     // Increase supply
+    totalSupply_ = totalSupply_.add(_stakingRewards);
     totalSupply_ = totalSupply_.add(_additionalRewards.mul(2));
 
-    emit Mint(_staker, _additionalRewards);
+    emit Mint(_staker, _additionalRewards.add(_stakingRewards));
     emit Mint(origin, _additionalRewards);
 
     // Remove Stake
