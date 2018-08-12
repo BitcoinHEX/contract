@@ -13,7 +13,15 @@ const {
 } = require('./helpers/general')
 const BigNumber = require('bignumber.js')
 
-describe.only('when running different scenarios', () => {
+/*
+  default values:
+    65 million utxos at fork block
+    ~17.5 million Bitcoin at fork block
+    20% redeem (high)
+    10% redeem (mid)
+    5% redeem (low)
+*/
+describe('when running different scenarios', () => {
   contract('StakeableToken', () => {
     let skt
 
@@ -22,16 +30,6 @@ describe.only('when running different scenarios', () => {
       skt = await setupStakeableToken(launchTime)
       await timeWarpRelativeToLaunchTime(skt, 60, true)
     })
-
-    /*
-      65 million utxos
-      17.5 million coins
-      20%
-      10%
-      5%
-
-
-    */
 
     it('should overflow after around 140 years due to compounding issues', async () => {
       const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
@@ -50,7 +48,7 @@ describe.only('when running different scenarios', () => {
 
       let overflowed = false
       let elapsedTime = 0
-      // let round = 0
+
       while (!overflowed) {
         try {
           for (const staker of accounts) {
@@ -83,8 +81,6 @@ describe.only('when running different scenarios', () => {
           overflowed = true
         }
 
-        // round++
-        // if (round > 1) assert(false, 'stop here...')
       }
     })
   })
