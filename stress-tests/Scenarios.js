@@ -8,20 +8,15 @@ const {
   timeWarpRelativeToLaunchTime
 } = require('../test/helpers/urt')
 const { getDefaultLaunchTime } = require('../test/helpers/bhx')
-
 const {
-  accounts,
   stakers,
   oneInterestPeriod,
   getCurrentBlockTime,
   warpBufferTime,
-  expectRevert,
-  shuffleArray
+  expectRevert
 } = require('../test/helpers/general')
-const { tryStakeClaimRound, stressTestStakes } = require('./helpers/skt')
+const { stressTestStakes } = require('./helpers/skt')
 const BigNumber = require('bignumber.js')
-const BN = require('bn.js')
-const chalk = require('chalk')
 
 /*
   default values:
@@ -110,7 +105,7 @@ describe('when running different scenarios', () => {
       async () => {
         const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
         const estimatedRedeemed = maxCoins.div(5) // 20% estimate
-        const timeToStake = oneInterestPeriod * 36
+        const timeToStake = oneInterestPeriod * 36 // little less than 1 year
         await stressTestStakes(skt, estimatedRedeemed, timeToStake, false)
       }
     ).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
@@ -130,7 +125,7 @@ describe('when running different scenarios', () => {
       async () => {
         const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
         const estimatedRedeemed = maxCoins.div(5) // 20% estimate
-        const timeToStake = oneInterestPeriod * 36
+        const timeToStake = oneInterestPeriod * 36 // little less than 1 year
         await stressTestStakes(skt, estimatedRedeemed, timeToStake, true)
       }
     ).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
