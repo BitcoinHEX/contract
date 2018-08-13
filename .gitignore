@@ -7,7 +7,7 @@ package-lock.json
 /allFiredEvents
 /scTopics
 .idea
-.node-xmlhttprequest*
+.node-xmlhttprequest-*
 secrets.js
 .vscode
 yarn-error.log

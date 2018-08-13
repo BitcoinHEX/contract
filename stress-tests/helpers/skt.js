@@ -58,7 +58,7 @@ const stressTestStakes = async (
   while (!overflowed) {
     try {
       if (randomizeStakes) {
-        stakingAccounts = shuffleArray(stakingAccounts)
+        stakingAccounts = shuffleArray(accounts)
       } else {
         stakingAccounts = accounts
       }

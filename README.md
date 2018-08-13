@@ -36,6 +36,17 @@ yarn compile
 yarn test
 ```
 
+### Stress Testing
+Due to the need for more accounts, ganache-cli is used as a test blockchain for stress tests. This means that ganache-cli must be started before running stress tests.
+```
+yarn start:blockchain
+```
+After the blockchain is started, stress tests can be run using (in another terminal window):
+```
+yarn test:stress
+```
+*IMPORTANT NOTE:* Due to limitations of bignumber.js used by truffle, account ether balances will cause the tests to fail after a certain number of iterations. If you run into this problem, simply restart ganache-cli
+
 ### Docs for wallet/app developers
 [See here](ABI.md) for description of each public function.
 
