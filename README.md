@@ -239,6 +239,5 @@ w > 45 | 0%
 
 # TODOS
 
-- [ ] find point in time where overflows from interest occur
 - [ ] simulate different situations
 - [ ] fuzzy test stakes
