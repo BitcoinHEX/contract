@@ -3,6 +3,7 @@ const {
   oneInterestPeriod
 } = require('../../test/helpers/general')
 const { warpThroughBonusWeeks } = require('../../test/helpers/urt')
+const chalk = require('chalk')
 
 const tryStakeClaimRound = async (skt, stakers, timeToStake) => {
   let stakeTime
@@ -12,7 +13,7 @@ const tryStakeClaimRound = async (skt, stakers, timeToStake) => {
     const unlockTime = stakeTime + oneInterestPeriod * 365
 
     // eslint-disable-next-line no-console
-    console.log(`staking ${balance.toString()} for ${staker}`)
+    console.log(chalk.magenta(`staking ${balance.toString()} for ${staker}`))
 
     await skt.startStake(balance, unlockTime, {
       from: staker

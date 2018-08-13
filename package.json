@@ -35,7 +35,7 @@
     "lint": "yarn run lint:sol && yarn run lint:js",
     "test": "truffle test --reset",
     "test:gas": "yarn run clean:contracts && GAS_REPORTER=true truffle test",
-    "test:stress": "yarn run clean:contracts && truffle test stress-tests/* --network dev",
+    "test:stress": "truffle test stress-tests/* --network dev",
     "lint:sol": "solium --dir ./contracts",
     "lint:js": "prettier migrations/* test/* --write",
     "start:blockchain": "ganache-cli -a 100 -e 1000 -d -m 'paper purchase vacuum hawk opera kind sorry lawsuit can inspire used letter crouch laugh execute' -p 9545 "
@@ -53,6 +53,8 @@
   },
   "homepage": "https://bitcoinhex.com",
   "dependencies": {
+    "bn.js": "^4.11.8",
+    "chalk": "^2.4.1",
     "ganache-cli": "^6.1.6",
     "left-pad": "^1.3.0"
   }

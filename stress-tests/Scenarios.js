@@ -20,6 +20,8 @@ const {
 } = require('../test/helpers/general')
 const { tryStakeClaimRound } = require('./helpers/skt')
 const BigNumber = require('bignumber.js')
+const BN = require('bn.js')
+const chalk = require('chalk')
 
 /*
   default values:
@@ -93,7 +95,7 @@ describe('when running different scenarios', () => {
       }
     })
 
-    it.only('should overflow after x years due to compounding overflow when interest focused on one user', async () => {
+    it('should overflow after 150 years due to compounding overflow when interest focused on one user', async () => {
       const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
       const estimatedRedeemed = maxCoins.div(5) // 20% estimate
       const amountToMintPerUser = estimatedRedeemed.div(accounts.length)
@@ -112,7 +114,7 @@ describe('when running different scenarios', () => {
 
       let overflowed = false
       let elapsedTime = 0
-      const attempts = 0
+      let attempts = 0
       const timeToStake = oneInterestPeriod * 365 + warpBufferTime
 
       while (!overflowed) {
@@ -123,23 +125,52 @@ describe('when running different scenarios', () => {
 
           // eslint-disable-next-line no-console
           console.log(
-            `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)} years`
+            chalk.yellow(
+              `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)} years`
+            )
           )
         } catch (err) {
-          if (attempts > 4) {
-            // eslint-disable-next-line no-console
-            console.log(err)
+          if (attempts > 5) {
+            const totalSupply = await skt.totalSupply()
+            const balances = await Promise.all(
+              accounts.map(account => skt.balanceOf(account))
+            )
+            // need to use bn.js rather than bignumber.js in order to avoid hitting 15 sig dig limit
+            const maxBalance = balances.reduce((prevValue, currValue) => {
+              return new BN(prevValue.toString()).lt(
+                new BN(currValue.toString())
+              )
+                ? currValue
+                : prevValue
+            }, new BN(0))
+
+            /* eslint-disable no-console */
+            console.log(
+              chalk.cyan(
+                `overflow point reached! Max account balance: ${maxBalance.toString()}`
+              )
+            )
+            console.log(chalk.cyan(`totalSupply: ${totalSupply.toString()}`))
+            console.log(
+              chalk.cyan(`elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)}`)
+            )
+            /* eslint-enable no-console */
             overflowed = true
           } else {
-            // ganache-cli times out sometimes... just retry to get through it
-            await tryStakeClaimRound(skt, accounts, timeToStake)
+            attempts++
+            // eslint-disable-next-line no-console
+            console.log(
+              chalk.red(
+                `error occurred: ${err.message}. Trying attempt: ${attempts}...`
+              )
+            )
           }
         }
       }
-    })
+    }).timeout(60 * 60 * 1000) // set timeout to an hour to see how far this gets...
 
     it.only(
-      'should overflow after around x years due to totalSupply overflow when funds focused randomly',
+      'should overflow after around 200+ years due to totalSupply overflow when funds focused randomly',
       async () => {
         const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
         const estimatedRedeemed = maxCoins.div(5) // 20% estimate
@@ -160,7 +191,7 @@ describe('when running different scenarios', () => {
         let overflowed = false
         let elapsedTime = 0
         let shuffledStakers = accounts
-        const attempts = 0
+        let attempts = 0
         const timeToStake = oneInterestPeriod * 365 + warpBufferTime
 
         while (!overflowed) {
@@ -173,16 +204,49 @@ describe('when running different scenarios', () => {
 
             // eslint-disable-next-line no-console
             console.log(
-              `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)} years`
+              chalk.yellow(
+                `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)} years`
+              )
             )
           } catch (err) {
             if (attempts > 4) {
-              // eslint-disable-next-line no-console
-              console.log(err)
+              const totalSupply = await skt.totalSupply()
+              const balances = await Promise.all(
+                shuffledStakers.map(account => skt.balanceOf(account))
+              )
+              // need to use bn.js rather than bignumber.js in order to avoid hitting 15 sig dig limit
+              const maxBalance = balances.reduce((prevValue, currValue) => {
+                return new BN(prevValue.toString()).lt(
+                  new BN(currValue.toString())
+                )
+                  ? currValue
+                  : prevValue
+              }, new BN(0))
+
+              /* eslint-disable no-console */
+              console.log(
+                chalk.cyan(
+                  `overflow point reached! Max account balance: ${maxBalance}`
+                )
+              )
+              console.log(chalk.cyan(`totalSupply: ${totalSupply.toString()}`))
+              console.log(
+                chalk.cyan(
+                  `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)}`
+                )
+              )
+              /* eslint-enable no-console */
               overflowed = true
             } else {
-              // ganache-cli times out sometimes... just retry to get through it
-              await tryStakeClaimRound(skt, shuffledStakers, timeToStake)
+              attempts++
+              // eslint-disable-next-line no-console
+              console.log(
+                chalk.red(
+                  `error occurred: ${
+                    err.message
+                  }. Trying attempt: ${attempts}...`
+                )
+              )
             }
           }
         }
