@@ -26,6 +26,12 @@ const oneInterestPeriod = 60 * 60 * 24 * 10 // 10 days
 const stakeBufferTime = 60
 const warpBufferTime = 60 * 60
 
+const shuffleArray = arr =>
+  arr
+    .map(a => [Math.random(), a])
+    .sort((a, b) => a[0] - b[0])
+    .map(a => a[1])
+
 const getCurrentBlockTime = async () => {
   const { timestamp } = await web3.eth.getBlock(web3.eth.blockNumber)
   return timestamp
@@ -109,5 +115,6 @@ module.exports = {
   areInRange,
   oneInterestPeriod,
   stakeBufferTime,
-  warpBufferTime
+  warpBufferTime,
+  shuffleArray
 }
