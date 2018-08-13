@@ -18,7 +18,7 @@ const {
   expectRevert,
   shuffleArray
 } = require('../test/helpers/general')
-const { tryStakeClaimRound } = require('./helpers/skt')
+const { tryStakeClaimRound, stressTestStakes } = require('./helpers/skt')
 const BigNumber = require('bignumber.js')
 const BN = require('bn.js')
 const chalk = require('chalk')
@@ -95,162 +95,44 @@ describe('when running different scenarios', () => {
       }
     })
 
-    it('should overflow after 150 years due to compounding overflow when interest focused on one user', async () => {
-      const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
-      const estimatedRedeemed = maxCoins.div(5) // 20% estimate
-      const amountToMintPerUser = estimatedRedeemed.div(accounts.length)
-
-      await Promise.all(
-        accounts.map(staker => skt.mintTokens(staker, amountToMintPerUser))
-      )
-
-      const maxRedeemed = new BigNumber('100e18').mul(accounts.length)
-      const totalRedeemed = maxRedeemed
-      const redeemedCount = accounts.length
-
-      await skt.setMaxRedeemable(maxRedeemed)
-      await skt.setRedeemedCount(redeemedCount)
-      await skt.setTotalRedeemed(totalRedeemed)
-
-      let overflowed = false
-      let elapsedTime = 0
-      let attempts = 0
-      const timeToStake = oneInterestPeriod * 365 + warpBufferTime
-
-      while (!overflowed) {
-        try {
-          await tryStakeClaimRound(skt, accounts, timeToStake)
-
-          elapsedTime += oneInterestPeriod * 365 + warpBufferTime
-
-          // eslint-disable-next-line no-console
-          console.log(
-            chalk.yellow(
-              `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)} years`
-            )
-          )
-        } catch (err) {
-          if (attempts > 5) {
-            const totalSupply = await skt.totalSupply()
-            const balances = await Promise.all(
-              accounts.map(account => skt.balanceOf(account))
-            )
-            // need to use bn.js rather than bignumber.js in order to avoid hitting 15 sig dig limit
-            const maxBalance = balances.reduce((prevValue, currValue) => {
-              return new BN(prevValue.toString()).lt(
-                new BN(currValue.toString())
-              )
-                ? currValue
-                : prevValue
-            }, new BN(0))
-
-            /* eslint-disable no-console */
-            console.log(
-              chalk.cyan(
-                `overflow point reached! Max account balance: ${maxBalance.toString()}`
-              )
-            )
-            console.log(chalk.cyan(`totalSupply: ${totalSupply.toString()}`))
-            console.log(
-              chalk.cyan(`elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)}`)
-            )
-            /* eslint-enable no-console */
-            overflowed = true
-          } else {
-            attempts++
-            // eslint-disable-next-line no-console
-            console.log(
-              chalk.red(
-                `error occurred: ${err.message}. Trying attempt: ${attempts}...`
-              )
-            )
-          }
-        }
-      }
-    }).timeout(60 * 60 * 1000) // set timeout to an hour to see how far this gets...
-
     it.only(
-      'should overflow after around 200+ years due to totalSupply overflow when funds focused randomly',
+      'should overflow after 150 years due to compounding overflow when interest focused on one user in max interest period increments',
       async () => {
         const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
         const estimatedRedeemed = maxCoins.div(5) // 20% estimate
-        const amountToMintPerUser = estimatedRedeemed.div(accounts.length)
-
-        await Promise.all(
-          accounts.map(staker => skt.mintTokens(staker, amountToMintPerUser))
-        )
-
-        const maxRedeemed = new BigNumber('100e18').mul(accounts.length)
-        const totalRedeemed = maxRedeemed
-        const redeemedCount = accounts.length
-
-        await skt.setMaxRedeemable(maxRedeemed)
-        await skt.setRedeemedCount(redeemedCount)
-        await skt.setTotalRedeemed(totalRedeemed)
-
-        let overflowed = false
-        let elapsedTime = 0
-        let shuffledStakers = accounts
-        let attempts = 0
-        const timeToStake = oneInterestPeriod * 365 + warpBufferTime
-
-        while (!overflowed) {
-          try {
-            shuffledStakers = shuffleArray(shuffledStakers)
-
-            await tryStakeClaimRound(skt, shuffledStakers, timeToStake)
-
-            elapsedTime += oneInterestPeriod * 365 + warpBufferTime
-
-            // eslint-disable-next-line no-console
-            console.log(
-              chalk.yellow(
-                `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)} years`
-              )
-            )
-          } catch (err) {
-            if (attempts > 4) {
-              const totalSupply = await skt.totalSupply()
-              const balances = await Promise.all(
-                shuffledStakers.map(account => skt.balanceOf(account))
-              )
-              // need to use bn.js rather than bignumber.js in order to avoid hitting 15 sig dig limit
-              const maxBalance = balances.reduce((prevValue, currValue) => {
-                return new BN(prevValue.toString()).lt(
-                  new BN(currValue.toString())
-                )
-                  ? currValue
-                  : prevValue
-              }, new BN(0))
-
-              /* eslint-disable no-console */
-              console.log(
-                chalk.cyan(
-                  `overflow point reached! Max account balance: ${maxBalance}`
-                )
-              )
-              console.log(chalk.cyan(`totalSupply: ${totalSupply.toString()}`))
-              console.log(
-                chalk.cyan(
-                  `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)}`
-                )
-              )
-              /* eslint-enable no-console */
-              overflowed = true
-            } else {
-              attempts++
-              // eslint-disable-next-line no-console
-              console.log(
-                chalk.red(
-                  `error occurred: ${
-                    err.message
-                  }. Trying attempt: ${attempts}...`
-                )
-              )
-            }
-          }
-        }
+        const timeToStake = oneInterestPeriod * 365 + warpBufferTime // max interest rate
+        await stressTestStakes(skt, estimatedRedeemed, timeToStake, false)
       }
-    ).timeout(60 * 60 * 1000) // set timeout to an hour to see how far this gets...
+    ).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
+
+    it.only(
+      'should overflow after x years due to compounding overflow when interest focused on one user in ~1 year increments',
+      async () => {
+        const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
+        const estimatedRedeemed = maxCoins.div(5) // 20% estimate
+        const timeToStake = oneInterestPeriod * 36
+        await stressTestStakes(skt, estimatedRedeemed, timeToStake, false)
+      }
+    ).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
+
+    it.only(
+      'should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in max interest period increments',
+      async () => {
+        const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
+        const estimatedRedeemed = maxCoins.div(5) // 20% estimate
+        const timeToStake = oneInterestPeriod * 365 + warpBufferTime
+        await stressTestStakes(skt, estimatedRedeemed, timeToStake, true)
+      }
+    ).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
+
+    it.only(
+      'should overflow after around x years due to totalSupply overflow when funds focused randomly in ~1 year increments',
+      async () => {
+        const maxCoins = new BigNumber('17.5e24') // 17.5 mil with 18 decimals
+        const estimatedRedeemed = maxCoins.div(5) // 20% estimate
+        const timeToStake = oneInterestPeriod * 36
+        await stressTestStakes(skt, estimatedRedeemed, timeToStake, true)
+      }
+    ).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
   })
 })
