@@ -249,6 +249,5 @@ w > 32 && w < 45 | 1%
 w > 45 | 0%
 
 # TODOS
-
-- [ ] simulate different situations
 - [ ] fuzzy test stakes
+- [ ] implement affiliate links for staking (post bonus affiliate rewards)
