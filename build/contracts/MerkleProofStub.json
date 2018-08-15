@@ -39,14 +39,14 @@
     "absolutePath": "/Users/tovarishfin/dev/bhx/bhx-contracts/contracts/stubs/MerkleProofStub.sol",
     "exportedSymbols": {
       "MerkleProofStub": [
-        2093
+        2128
       ]
     },
-    "id": 2094,
+    "id": 2129,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2071,
+        "id": 2106,
         "literals": [
           "solidity",
           "^",
@@ -59,10 +59,10 @@
       {
         "absolutePath": "/Users/tovarishfin/dev/bhx/bhx-contracts/node_modules/openzeppelin-solidity/contracts/MerkleProof.sol",
         "file": "../../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol",
-        "id": 2072,
+        "id": 2107,
         "nodeType": "ImportDirective",
-        "scope": 2094,
-        "sourceUnit": 2316,
+        "scope": 2129,
+        "sourceUnit": 2351,
         "src": "26:76:5",
         "symbolAliases": [],
         "unitAlias": ""
@@ -73,16 +73,16 @@
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 2093,
+        "id": 2128,
         "linearizedBaseContracts": [
-          2093
+          2128
         ],
         "name": "MerkleProofStub",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 2091,
+              "id": 2126,
               "nodeType": "Block",
               "src": "267:87:5",
               "statements": [
@@ -92,11 +92,11 @@
                     "arguments": [
                       {
                         "argumentTypes": null,
-                        "id": 2086,
+                        "id": 2121,
                         "name": "_proof",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2075,
+                        "referencedDeclaration": 2110,
                         "src": "311:6:5",
                         "typeDescriptions": {
                           "typeIdentifier": "t_array$_t_bytes32_$dyn_calldata_ptr",
@@ -105,11 +105,11 @@
                       },
                       {
                         "argumentTypes": null,
-                        "id": 2087,
+                        "id": 2122,
                         "name": "_root",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2077,
+                        "referencedDeclaration": 2112,
                         "src": "325:5:5",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -118,11 +118,11 @@
                       },
                       {
                         "argumentTypes": null,
-                        "id": 2088,
+                        "id": 2123,
                         "name": "_leaf",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2079,
+                        "referencedDeclaration": 2114,
                         "src": "338:5:5",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -147,32 +147,32 @@
                       ],
                       "expression": {
                         "argumentTypes": null,
-                        "id": 2084,
+                        "id": 2119,
                         "name": "MerkleProof",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2315,
+                        "referencedDeclaration": 2350,
                         "src": "280:11:5",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_contract$_MerkleProof_$2315_$",
+                          "typeIdentifier": "t_type$_t_contract$_MerkleProof_$2350_$",
                           "typeString": "type(library MerkleProof)"
                         }
                       },
-                      "id": 2085,
+                      "id": 2120,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "verifyProof",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 2314,
+                      "referencedDeclaration": 2349,
                       "src": "280:23:5",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_pure$_t_array$_t_bytes32_$dyn_memory_ptr_$_t_bytes32_$_t_bytes32_$returns$_t_bool_$",
                         "typeString": "function (bytes32[] memory,bytes32,bytes32) pure returns (bool)"
                       }
                     },
-                    "id": 2089,
+                    "id": 2124,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -186,15 +186,15 @@
                       "typeString": "bool"
                     }
                   },
-                  "functionReturnParameters": 2083,
-                  "id": 2090,
+                  "functionReturnParameters": 2118,
+                  "id": 2125,
                   "nodeType": "Return",
                   "src": "273:76:5"
                 }
               ]
             },
             "documentation": null,
-            "id": 2092,
+            "id": 2127,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -202,15 +202,15 @@
             "name": "testVerifyProof",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2080,
+              "id": 2115,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2075,
+                  "id": 2110,
                   "name": "_proof",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2092,
+                  "scope": 2127,
                   "src": "165:16:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -220,7 +220,7 @@
                   },
                   "typeName": {
                     "baseType": {
-                      "id": 2073,
+                      "id": 2108,
                       "name": "bytes32",
                       "nodeType": "ElementaryTypeName",
                       "src": "165:7:5",
@@ -229,7 +229,7 @@
                         "typeString": "bytes32"
                       }
                     },
-                    "id": 2074,
+                    "id": 2109,
                     "length": null,
                     "nodeType": "ArrayTypeName",
                     "src": "165:9:5",
@@ -243,10 +243,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 2077,
+                  "id": 2112,
                   "name": "_root",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2092,
+                  "scope": 2127,
                   "src": "187:13:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -255,7 +255,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 2076,
+                    "id": 2111,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "187:7:5",
@@ -269,10 +269,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 2079,
+                  "id": 2114,
                   "name": "_leaf",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2092,
+                  "scope": 2127,
                   "src": "206:13:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -281,7 +281,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 2078,
+                    "id": 2113,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "206:7:5",
@@ -298,15 +298,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 2083,
+              "id": 2118,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2082,
+                  "id": 2117,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2092,
+                  "scope": 2127,
                   "src": "259:4:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -315,7 +315,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 2081,
+                    "id": 2116,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "259:4:5",
@@ -330,14 +330,14 @@
               ],
               "src": "258:6:5"
             },
-            "scope": 2093,
+            "scope": 2128,
             "src": "135:219:5",
             "stateMutability": "pure",
             "superFunction": null,
             "visibility": "external"
           }
         ],
-        "scope": 2094,
+        "scope": 2129,
         "src": "105:251:5"
       }
     ],
@@ -347,14 +347,14 @@
     "absolutePath": "/Users/tovarishfin/dev/bhx/bhx-contracts/contracts/stubs/MerkleProofStub.sol",
     "exportedSymbols": {
       "MerkleProofStub": [
-        2093
+        2128
       ]
     },
-    "id": 2094,
+    "id": 2129,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2071,
+        "id": 2106,
         "literals": [
           "solidity",
           "^",
@@ -367,10 +367,10 @@
       {
         "absolutePath": "/Users/tovarishfin/dev/bhx/bhx-contracts/node_modules/openzeppelin-solidity/contracts/MerkleProof.sol",
         "file": "../../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol",
-        "id": 2072,
+        "id": 2107,
         "nodeType": "ImportDirective",
-        "scope": 2094,
-        "sourceUnit": 2316,
+        "scope": 2129,
+        "sourceUnit": 2351,
         "src": "26:76:5",
         "symbolAliases": [],
         "unitAlias": ""
@@ -381,16 +381,16 @@
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 2093,
+        "id": 2128,
         "linearizedBaseContracts": [
-          2093
+          2128
         ],
         "name": "MerkleProofStub",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 2091,
+              "id": 2126,
               "nodeType": "Block",
               "src": "267:87:5",
               "statements": [
@@ -400,11 +400,11 @@
                     "arguments": [
                       {
                         "argumentTypes": null,
-                        "id": 2086,
+                        "id": 2121,
                         "name": "_proof",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2075,
+                        "referencedDeclaration": 2110,
                         "src": "311:6:5",
                         "typeDescriptions": {
                           "typeIdentifier": "t_array$_t_bytes32_$dyn_calldata_ptr",
@@ -413,11 +413,11 @@
                       },
                       {
                         "argumentTypes": null,
-                        "id": 2087,
+                        "id": 2122,
                         "name": "_root",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2077,
+                        "referencedDeclaration": 2112,
                         "src": "325:5:5",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -426,11 +426,11 @@
                       },
                       {
                         "argumentTypes": null,
-                        "id": 2088,
+                        "id": 2123,
                         "name": "_leaf",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2079,
+                        "referencedDeclaration": 2114,
                         "src": "338:5:5",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
@@ -455,32 +455,32 @@
                       ],
                       "expression": {
                         "argumentTypes": null,
-                        "id": 2084,
+                        "id": 2119,
                         "name": "MerkleProof",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2315,
+                        "referencedDeclaration": 2350,
                         "src": "280:11:5",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_contract$_MerkleProof_$2315_$",
+                          "typeIdentifier": "t_type$_t_contract$_MerkleProof_$2350_$",
                           "typeString": "type(library MerkleProof)"
                         }
                       },
-                      "id": 2085,
+                      "id": 2120,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "memberName": "verifyProof",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 2314,
+                      "referencedDeclaration": 2349,
                       "src": "280:23:5",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_pure$_t_array$_t_bytes32_$dyn_memory_ptr_$_t_bytes32_$_t_bytes32_$returns$_t_bool_$",
                         "typeString": "function (bytes32[] memory,bytes32,bytes32) pure returns (bool)"
                       }
                     },
-                    "id": 2089,
+                    "id": 2124,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -494,15 +494,15 @@
                       "typeString": "bool"
                     }
                   },
-                  "functionReturnParameters": 2083,
-                  "id": 2090,
+                  "functionReturnParameters": 2118,
+                  "id": 2125,
                   "nodeType": "Return",
                   "src": "273:76:5"
                 }
               ]
             },
             "documentation": null,
-            "id": 2092,
+            "id": 2127,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -510,15 +510,15 @@
             "name": "testVerifyProof",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2080,
+              "id": 2115,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2075,
+                  "id": 2110,
                   "name": "_proof",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2092,
+                  "scope": 2127,
                   "src": "165:16:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -528,7 +528,7 @@
                   },
                   "typeName": {
                     "baseType": {
-                      "id": 2073,
+                      "id": 2108,
                       "name": "bytes32",
                       "nodeType": "ElementaryTypeName",
                       "src": "165:7:5",
@@ -537,7 +537,7 @@
                         "typeString": "bytes32"
                       }
                     },
-                    "id": 2074,
+                    "id": 2109,
                     "length": null,
                     "nodeType": "ArrayTypeName",
                     "src": "165:9:5",
@@ -551,10 +551,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 2077,
+                  "id": 2112,
                   "name": "_root",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2092,
+                  "scope": 2127,
                   "src": "187:13:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -563,7 +563,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 2076,
+                    "id": 2111,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "187:7:5",
@@ -577,10 +577,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 2079,
+                  "id": 2114,
                   "name": "_leaf",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2092,
+                  "scope": 2127,
                   "src": "206:13:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -589,7 +589,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 2078,
+                    "id": 2113,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "206:7:5",
@@ -606,15 +606,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 2083,
+              "id": 2118,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2082,
+                  "id": 2117,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2092,
+                  "scope": 2127,
                   "src": "259:4:5",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -623,7 +623,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 2081,
+                    "id": 2116,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "259:4:5",
@@ -638,14 +638,14 @@
               ],
               "src": "258:6:5"
             },
-            "scope": 2093,
+            "scope": 2128,
             "src": "135:219:5",
             "stateMutability": "pure",
             "superFunction": null,
             "visibility": "external"
           }
         ],
-        "scope": 2094,
+        "scope": 2129,
         "src": "105:251:5"
       }
     ],
@@ -657,5 +657,5 @@
   },
   "networks": {},
   "schemaVersion": "2.0.1",
-  "updatedAt": "2018-08-13T11:23:40.101Z"
+  "updatedAt": "2018-08-15T14:27:34.537Z"
 }

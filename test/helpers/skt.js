@@ -8,6 +8,7 @@ const {
   defaultMaximumRedeemable,
   defaultTotalBtcCirculationAtFork
 } = require('./bhx')
+const { satoshiStructToObj } = require('./urt')
 
 const defaultInterestRatePercent = new BigNumber(1)
 
@@ -232,7 +233,12 @@ const testCalculateStakingRewards = async (skt, staker, stakeIndex) => {
   return rewards
 }
 
-const calculateSatoshiRewards = async (skt, stakeTime, unlockTime) => {
+const calculateSatoshiRewards = async (
+  skt,
+  stakeAmount,
+  stakeTime,
+  unlockTime
+) => {
   const launchTime = await skt.launchTime()
   const startWeek = new BigNumber(stakeTime)
     .sub(launchTime)
@@ -246,25 +252,39 @@ const calculateSatoshiRewards = async (skt, stakeTime, unlockTime) => {
   const rewardableEndWeek = endWeek > 50 ? 50 : endWeek
   let expectedRewards = new BigNumber(0)
   for (let i = startWeek; i < rewardableEndWeek; i++) {
-    const unclaimedCoins = await skt.unclaimedCoinsByWeek(i)
+    const satoshiStruct = await skt.satoshiRewardDataByWeek(i)
+    const { unclaimedCoins, totalStaked } = satoshiStructToObj(satoshiStruct)
+    const rewardRatio = stakeAmount
+      .mul(100)
+      .div(totalStaked)
+      .floor(0)
     const weeklyReward = unclaimedCoins
-      .mul(2)
+      .div(50)
+      .mul(rewardRatio)
       .div(100)
       .floor(0)
+
     expectedRewards = expectedRewards.add(weeklyReward)
   }
 
   return expectedRewards
 }
 
-const testCalculateSatoshiRewards = async (skt, stakeTime, unlockTime) => {
+const testCalculateSatoshiRewards = async (
+  skt,
+  stakeAmount,
+  stakeTime,
+  unlockTime
+) => {
   const expectedRewards = await calculateSatoshiRewards(
     skt,
+    stakeAmount,
     stakeTime,
     unlockTime
   )
 
   const rewards = await skt.calculateWeAreAllSatoshiRewards(
+    stakeAmount,
     stakeTime,
     unlockTime
   )
@@ -463,6 +483,7 @@ module.exports = {
   testCalculateCritMassRewards,
   testCalculateAdditionalRewards,
   stakeStructToObj,
+  satoshiStructToObj,
   getWeeksSinceLaunch,
   reorgStakesAfterRemoval,
   testClaimAllStakes

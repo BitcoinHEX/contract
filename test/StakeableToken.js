@@ -135,6 +135,7 @@ describe('when using core StakeableToken functionality', () => {
     it('should have correct satoshi rewards at time of maturation', async () => {
       satoshiRewards = await testCalculateSatoshiRewards(
         skt,
+        stakeAmount,
         stakeTime,
         unlockTime
       )
@@ -229,9 +230,12 @@ describe('when handling multiple users', () => {
     it('should have correct satoshi rewards for all stakers', async () => {
       for (const staker of activeStakers) {
         const stakeStruct = await skt.staked(staker, stakeIndex)
-        const { stakeTime, unlockTime } = stakeStructToObj(stakeStruct)
+        const { stakeTime, unlockTime, stakeAmount } = stakeStructToObj(
+          stakeStruct
+        )
         const satoshiRewards = await testCalculateSatoshiRewards(
           skt,
+          stakeAmount,
           stakeTime,
           unlockTime
         )
@@ -367,9 +371,10 @@ describe('when handling multiple stakes', () => {
 
     it('should have correct satoshi rewards for each stake', async () => {
       for (const stake of userStakes) {
-        const { stakeTime, unlockTime, stakeIndex } = stake
+        const { stakeTime, unlockTime, stakeIndex, stakeAmount } = stake
         const satoshiRewards = await testCalculateSatoshiRewards(
           skt,
+          stakeAmount,
           stakeTime,
           unlockTime
         )
@@ -502,7 +507,7 @@ describe('when staking outside of the bonus weeks', () => {
     })
 
     it('should NOT give any satoshi rewards during post bonus period', async () => {
-      await testCalculateSatoshiRewards(skt, stakeTime, unlockTime)
+      await testCalculateSatoshiRewards(skt, stakeAmount, stakeTime, unlockTime)
     })
 
     it('should still show viral rewards during post bonus period', async () => {

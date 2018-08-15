@@ -25,6 +25,11 @@ const {
   bitcoinMerkleTree: defaultMerkleTree
 } = require('./mkl')
 
+const satoshiStructToObj = struct => ({
+  unclaimedCoins: struct[0],
+  totalStaked: struct[1]
+})
+
 const redeemAllUtxos = async contract => {
   let index = 0
   for (const bitcoinTx of transactions) {
@@ -398,12 +403,18 @@ const testRedeemReferredUtxo = async (
 
 const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
   const preLastUpdatedWeek = await urt.lastUpdatedWeek()
-  const preUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek - 1)
+  const preSatoshiStruct = await urt.satoshiRewardDataByWeek(expectedWeek - 1)
+  const { unclaimedCoins: preUnclaimedCoins } = satoshiStructToObj(
+    preSatoshiStruct
+  )
 
   await urt.storeSatoshiWeekData()
 
   const postLastUpdatedWeek = await urt.lastUpdatedWeek()
-  const postUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek - 1)
+  const postSatoshiStruct = await urt.satoshiRewardDataByWeek(expectedWeek - 1)
+  const { unclaimedCoins: postUnclaimedCoins } = satoshiStructToObj(
+    postSatoshiStruct
+  )
 
   const maximumRedeemable = await urt.maximumRedeemable()
   const totalRedeemed = await urt.totalRedeemed()
@@ -518,6 +529,7 @@ const testGetRedeemAmount = async (urt, amount) => {
 }
 
 module.exports = {
+  satoshiStructToObj,
   setupContract,
   bitcoinPrivateKeys,
   getProofAndComponents,
