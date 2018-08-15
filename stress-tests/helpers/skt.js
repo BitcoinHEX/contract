@@ -1,6 +1,5 @@
 const {
   getCurrentBlockTime,
-  oneInterestPeriod,
   accounts,
   warpBufferTime,
   shuffleArray
@@ -15,7 +14,7 @@ const tryStakeClaimRound = async (skt, stakers, timeToStake) => {
   for (const staker of stakers) {
     const balance = await skt.balanceOf(staker)
     stakeTime = await getCurrentBlockTime()
-    const unlockTime = stakeTime + oneInterestPeriod * 365
+    const unlockTime = stakeTime + timeToStake
 
     // eslint-disable-next-line no-console
     console.log(chalk.magenta(`staking ${balance.toString()} for ${staker}`))
@@ -37,14 +36,14 @@ const stressTestStakes = async (
   randomizeStakes
 ) => {
   const amountToMintPerUser = totalCoins.div(accounts.length)
+  const maxRedeemed = new BigNumber('100e18').mul(accounts.length)
+  const totalRedeemed = maxRedeemed
+  const redeemedCount = accounts.length
+  let previousTotalSupply
 
   await Promise.all(
     accounts.map(staker => skt.mintTokens(staker, amountToMintPerUser))
   )
-
-  const maxRedeemed = new BigNumber('100e18').mul(accounts.length)
-  const totalRedeemed = maxRedeemed
-  const redeemedCount = accounts.length
 
   await skt.setMaxRedeemable(maxRedeemed)
   await skt.setRedeemedCount(redeemedCount)
@@ -65,14 +64,35 @@ const stressTestStakes = async (
 
       await tryStakeClaimRound(skt, stakingAccounts, timeToStake)
 
-      elapsedTime += oneInterestPeriod * 365 + warpBufferTime
+      elapsedTime += timeToStake + warpBufferTime
 
-      // eslint-disable-next-line no-console
+      const elapsedTimeInYears = elapsedTime / (60 * 60 * 24 * 365)
+      const totalSupply = await skt.totalSupply()
+      const safeTotalSupply = new BN(totalSupply.toString())
+      const inflationOverPeriod = previousTotalSupply
+        ? safeTotalSupply
+            .div(previousTotalSupply)
+            .sub(1)
+            .mul(100)
+            .floor(2)
+            .toString()
+        : 0
+      console.log('current supply', safeTotalSupply.toString())
+      console.log(
+        'previous supply',
+        previousTotalSupply ? previousTotalSupply.toString() : 0
+      )
+      /* eslint-disable no-console */
+      console.log(chalk.yellow(`elapsed time: ${elapsedTimeInYears} years`))
+
       console.log(
         chalk.yellow(
-          `elapsed time: ${elapsedTime / (60 * 60 * 24 * 365)} years`
+          `inflation over ${elapsedTimeInYears} years: ${inflationOverPeriod}%`
         )
       )
+      /* eslint-enable no-console */
+
+      previousTotalSupply = safeTotalSupply
     } catch (err) {
       if (attempts > 4) {
         const totalSupply = await skt.totalSupply()
