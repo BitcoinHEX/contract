@@ -123,18 +123,15 @@ describe('when running different scenarios', () => {
       await stressTestStakes(skt, estimatedRedeemed, timeToStake, true)
     }).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
 
-    it.only(
-      'should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in ~1 year increments',
-      async () => {
-        // 17.5 mil with 18 decimals
-        const maxCoins = new BigNumber('17.5e24')
-        // 20% estimate
-        const estimatedRedeemed = maxCoins.div(5)
-        // little less than 1 year
-        const timeToStake = oneInterestPeriod * 36
+    it('should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in ~1 year increments', async () => {
+      // 17.5 mil with 18 decimals
+      const maxCoins = new BigNumber('17.5e24')
+      // 20% estimate
+      const estimatedRedeemed = maxCoins.div(5)
+      // little less than 1 year
+      const timeToStake = oneInterestPeriod * 36
 
-        await stressTestStakes(skt, estimatedRedeemed, timeToStake, true)
-      }
-    ).timeout(60 * 60 * 2000) // set timeout to an hour... this test will take a looong time
+      await stressTestStakes(skt, estimatedRedeemed, timeToStake, true)
+    }).timeout(60 * 60 * 2000) // set timeout to an hour... this test will take a looong time
   })
 })

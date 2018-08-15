@@ -200,6 +200,7 @@ contract StakeableToken is UTXORedeemableToken {
     for (uint256 _i = _startWeek; _i < _rewardableEndWeek; _i++) {
       _rewards = _rewards.add(unclaimedCoinsByWeek[_i].div(50));
     }
+
     return _rewards;
   }
 
