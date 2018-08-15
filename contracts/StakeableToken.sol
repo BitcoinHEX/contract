@@ -7,7 +7,6 @@ contract StakeableToken is UTXORedeemableToken {
   event Mint(address indexed _address, uint _reward);
 
   uint256 public totalBtcCirculationAtFork;
-  uint256 public totalStakedCoins;
   uint256 public constant interestRatePercent = 1;
   uint256 public constant maxStakingTimeInSeconds = 365 days * 10;
   uint256 public constant oneInterestPeriodInSeconds = 10 days;
@@ -177,6 +176,7 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   function calculateWeAreAllSatoshiRewards(
+    uint256 _stakeAmount,
     uint256 _stakeTime,
     uint256 _unlockTime
   ) 
@@ -198,7 +198,16 @@ contract StakeableToken is UTXORedeemableToken {
 
     // Award 2% of unclaimed coins at end of every week
     for (uint256 _i = _startWeek; _i < _rewardableEndWeek; _i++) {
-      _rewards = _rewards.add(unclaimedCoinsByWeek[_i].div(50));
+      uint256 _rewardRatio = _stakeAmount
+        .mul(100)
+        .div(satoshiRewardDataByWeek[_i].totalStaked);
+
+      uint256 _satoshiRewardWeek = satoshiRewardDataByWeek[_i].unclaimedCoins
+        .div(50)
+        .mul(_rewardRatio)
+        .div(100);
+
+      _rewards = _rewards.add(_satoshiRewardWeek);
     }
 
     return _rewards;
@@ -249,6 +258,7 @@ contract StakeableToken is UTXORedeemableToken {
     // only give rewards if within first 50 weeks
     if (_stake.stakeTime.sub(launchTime).div(7 days) <= 50) {
       uint256 _weAreAllSatoshiRewards = calculateWeAreAllSatoshiRewards(
+        _stake.stakeAmount,
         _stake.stakeTime,
         _stake.unlockTime
       );
@@ -362,7 +372,7 @@ contract StakeableToken is UTXORedeemableToken {
     // ensure that unlock time is not more than approx 10 years
     require(_unlockTime <= block.timestamp.add(maxStakingTimeInSeconds));
     // Check if weekly data needs to be updated
-    storeWeekUnclaimed();
+    storeSatoshiWeekData();
 
     // Remove balance from sender
     balances[_staker] = balances[_staker].sub(_value);
@@ -405,7 +415,7 @@ contract StakeableToken is UTXORedeemableToken {
     StakeStruct memory _stake = staked[_staker][_stakeIndex]; 
     require(block.timestamp >= _stake.unlockTime);
     // Check if weekly data needs to be updated
-    storeWeekUnclaimed();
+    storeSatoshiWeekData();
 
     uint256 _startingStake = _stake.stakeAmount;
     // Calculate Rewards

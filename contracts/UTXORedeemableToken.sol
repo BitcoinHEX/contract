@@ -26,41 +26,44 @@ import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 * Based on https://github.com/ProjectWyvern/wyvern-ethereum
 */
 contract UTXORedeemableToken is StandardToken {
+
+  struct SatoshiWeekData {
+    uint256 unclaimedCoins;
+    uint256 totalStaked;
+  } 
+
   /* Origin Address */
   address public origin;
-
   /* Store time of launch for contract */
   uint256 public launchTime;
-
   /* Store last updated week */
-  uint256 public lastUpdatedWeek = 0;
-
-  /* Weekly update data */
-  mapping(uint256 => uint256) public unclaimedCoinsByWeek;
-
-  /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
-  bytes32 public rootUtxoMerkleTreeHash;
-
-  /* Redeemed UTXOs. */
-  mapping(bytes32 => bool) public redeemedUTXOs;
-
+  uint256 public lastUpdatedWeek;
+  uint256 public totalStakedCoins;
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
   uint256 public redeemedCount = 0;
-
   /* Maximum redeemable tokens, must be initialized by token constructor. */
   uint256 public maximumRedeemable;
+  /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
+  bytes32 public rootUtxoMerkleTreeHash;
+  /* Weekly update data */
+  mapping(uint256 => SatoshiWeekData) public satoshiRewardDataByWeek;
+  /* Redeemed UTXOs. */
+  mapping(bytes32 => bool) public redeemedUTXOs;
 
   /* Claim, stake, and minting events need to happen atleast once every week for this function to
      run automatically, otherwise function can be manually called for that week */
-  function storeWeekUnclaimed()
+  function storeSatoshiWeekData()
     public 
   {
     uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
     if (_weeksSinceLaunch <= 50 && _weeksSinceLaunch > lastUpdatedWeek) {
       uint256 unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-      unclaimedCoinsByWeek[_weeksSinceLaunch - 1] = unclaimedCoins;
+      satoshiRewardDataByWeek[_weeksSinceLaunch - 1] = SatoshiWeekData(
+        unclaimedCoins, 
+        totalStakedCoins
+      );
       lastUpdatedWeek = _weeksSinceLaunch;
     }
   }
@@ -391,7 +394,7 @@ contract UTXORedeemableToken is StandardToken {
     // ensure that redeeming after launch time
     require(block.timestamp >= launchTime);
     /* Check if weekly data needs to be updated */
-    storeWeekUnclaimed();
+    storeSatoshiWeekData();
 
     // /* Disable claims after 50 weeks */
     // require(block.timestamp.sub(launchTime).div(7 days) < 50);

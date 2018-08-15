@@ -626,7 +626,7 @@
     {
       "constant": false,
       "inputs": [],
-      "name": "storeWeekUnclaimed",
+      "name": "storeSatoshiWeekData",
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",

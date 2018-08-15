@@ -158,18 +158,18 @@ const warpThroughBonusWeeks = async (urt, seconds) => {
   }
 
   /* eslint-disable no-console */
-  await urt.storeWeekUnclaimed()
+  await urt.storeSatoshiWeekData()
 
   for (let i = 1; i <= bonusWeeksToWarp; i++) {
     await timeWarpRelativeToLaunchTime(urt, weekInSeconds * i, true)
-    await urt.storeWeekUnclaimed()
+    await urt.storeSatoshiWeekData()
     console.log(
       `warped to week ${i} of ${bonusWeeksToWarp} and stored week unclaimd`
     )
   }
 
   await timeWarpRelativeToLaunchTime(urt, seconds, true)
-  await urt.storeWeekUnclaimed()
+  await urt.storeSatoshiWeekData()
   console.log(
     `warped remaining ${seconds -
       bonusWeeksToWarp * weekInSeconds} seconds and stored week unclaimed`
@@ -400,7 +400,7 @@ const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
   const preLastUpdatedWeek = await urt.lastUpdatedWeek()
   const preUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek - 1)
 
-  await urt.storeWeekUnclaimed()
+  await urt.storeSatoshiWeekData()
 
   const postLastUpdatedWeek = await urt.lastUpdatedWeek()
   const postUnclaimedCoins = await urt.unclaimedCoinsByWeek(expectedWeek - 1)
@@ -453,7 +453,7 @@ const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
 const calculateExpectedRedeemAmount = async (urt, amount) => {
   // convert to wei units
   let bigAmount = new BigNumber(amount).mul(1e10)
-  await urt.storeWeekUnclaimed()
+  await urt.storeSatoshiWeekData()
   const blockTime = await getCurrentBlockTime()
   const launchTime = await urt.launchTime()
   const timeDiff = new BigNumber(blockTime).sub(launchTime)
