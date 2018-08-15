@@ -58,9 +58,9 @@ contract UTXORedeemableToken is StandardToken {
   {
     uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
 
-    if (_weeksSinceLaunch <= 50 && _weeksSinceLaunch > lastUpdatedWeek) {
+    if (_weeksSinceLaunch < 50 && _weeksSinceLaunch > lastUpdatedWeek) {
       uint256 unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-      satoshiRewardDataByWeek[_weeksSinceLaunch - 1] = SatoshiWeekData(
+      satoshiRewardDataByWeek[_weeksSinceLaunch] = SatoshiWeekData(
         unclaimedCoins, 
         totalStakedCoins
       );

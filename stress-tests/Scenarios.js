@@ -1,13 +1,5 @@
-const {
-  setupStakeableToken,
-  testClaimAllStakes,
-  testCompound
-} = require('../test/helpers/skt')
-const {
-  warpThroughBonusWeeks,
-  timeWarpRelativeToLaunchTime
-} = require('../test/helpers/urt')
-const { getDefaultLaunchTime } = require('../test/helpers/bhx')
+const { testClaimAllStakes, testCompound } = require('../test/helpers/skt')
+const { warpThroughBonusWeeks } = require('../test/helpers/urt')
 const {
   stakers,
   oneInterestPeriod,
@@ -15,7 +7,7 @@ const {
   warpBufferTime,
   expectRevert
 } = require('../test/helpers/general')
-const { stressTestStakes } = require('./helpers/skt')
+const { stressTestStakes, setupStakeableToken } = require('./helpers/skt')
 const BigNumber = require('bignumber.js')
 
 /*
@@ -26,42 +18,46 @@ const BigNumber = require('bignumber.js')
     10% redeem (mid)
     5% redeem (low)
 */
-describe('when running different scenarios', () => {
+describe.only('when running different scenarios', () => {
   contract('StakeableToken', () => {
-    let skt, stakeTime, unlockTime, launchTime
+    const defaultCirculationAtFork = new BigNumber('17.5e6').mul(10).div(100)
+    const defaultMaximumRedeemable = new BigNumber('17.5e6').mul(20).div(100)
 
-    beforeEach('setup contract', async () => {
-      launchTime = await getDefaultLaunchTime()
-      skt = await setupStakeableToken(launchTime)
-      await timeWarpRelativeToLaunchTime(skt, 60, true)
-    })
-
-    it('should successfully claim all user stakes when less than 43', async () => {
-      await skt.mintTokens(stakers[0], '50e18')
-      const desiredStakes = 42
+    it('should successfully claim all user stakes when less than 35', async () => {
+      const mintPerUser = new BigNumber('50e18')
+      const skt = await setupStakeableToken(
+        defaultCirculationAtFork,
+        defaultMaximumRedeemable
+      )
+      await skt.mintTokens(stakers[0], mintPerUser)
+      const desiredStakes = 34
       const stakeAmount = new BigNumber(1e18)
 
       for (let i = 0; i < desiredStakes; i++) {
-        stakeTime = await getCurrentBlockTime()
-        unlockTime = stakeTime + oneInterestPeriod * 365
+        const stakeTime = await getCurrentBlockTime()
+        const unlockTime = stakeTime + oneInterestPeriod * 365
         await skt.startStake(stakeAmount, unlockTime, {
           from: stakers[0]
         })
       }
 
       await warpThroughBonusWeeks(skt, oneInterestPeriod * 365 + warpBufferTime)
-
       await testClaimAllStakes(skt, stakers[0], desiredStakes)
     })
 
-    it('should run out of gas when trying to claim 43 or more stakes', async () => {
-      await skt.mintTokens(stakers[0], '50e18')
-      const desiredStakes = 43
+    it('should run out of gas when trying to claim 35 or more stakes', async () => {
+      const mintPerUser = new BigNumber('50e18')
+      const skt = await setupStakeableToken(
+        defaultCirculationAtFork,
+        defaultMaximumRedeemable
+      )
+      await skt.mintTokens(stakers[0], mintPerUser)
+      const desiredStakes = 35
       const stakeAmount = new BigNumber(1e18)
 
       for (let i = 0; i < desiredStakes; i++) {
-        stakeTime = await getCurrentBlockTime()
-        unlockTime = stakeTime + oneInterestPeriod * 365
+        const stakeTime = await getCurrentBlockTime()
+        const unlockTime = stakeTime + oneInterestPeriod * 365
         await skt.startStake(stakeAmount, unlockTime, {
           from: stakers[0]
         })
@@ -72,6 +68,11 @@ describe('when running different scenarios', () => {
     })
 
     it('should run into overflow issues when stakes are too high', async () => {
+      const skt = await setupStakeableToken(
+        defaultCirculationAtFork,
+        defaultMaximumRedeemable
+      )
+
       let zeros = 18
       let limitReached = false
       while (!limitReached) {
@@ -91,47 +92,51 @@ describe('when running different scenarios', () => {
     })
 
     it('should overflow after 150 years due to compounding overflow when interest focused on one user in max interest period increments', async () => {
-      // 17.5 mil with 18 decimals
-      const maxCoins = new BigNumber('17.5e24')
-      // 20% estimate
-      const estimatedRedeemed = maxCoins.div(5)
+      const skt = await setupStakeableToken(
+        defaultCirculationAtFork,
+        defaultMaximumRedeemable
+      )
+
       // max interest time
       const timeToStake = oneInterestPeriod * 365
 
-      await stressTestStakes(skt, estimatedRedeemed, timeToStake, false)
+      await stressTestStakes(skt, defaultMaximumRedeemable, timeToStake, false)
     }).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
 
-    it('should overflow after 150 years due to compounding overflow when interest focused on one user in ~1 year increments', async () => {
-      // 17.5 mil with 18 decimals
-      const maxCoins = new BigNumber('17.5e24')
-      // 20% estimate
-      const estimatedRedeemed = maxCoins.div(5)
+    xit('should overflow after 150 years due to compounding overflow when interest focused on one user in ~1 year increments', async () => {
+      const skt = await setupStakeableToken(
+        defaultCirculationAtFork,
+        defaultMaximumRedeemable
+      )
+
       // little less than 1 year
       const timeToStake = oneInterestPeriod * 36
 
-      await stressTestStakes(skt, estimatedRedeemed, timeToStake, false)
+      await stressTestStakes(skt, defaultMaximumRedeemable, timeToStake, false)
     }).timeout(60 * 60 * 2000) // set timeout to an hour... this test will take a looong time
 
     it('should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in max interest period increments', async () => {
-      // 17.5 mil with 18 decimals
-      const maxCoins = new BigNumber('17.5e24')
-      // 20% estimate
-      const estimatedRedeemed = maxCoins.div(5)
+      const skt = await setupStakeableToken(
+        defaultCirculationAtFork,
+        defaultMaximumRedeemable
+      )
+
       // max interest time
       const timeToStake = oneInterestPeriod * 365
 
-      await stressTestStakes(skt, estimatedRedeemed, timeToStake, true)
+      await stressTestStakes(skt, defaultMaximumRedeemable, timeToStake, true)
     }).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
 
-    it('should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in ~1 year increments', async () => {
-      // 17.5 mil with 18 decimals
-      const maxCoins = new BigNumber('17.5e24')
-      // 20% estimate
-      const estimatedRedeemed = maxCoins.div(5)
+    xit('should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in ~1 year increments', async () => {
+      const skt = await setupStakeableToken(
+        defaultCirculationAtFork,
+        defaultMaximumRedeemable
+      )
+
       // little less than 1 year
       const timeToStake = oneInterestPeriod * 36
 
-      await stressTestStakes(skt, estimatedRedeemed, timeToStake, true)
+      await stressTestStakes(skt, defaultMaximumRedeemable, timeToStake, true)
     }).timeout(60 * 60 * 2000) // set timeout to an hour... this test will take a looong time
   })
 })

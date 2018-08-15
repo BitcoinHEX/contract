@@ -240,10 +240,11 @@ const calculateSatoshiRewards = async (
   unlockTime
 ) => {
   const launchTime = await skt.launchTime()
-  const startWeek = new BigNumber(stakeTime)
+  let startWeek = new BigNumber(stakeTime)
     .sub(launchTime)
     .div(60 * 60 * 24 * 7)
     .floor(0)
+  startWeek = startWeek.equals(0) ? new BigNumber(1) : startWeek
   const endWeek = new BigNumber(unlockTime)
     .sub(launchTime)
     .div(60 * 60 * 24 * 7)
@@ -254,10 +255,12 @@ const calculateSatoshiRewards = async (
   for (let i = startWeek; i < rewardableEndWeek; i++) {
     const satoshiStruct = await skt.satoshiRewardDataByWeek(i)
     const { unclaimedCoins, totalStaked } = satoshiStructToObj(satoshiStruct)
+
     const rewardRatio = stakeAmount
       .mul(100)
       .div(totalStaked)
       .floor(0)
+
     const weeklyReward = unclaimedCoins
       .div(50)
       .mul(rewardRatio)
@@ -282,7 +285,6 @@ const testCalculateSatoshiRewards = async (
     stakeTime,
     unlockTime
   )
-
   const rewards = await skt.calculateWeAreAllSatoshiRewards(
     stakeAmount,
     stakeTime,
@@ -429,6 +431,7 @@ const testClaimAllStakes = async (skt, staker, stakeCount) => {
     const stakingRewards = await calculateStakingRewards(skt, staker, i)
     const satoshiRewards = await testCalculateSatoshiRewards(
       skt,
+      stakeAmount,
       stakeTime,
       unlockTime
     )

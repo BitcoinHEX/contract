@@ -186,9 +186,12 @@ contract StakeableToken is UTXORedeemableToken {
   {
     uint256 _rewards = 0;
     /* Calculate what week stake was opened */
-    uint256 _startWeek = _stakeTime
+    uint256 _startWeekCandidate = _stakeTime
       .sub(launchTime)
       .div(7 days);
+
+    // rewards are not deducted nor given during first week
+    uint256 _startWeek = _startWeekCandidate == 0 ? 1 : _startWeekCandidate;
 
     uint256 _endWeek = _unlockTime
       .sub(launchTime)

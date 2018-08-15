@@ -1,13 +1,41 @@
+const StakeableTokenStub = artifacts.require('StakeableTokenStub')
+
 const {
   getCurrentBlockTime,
   accounts,
   warpBufferTime,
-  shuffleArray
+  shuffleArray,
+  origin
 } = require('../../test/helpers/general')
-const { warpThroughBonusWeeks } = require('../../test/helpers/urt')
+const {
+  warpThroughBonusWeeks,
+  timeWarpRelativeToLaunchTime
+} = require('../../test/helpers/urt')
+const { getDefaultLaunchTime } = require('../../test/helpers/bhx')
+const {
+  bitcoinRootHash: defaultRootUtxoMerkleHash
+} = require('../../test/helpers/mkl')
 const chalk = require('chalk')
 const BN = require('bignumber.js')
 const BigNumber = require('bignumber.js')
+
+const setupStakeableToken = async (
+  defaultCirculationAtFork,
+  defaultMaximumRedeemable
+) => {
+  const launchTime = await getDefaultLaunchTime()
+  const skt = await StakeableTokenStub.new(
+    origin,
+    launchTime,
+    defaultRootUtxoMerkleHash,
+    defaultCirculationAtFork,
+    defaultMaximumRedeemable
+  )
+
+  await timeWarpRelativeToLaunchTime(skt, 60, true)
+
+  return skt
+}
 
 const tryStakeClaimRound = async (skt, stakers, timeToStake) => {
   let stakeTime
@@ -77,11 +105,7 @@ const stressTestStakes = async (
             .floor(2)
             .toString()
         : 0
-      console.log('current supply', safeTotalSupply.toString())
-      console.log(
-        'previous supply',
-        previousTotalSupply ? previousTotalSupply.toString() : 0
-      )
+
       /* eslint-disable no-console */
       console.log(chalk.yellow(`elapsed time: ${elapsedTimeInYears} years`))
 
@@ -132,6 +156,7 @@ const stressTestStakes = async (
 }
 
 module.exports = {
+  setupStakeableToken,
   tryStakeClaimRound,
   stressTestStakes
 }
