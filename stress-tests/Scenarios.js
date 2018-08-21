@@ -18,7 +18,8 @@ const BigNumber = require('bignumber.js')
     10% redeem (mid)
     5% redeem (low)
 */
-describe.only('when running different scenarios', () => {
+
+describe('when running different scenarios', () => {
   contract('StakeableToken', () => {
     const defaultCirculationAtFork = new BigNumber('17.5e6').mul(10).div(100)
     const defaultMaximumRedeemable = new BigNumber('17.5e6').mul(20).div(100)
@@ -90,6 +91,12 @@ describe.only('when running different scenarios', () => {
         }
       }
     })
+  })
+})
+describe('when running different long term scenarios', () => {
+  contract('StakeableToken', () => {
+    const defaultCirculationAtFork = new BigNumber('17.5e24').mul(10).div(100)
+    const defaultMaximumRedeemable = new BigNumber('17.5e24').mul(20).div(100)
 
     it('should overflow after 150 years due to compounding overflow when interest focused on one user in max interest period increments', async () => {
       const skt = await setupStakeableToken(
@@ -103,7 +110,7 @@ describe.only('when running different scenarios', () => {
       await stressTestStakes(skt, defaultMaximumRedeemable, timeToStake, false)
     }).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
 
-    xit('should overflow after 150 years due to compounding overflow when interest focused on one user in ~1 year increments', async () => {
+    it('should overflow after 150 years due to compounding overflow when interest focused on one user in ~1 year increments', async () => {
       const skt = await setupStakeableToken(
         defaultCirculationAtFork,
         defaultMaximumRedeemable
@@ -127,7 +134,7 @@ describe.only('when running different scenarios', () => {
       await stressTestStakes(skt, defaultMaximumRedeemable, timeToStake, true)
     }).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
 
-    xit('should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in ~1 year increments', async () => {
+    it('should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in ~1 year increments', async () => {
       const skt = await setupStakeableToken(
         defaultCirculationAtFork,
         defaultMaximumRedeemable

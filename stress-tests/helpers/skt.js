@@ -46,7 +46,6 @@ const tryStakeClaimRound = async (skt, stakers, timeToStake) => {
 
     // eslint-disable-next-line no-console
     console.log(chalk.magenta(`staking ${balance.toString()} for ${staker}`))
-
     await skt.startStake(balance, unlockTime, {
       from: staker
     })
@@ -91,7 +90,6 @@ const stressTestStakes = async (
       }
 
       await tryStakeClaimRound(skt, stakingAccounts, timeToStake)
-
       elapsedTime += timeToStake + warpBufferTime
 
       const elapsedTimeInYears = elapsedTime / (60 * 60 * 24 * 365)
@@ -111,7 +109,8 @@ const stressTestStakes = async (
 
       console.log(
         chalk.yellow(
-          `inflation over ${elapsedTimeInYears} years: ${inflationOverPeriod}%`
+          `inflation over ${timeToStake /
+            (60 * 60 * 24 * 365)} years: ${inflationOverPeriod}%`
         )
       )
       /* eslint-enable no-console */

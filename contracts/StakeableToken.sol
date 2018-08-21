@@ -387,7 +387,7 @@ contract StakeableToken is UTXORedeemableToken {
         _value, 
         block.timestamp, 
         _unlockTime, 
-        totalStakedCoins,
+        totalStakedCoins.add(_value),
         totalSupply_
       )
     );
