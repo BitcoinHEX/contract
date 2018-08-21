@@ -25,6 +25,11 @@ contract StakeableToken is UTXORedeemableToken {
   *start utility functions*
   ************************/
 
+  /**
+    @dev Retrieves all user stakes. Must be returned as tuple due to the way
+    solidity works.
+    @param _staker staker address for accessing array
+  */
   function getUserStakes(address _staker)
     public
     view
@@ -47,6 +52,9 @@ contract StakeableToken is UTXORedeemableToken {
     return (_stakeAmount, _stakeTime, _unlockTime, _totalStakedCoinsAtStart);
   }
 
+  /** 
+    @notice A convenience function to get weeks since launch.
+  */
   function getWeeksSinceLaunch()
     public
     view
@@ -57,6 +65,10 @@ contract StakeableToken is UTXORedeemableToken {
       : 0;
   }
 
+  /**
+    @notice A convenience function for users to check if currently
+    in bonus period (first 50 weeks after launch)
+  */
   function isDuringBonusPeriod()
     public
     view
@@ -85,12 +97,11 @@ contract StakeableToken is UTXORedeemableToken {
     _stakedArray.length = _stakedArray.length.sub(1);
   }
 
-  // TODO: HEAVILY test this in order to ensure that there are no integer overflows
   /**
-    @dev compound groups up compounding periods by 30 in order to avoid  
-    uint overflows when taking (100 + rate) ** periods. Accuracy is also brought by
-    10 decimals in order to avoid uint overflows when 
-    taking compounded * ((100  + rate) ** periods).
+    @dev compound groups up compounding periods by 10 in order to avoid  
+    uint overflows when taking (100 + rate) ** periods. Accuracy is also brought 
+    down by 10 decimals in order to avoid uint overflows when 
+    running: compounded * ((100  + rate) ** periods).
 
     @param _principle base amount being compounded
     @param _periods amount of periods to compound principle
@@ -125,6 +136,15 @@ contract StakeableToken is UTXORedeemableToken {
     return _compounded.mul(1e10);
   }
 
+  /**
+    @dev A utility funciton for calculating staking rewards for a single 
+    staker based on index. Used with claimSingleStakingReward to 
+    calculate part of rewards. Can also be used as a user 
+    convenience function.
+
+    @param _staker user who has a stake already created
+    @param _stakeIndex index of the already created stake
+  */
   function calculateStakingRewards(
     address _staker,
     uint256 _stakeIndex
@@ -175,6 +195,18 @@ contract StakeableToken is UTXORedeemableToken {
     return _compounded.sub(_stake.stakeAmount);
   }
 
+  /**
+    @dev A utility function for calculating satoshi rewards.
+    Depends on getRedeemAmount in UTXORedeemableToken which
+    reduces tokens given when redeeming proportionally to bonus
+    given by this function. Goal is to give unclaimed tokens as
+    a bonus to staking users during bonus period.
+
+    @param _stakeAmount amount to stake for calculations  (doesnt actually stake)
+    @param _stakeTime amount of time in seconds to stake
+    @param _unlockTime unix timestamp in seconds for when the 
+    tokens would be unlocked.
+  */
   function calculateWeAreAllSatoshiRewards(
     uint256 _stakeAmount,
     uint256 _stakeTime,
@@ -216,8 +248,15 @@ contract StakeableToken is UTXORedeemableToken {
     return _rewards;
   }
 
-  // TODO: double check that we want to make this public... if so... is it ok that
-  // it shows non zero amounts for users outside of bonus period?
+  /**
+    @dev A utility function which calculates the viral 
+    component of additional rewards.
+    @notice This function can be used outside of the
+    bonus period and will give a non-zero value which
+    could be misleading. It does not affect functionality
+    of the contract however.
+    @param _stakeAmount the base amount to stake for calculations
+  */
   function calculateViralRewards(
     uint256 _stakeAmount
   ) 
@@ -232,6 +271,11 @@ contract StakeableToken is UTXORedeemableToken {
       .div(10);
   }
 
+  /**
+    @dev A utility function which calculates the crit mass
+    component of additional rewards
+    @param _stakeamount the base amount to stake for calculations
+  */
   function calculateCritMassRewards(
     uint256 _stakeAmount
   ) 
@@ -248,6 +292,10 @@ contract StakeableToken is UTXORedeemableToken {
 
   /**
     @dev Additional rewards should only be given within first 50 weeks.
+    Additional rewards is composed of satoshi, viral and crit mass rewards.
+    Calculates additional rewards for a single stake.
+    @param _staker user that has an already existing stake
+    @param _stakeIndex index of already created user stake
    */
   function calculateAdditionalRewards(
     address _staker,
