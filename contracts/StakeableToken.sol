@@ -133,13 +133,13 @@ contract StakeableToken is UTXORedeemableToken {
 
     for(uint256 _i = 0; _i < _groupings; _i = _i.add(1)) {
       _compounded = _compounded
-        .mul(_rate ** _maxGroupPeriods)
+        .mul(_interestRate ** _maxGroupPeriods)
         .div(1e4 ** _maxGroupPeriods);
     }
 
     if (_remainingPeriods != 0) {
       _compounded = _compounded
-        .mul(_rate ** _remainingPeriods)
+        .mul(_interestRate ** _remainingPeriods)
         .div(1e4 ** _remainingPeriods);
     }
 
