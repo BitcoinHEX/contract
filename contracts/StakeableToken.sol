@@ -2,6 +2,14 @@ pragma solidity ^0.4.23;
 import "./UTXORedeemableToken.sol";
 
 
+/**
+@title StakeableToken is the component of BitcoinHex token which 
+handles staking and the associated rewards.
+@notice Some of functions and state must be supplied from UTXORedeemableToken.
+
+Overflows due to interest have been tested and should not occur until 150 years from start time
+assuming 17.5e24 * .2 redeemed and every user staking full amounts the entire time.
+*/
 contract StakeableToken is UTXORedeemableToken {
 
   event Mint(address indexed _address, uint _reward);
@@ -26,8 +34,8 @@ contract StakeableToken is UTXORedeemableToken {
   ************************/
 
   /**
-    @dev Retrieves all user stakes. Must be returned as tuple due to the way
-    solidity works.
+    @notice Retrieves all user stakes. 
+    @dev Must return as tuple due to the way solidity works.
     @param _staker staker address for accessing array
   */
   function getUserStakes(address _staker)
@@ -88,7 +96,7 @@ contract StakeableToken is UTXORedeemableToken {
     address _staker,
     uint256 _stakeIndex
   )
-    public
+    internal
   {
     StakeStruct[] storage _stakedArray = staked[_staker];
     // set last item to index of item we want to get rid of
@@ -116,6 +124,8 @@ contract StakeableToken is UTXORedeemableToken {
     pure
     returns (uint256)
   {
+    // bring up by 1e4 in order to get an accurate percent
+    uint256 _interestRate = _rate.add(1e4);
     uint256 _maxGroupPeriods = 10;
     uint256 _remainingPeriods = _periods % _maxGroupPeriods;
     uint256 _groupings = _periods.div(_maxGroupPeriods);
@@ -137,7 +147,7 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @dev A utility funciton for calculating staking rewards for a single 
+    @notice A utility funciton for calculating staking rewards for a single 
     staker based on index. Used with claimSingleStakingReward to 
     calculate part of rewards. Can also be used as a user 
     convenience function.
@@ -178,8 +188,6 @@ contract StakeableToken is UTXORedeemableToken {
         : 1;
     }
 
-    // bring up by 1e4 in order to get an accurate percent
-    uint256 _interestRate = _scaledInterestRate.add(1e4);
     // Calculate Periods
     uint256 _periods = _stake.unlockTime
       .sub(_stake.stakeTime)
@@ -188,7 +196,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _compounded = compound(
       _stake.stakeAmount, 
       _periods, 
-      _interestRate
+      _scaledInterestRate
     );
 
     // Calculate final staking rewards with time bonus
@@ -196,7 +204,7 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @dev A utility function for calculating satoshi rewards.
+    @notice A utility function for calculating satoshi rewards.
     Depends on getRedeemAmount in UTXORedeemableToken which
     reduces tokens given when redeeming proportionally to bonus
     given by this function. Goal is to give unclaimed tokens as
@@ -249,7 +257,7 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @dev A utility function which calculates the viral 
+    @notice A utility function which calculates the viral 
     component of additional rewards.
     @notice This function can be used outside of the
     bonus period and will give a non-zero value which
@@ -272,7 +280,7 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @dev A utility function which calculates the crit mass
+    @notice A utility function which calculates the crit mass
     component of additional rewards
     @param _stakeamount the base amount to stake for calculations
   */
@@ -291,7 +299,7 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @dev Additional rewards should only be given within first 50 weeks.
+    @notice Additional rewards should only be given within first 50 weeks.
     Additional rewards is composed of satoshi, viral and crit mass rewards.
     Calculates additional rewards for a single stake.
     @param _staker user that has an already existing stake
@@ -366,8 +374,8 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @dev Retrieves total amount of staked tokens for a single user
-    @notice This function might fail if there are too many stakes for a user. 
+    @notice Retrieves total amount of staked tokens for a single user. 
+    This function might fail if there are too many stakes for a user. 
     Use getStakedAtIndexes if this is the case.
     @param _staker user address with an existing stake
   */
@@ -382,7 +390,7 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @dev This is a convenience function for calculating the total amount
+    @notice This is a convenience function for calculating the total amount
     returned once when a stake is unlockable. Includes the original stake.
     @param _staker user address with an already existing stake
     @param _stakeIndex index of already existing user stake
