@@ -282,7 +282,7 @@ contract StakeableToken is UTXORedeemableToken {
   /**
     @notice A utility function which calculates the crit mass
     component of additional rewards
-    @param _stakeamount the base amount to stake for calculations
+    @param _stakeAmount the base amount to stake for calculations
   */
   function calculateCritMassRewards(
     uint256 _stakeAmount
