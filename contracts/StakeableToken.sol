@@ -328,7 +328,12 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @notice available for use directly when there are too many stakes to do in a single operation
+    @notice Available for use directly when there are too many stakes 
+    to get in a single operation. 
+    Returns total staked between indexes for a given user.
+    @param _staker user with existing stakes
+    @param _startIndex starting index of stakes to return
+    @param _endIndex ending index of stakes to return
   */
   function getStakedAtIndexes(
     address _staker,
@@ -361,7 +366,10 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
-    @notice This function might fail if there are too many stakes for a user. Use getStakedAtIndexes if this is the case.
+    @dev Retrieves total amount of staked tokens for a single user
+    @notice This function might fail if there are too many stakes for a user. 
+    Use getStakedAtIndexes if this is the case.
+    @param _staker user address with an existing stake
   */
   function getTotalUserStaked(
     address _staker
@@ -373,6 +381,12 @@ contract StakeableToken is UTXORedeemableToken {
     return getStakedAtIndexes(_staker, 0, staked[_staker].length - 1);
   }
 
+  /**
+    @dev This is a convenience function for calculating the total amount
+    returned once when a stake is unlockable. Includes the original stake.
+    @param _staker user address with an already existing stake
+    @param _stakeIndex index of already existing user stake
+  */
   function calculateSingleStakePlusRewards(
     address _staker,
     uint256 _stakeIndex
@@ -452,7 +466,7 @@ contract StakeableToken is UTXORedeemableToken {
   /**
     @notice Used for claiming a single stake. Another user can claim a stake on another 
     user's behalf. All rewards and original stake go to original staker.
-    Useful for if _staker does not have any gas and someone else is claiming for them.
+    Useful for when _staker does not have any gas and someone else is claiming for them.
     @param _staker user address for who is making the claim
     @param _stakeIndex location of the stake to claim
   */
@@ -551,6 +565,12 @@ contract StakeableToken is UTXORedeemableToken {
     return true;
   }
 
+  /**
+    @notice Used for claiming a single stake. Another user can 
+    claim a stake on another user's behalf. All rewards and original stake go to original staker.
+    Useful for if _staker does not have any gas and someone else is claiming for them.
+    @param _staker user address for who is making the claim
+  */
   function claimAllStakingRewards(
     address _staker
   )
