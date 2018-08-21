@@ -403,7 +403,7 @@ const testRedeemReferredUtxo = async (
 
 const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
   const preLastUpdatedWeek = await urt.lastUpdatedWeek()
-  const preSatoshiStruct = await urt.satoshiRewardDataByWeek(expectedWeek - 1)
+  const preSatoshiStruct = await urt.satoshiRewardDataByWeek(expectedWeek)
   const { unclaimedCoins: preUnclaimedCoins } = satoshiStructToObj(
     preSatoshiStruct
   )
@@ -411,7 +411,7 @@ const testWeekIncrement = async (urt, expectedWeek, shouldIncrement) => {
   await urt.storeSatoshiWeekData()
 
   const postLastUpdatedWeek = await urt.lastUpdatedWeek()
-  const postSatoshiStruct = await urt.satoshiRewardDataByWeek(expectedWeek - 1)
+  const postSatoshiStruct = await urt.satoshiRewardDataByWeek(expectedWeek)
   const { unclaimedCoins: postUnclaimedCoins } = satoshiStructToObj(
     postSatoshiStruct
   )
