@@ -58,21 +58,20 @@ const tryStakeClaimRound = async (skt, stakers, timeToStake) => {
 
 const stressTestStakes = async (
   skt,
-  totalCoins,
+  maxRedeemable,
+  circulationAtFork,
   timeToStake,
   randomizeStakes
 ) => {
-  const amountToMintPerUser = totalCoins.div(accounts.length)
-  const maxRedeemed = new BigNumber('100e18').mul(accounts.length)
-  const totalRedeemed = maxRedeemed
+  const amountToMintPerUser = new BigNumber('35.1e24').div(accounts.length)
+  const totalRedeemed = new BigNumber('17.1e24').mul(20).div(100)
   const redeemedCount = accounts.length
-  let previousTotalSupply
 
   await Promise.all(
     accounts.map(staker => skt.mintTokens(staker, amountToMintPerUser))
   )
 
-  await skt.setMaxRedeemable(maxRedeemed)
+  await skt.setMaxRedeemable(maxRedeemable)
   await skt.setRedeemedCount(redeemedCount)
   await skt.setTotalRedeemed(totalRedeemed)
 
@@ -80,6 +79,7 @@ const stressTestStakes = async (
   let elapsedTime = 0
   let attempts = 0
   let stakingAccounts
+  let previousTotalSupply = await skt.totalSupply()
 
   while (!overflowed) {
     try {
@@ -95,14 +95,12 @@ const stressTestStakes = async (
       const elapsedTimeInYears = elapsedTime / (60 * 60 * 24 * 365)
       const totalSupply = await skt.totalSupply()
       const safeTotalSupply = new BN(totalSupply.toString())
-      const inflationOverPeriod = previousTotalSupply
-        ? safeTotalSupply
-            .div(previousTotalSupply)
-            .sub(1)
-            .mul(100)
-            .floor(2)
-            .toString()
-        : 0
+      const inflationOverPeriod = safeTotalSupply
+        .div(previousTotalSupply)
+        .sub(1)
+        .mul(100)
+        .floor(2)
+        .toString()
 
       /* eslint-disable no-console */
       console.log(chalk.yellow(`elapsed time: ${elapsedTimeInYears} years`))
