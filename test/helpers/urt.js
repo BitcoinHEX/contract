@@ -341,18 +341,25 @@ const testRedeemUtxo = async (
   const pubKey = retrievePubKey(bitcoinPrivateKey)
   const { v, r, s } = signEthAddress(bitcoinPrivateKey, config.from)
   const preRedeemerBalance = await urt.balanceOf(config.from)
+  const preOriginBalance = await urt.balanceOf(origin)
   const preRedeemedCount = await urt.redeemedCount()
 
   await urt.redeemUtxo(satoshis, proof, pubKey, true, v, r, s, config)
 
   const postRedeemerBalance = await urt.balanceOf(config.from)
-  const expectedRedeemAmount = await urt.getRedeemAmount(satoshis)
+  const postOriginBalance = await urt.balanceOf(origin)
+  const [redeemAmount, speedBonus] = await urt.getRedeemAmount(satoshis)
+  const expectedRedeemAmount = redeemAmount.add(speedBonus)
   const postRedeemedCount = await urt.redeemedCount()
-
   assert.equal(
     postRedeemerBalance.sub(preRedeemerBalance).toString(),
     expectedRedeemAmount.toString(),
     'redeemer token balance should be incremented by expectedRedeemAmount'
+  )
+  assert.equal(
+    postOriginBalance.sub(preOriginBalance).toString(),
+    speedBonus.toString(),
+    'origin balance should be incremented by speedBonus'
   )
   assert.equal(
     preRedeemedCount.add(1).toString(),
@@ -372,6 +379,7 @@ const testRedeemReferredUtxo = async (
   const pubKey = retrievePubKey(bitcoinPrivateKey)
   const { v, r, s } = signEthAddress(bitcoinPrivateKey, config.from)
   const preRedeemerBalance = await urt.balanceOf(config.from)
+  const preOriginBalance = await urt.balanceOf(origin)
   const preReferrerBalance = await urt.balanceOf(referrer)
   await urt.redeemReferredUtxo(
     satoshis,
@@ -385,14 +393,21 @@ const testRedeemReferredUtxo = async (
     config
   )
   const postRedeemerBalance = await urt.balanceOf(config.from)
+  const postOriginBalance = await urt.balanceOf(origin)
   const postReferrerBalance = await urt.balanceOf(referrer)
-  const expectedRedeemAmount = await urt.getRedeemAmount(satoshis)
+  const [redeemAmount, speedBonus] = await urt.getRedeemAmount(satoshis)
+  const expectedRedeemAmount = redeemAmount.add(speedBonus)
   const expectedReferralAmount = expectedRedeemAmount.div(20).floor(0)
 
   assert.equal(
     postRedeemerBalance.sub(preRedeemerBalance).toString(),
     expectedRedeemAmount.toString(),
     'redeemer token balance should be incremented by expectedRedeemAmount'
+  )
+  assert.equal(
+    postOriginBalance.sub(preOriginBalance).toString(),
+    speedBonus.toString(),
+    'origin balance should be incremented by speedBonus'
   )
   assert.equal(
     postReferrerBalance.sub(preReferrerBalance).toString(),
@@ -483,46 +498,98 @@ const calculateExpectedRedeemAmount = async (urt, amount) => {
       : bigAmount.div(4).floor(0)
   }
 
-  // TODO: talk with other dev on if this is really intended....
-  // reduction plus bonus? seems redundant
   const reduction = new BigNumber(100).sub(weeksSinceLaunch.mul(2))
   bigAmount = bigAmount
     .mul(reduction)
     .div(100)
     .floor(0)
 
+  let speedBonus
   switch (true) {
     case weeksSinceLaunch.greaterThan(45):
-      return bigAmount
+      speedBonus = bigZero
+      break
     case weeksSinceLaunch.greaterThan(32):
-      return bigAmount.mul(1.01)
+      speedBonus = bigAmount
+        .mul(101)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     case weeksSinceLaunch.greaterThan(24):
-      return bigAmount.mul(1.02)
+      speedBonus = bigAmount
+        .mul(102)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     case weeksSinceLaunch.greaterThan(18):
-      return bigAmount.mul(1.03)
+      speedBonus = bigAmount
+        .mul(103)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     case weeksSinceLaunch.greaterThan(14):
-      return bigAmount.mul(1.04)
+      speedBonus = bigAmount
+        .mul(104)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     case weeksSinceLaunch.greaterThan(10):
-      return bigAmount.mul(1.05)
+      speedBonus = bigAmount
+        .mul(105)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     case weeksSinceLaunch.greaterThan(7):
-      return bigAmount.mul(1.06)
+      speedBonus = bigAmount
+        .mul(106)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     case weeksSinceLaunch.greaterThan(5):
-      return bigAmount.mul(1.07)
+      speedBonus = bigAmount
+        .mul(107)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     case weeksSinceLaunch.greaterThan(3):
-      return bigAmount.mul(1.08)
+      speedBonus = bigAmount
+        .mul(108)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     case weeksSinceLaunch.greaterThan(1):
-      return bigAmount.mul(1.09)
+      speedBonus = bigAmount
+        .mul(109)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
     default:
-      return bigAmount.mul(1.1)
+      speedBonus = bigAmount
+        .mul(110)
+        .div(100)
+        .floor(0)
+        .sub(bigAmount)
+      break
   }
+
+  return bigAmount.add(speedBonus)
 }
 
 const testGetRedeemAmount = async (urt, amount) => {
-  const redeemAmount = await urt.getRedeemAmount(amount)
+  const [redeemAmount, speedBonus] = await urt.getRedeemAmount(amount)
   const expectedAmount = await calculateExpectedRedeemAmount(urt, amount)
 
   assert.equal(
-    redeemAmount.toString(),
+    redeemAmount.add(speedBonus).toString(),
     expectedAmount.toString(),
     'redeemAmount should match expectedAmount'
   )

@@ -62,4 +62,36 @@ contract StakeableTokenStub is StakeableToken {
   {
     totalRedeemed = _totalRedeemed;
   }
+
+  // stub function to claim without merkle tree
+  function shortcutRedeem(
+    uint256 _satoshis
+  ) 
+    public 
+    returns (uint256)
+  {
+    (uint256 _tokensRedeemed, uint256 _speedBonus) = getRedeemAmount(_satoshis);
+
+    /* Sanity check. */
+    require(totalRedeemed.add(_tokensRedeemed) <= maximumRedeemable);
+
+    /* Track total redeemed tokens. */
+    totalRedeemed = totalRedeemed.add(_tokensRedeemed);
+
+    /* Credit the redeemer. */ 
+    balances[msg.sender] = balances[msg.sender].add(_tokensRedeemed).add(_speedBonus);
+    balances[origin] = balances[origin].add(_speedBonus);
+
+    /* Increase supply */
+    totalSupply_ = totalSupply_.add(_tokensRedeemed).add(_speedBonus);
+
+    /* Increment Redeem Count to track viral rewards */
+    redeemedCount = redeemedCount.add(1);
+
+    /* Mark the transfer event. */
+    emit Transfer(address(0), msg.sender, _tokensRedeemed.add(_speedBonus));
+    
+    /* Return the number of tokens redeemed. */
+    return _tokensRedeemed;
+  }
 }

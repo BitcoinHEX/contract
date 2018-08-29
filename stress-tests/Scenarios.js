@@ -152,25 +152,22 @@ describe('when running different long term scenarios', () => {
       )
     }).timeout(60 * 60 * 1000) // set timeout to an hour... this test will take a looong time
 
-    it.only(
-      'should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in ~1 year increments',
-      async () => {
-        const skt = await setupStakeableToken(
-          defaultCirculationAtFork,
-          defaultMaximumRedeemable
-        )
+    it('should overflow after around 200+ years due to totalSupply overflow when funds focused randomly in ~1 year increments', async () => {
+      const skt = await setupStakeableToken(
+        defaultCirculationAtFork,
+        defaultMaximumRedeemable
+      )
 
-        // little less than 1 year
-        const timeToStake = oneInterestPeriod * 36
+      // little less than 1 year
+      const timeToStake = oneInterestPeriod * 36
 
-        await stressTestStakes(
-          skt,
-          defaultMaximumRedeemable,
-          defaultCirculationAtFork,
-          timeToStake,
-          true
-        )
-      }
-    ).timeout(60 * 60 * 2000) // set timeout to an hour... this test will take a looong time
+      await stressTestStakes(
+        skt,
+        defaultMaximumRedeemable,
+        defaultCirculationAtFork,
+        timeToStake,
+        true
+      )
+    }).timeout(60 * 60 * 2000) // set timeout to an hour... this test will take a looong time
   })
 })
