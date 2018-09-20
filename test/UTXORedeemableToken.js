@@ -13,7 +13,8 @@ const {
   testRedeemUtxo,
   testRedeemReferredUtxo,
   testWeekIncrement,
-  testGetRedeemAmount
+  testGetRedeemAmount,
+  getModelingVariables
 } = require('./helpers/urt')
 const { getDefaultLaunchTime } = require('./helpers/bhx')
 const {
@@ -467,6 +468,7 @@ describe('when incrementing weeks', () => {
 describe('when checking redeem amounts at different times', async () => {
   contract('UtxoRedeemableToken', () => {
     let urt
+    const weeklyValues = []
 
     before('setup contract', async () => {
       const launchTime = await getDefaultLaunchTime()
@@ -479,8 +481,10 @@ describe('when checking redeem amounts at different times', async () => {
         Number
       )) {
         await timeWarpRelativeToLaunchTime(urt, oneBlockWeek * week + 1, true)
+        weeklyValues.push(await getModelingVariables(urt))
         await testGetRedeemAmount(urt, BigNumber.random(9).mul(1e9))
       }
+      console.log(weeklyValues)
     })
   })
 })

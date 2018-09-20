@@ -169,7 +169,7 @@ const warpThroughBonusWeeks = async (urt, seconds) => {
     await timeWarpRelativeToLaunchTime(urt, weekInSeconds * i, true)
     await urt.storeSatoshiWeekData()
     console.log(
-      `warped to week ${i} of ${bonusWeeksToWarp} and stored week unclaimd`
+      `warped to week ${i} of ${bonusWeeksToWarp} and stored week unclaimed`
     )
   }
 
@@ -595,6 +595,14 @@ const testGetRedeemAmount = async (urt, amount) => {
   )
 }
 
+const getModelingVariables = async urt => {
+  return {
+    totalRedeemed: (await urt.totalRedeemed()).toString(),
+    totalStakedCoins: (await urt.totalStakedCoins()).toString(),
+    redeemedCount: (await urt.redeemedCount()).toString()
+  }
+}
+
 module.exports = {
   satoshiStructToObj,
   setupContract,
@@ -613,5 +621,6 @@ module.exports = {
   testWeekIncrement,
   testGetRedeemAmount,
   warpThroughBonusWeeks,
-  redeemAllUtxos
+  redeemAllUtxos,
+  getModelingVariables
 }
