@@ -17,7 +17,7 @@ const stakeStructToObj = struct => ({
   stakeTime: struct[1],
   unlockTime: struct[2],
   totalStakedCoinsAtStart: struct[3],
-  totalSupplyAtStart: struct[4]
+  maxOfTotalSupplyVSMaxRedeemableAtStart: struct[4]
 })
 
 const getWeeksSinceLaunch = async skt => {
@@ -205,7 +205,7 @@ const calculateStakingRewards = async (skt, staker, stakeIndex) => {
 
   let scaler = stake.totalStakedCoinsAtStart
     .mul(100)
-    .div(stake.totalSupplyAtStart)
+    .div(stake.maxOfTotalSupplyVSMaxRedeemableAtStart)
     .floor(0)
   scaler = scaler.gt(0) ? scaler : new BigNumber(1)
   let scaledRate = raisedRate.div(scaler).floor(0)

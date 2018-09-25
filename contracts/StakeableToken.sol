@@ -24,7 +24,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 stakeTime;
     uint256 unlockTime;
     uint256 totalStakedCoinsAtStart;
-    uint256 totalSupplyAtStart;
+    uint256 maxOfTotalSupplyVSMaxRedeemableAtStart;
   }
 
   mapping(address => StakeStruct[]) public staked;
@@ -187,7 +187,7 @@ contract StakeableToken is UTXORedeemableToken {
     if (_stake.totalStakedCoinsAtStart != 0) {
       uint256 _scalerCandidate = _stake.totalStakedCoinsAtStart
         .mul(100)
-        .div(_stake.totalSupplyAtStart);
+        .div(_stake.maxOfTotalSupplyVSMaxRedeemableAtStart);
       
       _scaler = _scalerCandidate > 0 ? _scalerCandidate : 1;
 
@@ -464,9 +464,9 @@ contract StakeableToken is UTXORedeemableToken {
 
     // TotalSupplyAtStart = Maximum redeemable supply, or total supply, whichever one is larger
     // Prevent early stakers from being penalised for being early
-    uint256 totalSupplyAtStart = totalSupply_;
+    uint256 maxOfTotalSupplyVSMaxRedeemableAtStart = totalSupply_;
     if (totalSupply_ < _maximumRedeemable) {
-      totalSupplyAtStart = _maximumRedeemable;
+      maxOfTotalSupplyVSMaxRedeemableAtStart = _maximumRedeemable;
     }
 
     // Create Stake
@@ -476,7 +476,7 @@ contract StakeableToken is UTXORedeemableToken {
         block.timestamp, 
         _unlockTime, 
         totalStakedCoins.add(_value),
-        totalSupplyAtStart
+        maxOfTotalSupplyVSMaxRedeemableAtStart
       )
     );
 
