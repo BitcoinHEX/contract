@@ -60,6 +60,17 @@ contract StakeableToken is UTXORedeemableToken {
     return (_stakeAmount, _stakeTime, _unlockTime, _totalStakedCoinsAtStart);
   }
 
+  /**
+    @notice A convenience function to get circulating supply.
+  */
+  function getCirculatingSupply()
+    public
+    view
+    returns (uint256)
+  {
+    return totalSupply_.sub(totalStakedCoins);
+  }
+
   /** 
     @notice A convenience function to get weeks since launch.
   */
@@ -131,7 +142,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _groupings = _periods.div(_maxGroupPeriods);
     uint256 _compounded = _principle.div(1e10);
 
-    for(uint256 _i = 0; _i < _groupings; _i = _i.add(1)) {
+    for (uint256 _i = 0; _i < _groupings; _i = _i.add(1)) {
       _compounded = _compounded
         .mul(_interestRate ** _maxGroupPeriods)
         .div(1e4 ** _maxGroupPeriods);
@@ -362,7 +373,7 @@ contract StakeableToken is UTXORedeemableToken {
     }
 
     // return single stake if indexes are the same
-    if( _startIndex == _endIndex) {
+    if ( _startIndex == _endIndex) {
       return staked[_staker][0].stakeAmount;
     }
 
@@ -451,6 +462,12 @@ contract StakeableToken is UTXORedeemableToken {
     balances[_staker] = balances[_staker].sub(_value);
     balances[address(this)] = balances[address(this)].add(_value);
 
+    // TotalSupplyAtStart = Maximum redeemable supply, or total supply, whichever one is larger
+    uint256 totalSupplyAtStart = totalSupply_;
+    if (totalSupply_ < _maximumRedeemable) {
+      totalSupplyAtStart = _maximumRedeemable;
+    }
+
     // Create Stake
     staked[_staker].push(
       StakeStruct(
@@ -458,7 +475,7 @@ contract StakeableToken is UTXORedeemableToken {
         block.timestamp, 
         _unlockTime, 
         totalStakedCoins.add(_value),
-        totalSupply_
+        totalSupplyAtStart
       )
     );
 
