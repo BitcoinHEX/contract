@@ -462,7 +462,7 @@ contract StakeableToken is UTXORedeemableToken {
     balances[_staker] = balances[_staker].sub(_value);
     balances[address(this)] = balances[address(this)].add(_value);
 
-    // TotalSupplyAtStart = Maximum redeemable supply, or total supply, whichever one is larger
+    // maxOfTotalSupplyVSMaxRedeemableAtStart = Maximum redeemable supply, or total supply, whichever one is larger
     // Prevent early stakers from being penalised for being early
     uint256 maxOfTotalSupplyVSMaxRedeemableAtStart = totalSupply_;
     if (totalSupply_ < _maximumRedeemable) {
