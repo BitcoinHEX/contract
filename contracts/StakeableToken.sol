@@ -241,7 +241,7 @@ contract StakeableToken is UTXORedeemableToken {
       .sub(launchTime)
       .div(7 days);
 
-    // rewards are not deducted nor given during first week
+    // rewards are not deducted nor given before end of first week
     uint256 _startWeek = _startWeekCandidate == 0 ? 1 : _startWeekCandidate;
 
     uint256 _endWeek = _unlockTime
@@ -256,6 +256,7 @@ contract StakeableToken is UTXORedeemableToken {
         .mul(100)
         .div(satoshiRewardDataByWeek[_i].totalStaked);
 
+      // Check storeSatoshiWeekData() for math on how satoshiRewardDataByWeek is calculated
       uint256 _satoshiRewardWeek = satoshiRewardDataByWeek[_i].unclaimedCoins
         .div(50)
         .mul(_rewardRatio)
