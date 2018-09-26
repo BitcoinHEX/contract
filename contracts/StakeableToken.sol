@@ -319,7 +319,8 @@ contract StakeableToken is UTXORedeemableToken {
    */
   function calculateAdditionalRewards(
     address _staker,
-    uint256 _stakeIndex
+    uint256 _stakeIndex,
+    uint256 _stakePayout
   ) 
     public 
     view 
@@ -333,8 +334,8 @@ contract StakeableToken is UTXORedeemableToken {
         _stake.stakeTime,
         _stake.unlockTime
       );
-      uint256 _viralRewards = calculateViralRewards(_stake.stakeAmount);
-      uint256 _critMassRewards = calculateCritMassRewards(_stake.stakeAmount);
+      uint256 _viralRewards = calculateViralRewards(_stakePayout);
+      uint256 _critMassRewards = calculateCritMassRewards(_stakePayout);
       uint256 _rewards = _weAreAllSatoshiRewards
         .add(_viralRewards)
         .add(_critMassRewards);
@@ -418,10 +419,16 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _stake = staked[_staker][_stakeIndex].stakeAmount;
     
     if (block.timestamp > staked[_staker][_stakeIndex].unlockTime) {
+      uint256 _stakingRewards = calculateStakingRewards(
+        _staker, 
+        _stakeIndex
+      );
+
       return _stake.add(
           calculateAdditionalRewards(
             _staker,
-            _stakeIndex
+            _stakeIndex,
+            _stakingRewards
           )
       );
     } else {
@@ -517,7 +524,8 @@ contract StakeableToken is UTXORedeemableToken {
     );
     uint256 _additionalRewards = calculateAdditionalRewards(
       _staker,
-      _stakeIndex
+      _stakeIndex,
+      _stakingRewards
     );
     uint256 _rewards = _startingStake
       .add(_stakingRewards)
