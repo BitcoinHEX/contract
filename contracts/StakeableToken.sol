@@ -520,8 +520,7 @@ contract StakeableToken is UTXORedeemableToken {
     require(block.timestamp >= _stake.unlockTime);
     // Check if weekly data needs to be updated
     storeSatoshiWeekData();
-
-    uint256 _startingStake = _stake.stakeAmount;
+    
     // Calculate Rewards
     uint256 _stakingRewards = calculateStakingRewards(
       _staker, 
@@ -532,17 +531,17 @@ contract StakeableToken is UTXORedeemableToken {
       _stakeIndex,
       _stakingRewards
     );
-    uint256 _rewards = _startingStake
+    uint256 _rewards = _stake.stakeAmount
       .add(_stakingRewards)
       .add(_additionalRewards);
     
     // Remove StakedCoins from global counter
     totalStakedCoins = totalStakedCoins
-      .sub(_startingStake);
+      .sub(_stake.stakeAmount);
 
     // Sub staked coins from contract
     balances[address(this)] = balances[address(this)]
-      .sub(_startingStake);
+      .sub(_stake.stakeAmount);
     
     // Add staked coins to staker
     balances[_staker] = balances[_staker]
