@@ -460,7 +460,8 @@ contract StakeableToken is UTXORedeemableToken {
   {
     address _staker = msg.sender;
 
-    uint256 _ unlockTime = block.timestamp.add(_stakePeriods.mul(10 days));
+    // Calculate Unlock time
+    uint256 _unlockTime = block.timestamp.add(_stakePeriods.mul(10 days));
 
     // Make sure staker has enough funds
     require(balances[_staker] >= _value);
