@@ -14,7 +14,7 @@ contract StakeableToken is UTXORedeemableToken {
 
   event Mint(address indexed _address, uint _reward);
 
-  uint256 public totalBtcCirculationAtFork;
+  uint256 public UTXOCountAtFork;
   uint256 public constant interestRatePercent = 1;
   uint256 public constant maxStakingTimeInSeconds = 365 days * 10;
   uint256 public constant oneInterestPeriodInSeconds = 10 days;
@@ -287,7 +287,7 @@ contract StakeableToken is UTXORedeemableToken {
     // Add bonus percentage to _rewards from 0-10% based on adoption
     return _stakeAmount
       .mul(redeemedCount)
-      .div(totalBtcCirculationAtFork)
+      .div(UTXOCountAtFork)
       .div(10);
   }
 

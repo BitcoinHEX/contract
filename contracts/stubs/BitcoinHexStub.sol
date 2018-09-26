@@ -9,14 +9,14 @@ contract BitcoinHexStub is BitcoinHex {
     address _originContract,
     bytes32 _rootUtxoMerkleTreeHash,
     uint256 _maximumRedeemable,
-    uint256 _totalBtcCirculationAtFork
+    uint256 _UTXOCountAtFork
   ) 
     public 
     BitcoinHex(
       _originContract,
       _rootUtxoMerkleTreeHash,
       _maximumRedeemable,
-      _totalBtcCirculationAtFork
+      _UTXOCountAtFork
     )
   {}    
 }

@@ -20,7 +20,7 @@ contract BitcoinHex is StakeableToken {
     address _originAddress,
     bytes32 _rootUtxoMerkleTreeHash,
     uint256 _maximumRedeemable,
-    uint256 _totalBtcCirculationAtFork
+    uint256 _UTXOCountAtFork
   ) 
     public
   {
@@ -28,6 +28,6 @@ contract BitcoinHex is StakeableToken {
     origin = _originAddress;
     rootUtxoMerkleTreeHash = _rootUtxoMerkleTreeHash;
     maximumRedeemable = _maximumRedeemable;
-    totalBtcCirculationAtFork = _totalBtcCirculationAtFork;
+    UTXOCountAtFork = _UTXOCountAtFork;
   }
 }

@@ -8,7 +8,7 @@ contract StakeableTokenStub is StakeableToken {
     address _origin,
     uint256 _launchTime,
     bytes32 _rootUtxoMerkleTreeHash,
-    uint256 _totalBtcCirculationAtFork,
+    uint256 _UTXOCountAtFork,
     uint256 _maximumRedeemable
   ) 
     public
@@ -16,7 +16,7 @@ contract StakeableTokenStub is StakeableToken {
     origin = _origin;
     launchTime = _launchTime;
     rootUtxoMerkleTreeHash = _rootUtxoMerkleTreeHash;
-    totalBtcCirculationAtFork = _totalBtcCirculationAtFork;
+    UTXOCountAtFork = _UTXOCountAtFork;
     maximumRedeemable = _maximumRedeemable;
   }
 
