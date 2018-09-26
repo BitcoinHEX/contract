@@ -250,7 +250,7 @@ contract StakeableToken is UTXORedeemableToken {
 
     uint256 _rewardableEndWeek = _endWeek > 50 ? 50 : _endWeek;
 
-    // Award 2% of unclaimed coins at end of every week
+    // Award 2% of unclaimed coins at end of every week - We intentionally overshoot to compensate for reduction from late claim scaling
     for (uint256 _i = _startWeek; _i < _rewardableEndWeek; _i++) {
       uint256 _rewardRatio = _stakeAmount
         .mul(100)

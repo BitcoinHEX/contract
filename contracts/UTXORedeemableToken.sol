@@ -324,25 +324,25 @@ contract UTXORedeemableToken is StandardToken {
 
     /* Apply speed bonus */
     uint256 _speedBonus = 0;
-    if(_weeksSinceLaunch > 45) {
+    if (_weeksSinceLaunch > 45) {
       _speedBonus = 0;
-    } else if(_weeksSinceLaunch > 32) {
+    } else if (_weeksSinceLaunch > 32) {
       _speedBonus = _redeemAmount.mul(101).div(100).sub(_redeemAmount);
-    } else if(_weeksSinceLaunch > 24) {
+    } else if (_weeksSinceLaunch > 24) {
       _speedBonus = _redeemAmount.mul(102).div(100).sub(_redeemAmount);
-    } else if(_weeksSinceLaunch > 18) {
+    } else if (_weeksSinceLaunch > 18) {
       _speedBonus = _redeemAmount.mul(103).div(100).sub(_redeemAmount);
-    } else if(_weeksSinceLaunch > 14) {
+    } else if (_weeksSinceLaunch > 14) {
       _speedBonus = _redeemAmount.mul(104).div(100).sub(_redeemAmount);
-    } else if(_weeksSinceLaunch > 10) {
+    } else if (_weeksSinceLaunch > 10) {
       _speedBonus = _redeemAmount.mul(105).div(100).sub(_redeemAmount);
-    } else if(_weeksSinceLaunch > 7) {
+    } else if (_weeksSinceLaunch > 7) {
       _speedBonus = _redeemAmount.mul(106).div(100).sub(_redeemAmount);
-    } else if(_weeksSinceLaunch > 5) {
+    } else if (_weeksSinceLaunch > 5) {
       _speedBonus = _redeemAmount.mul(107).div(100).sub(_redeemAmount);
-    } else if(_weeksSinceLaunch > 3) {
+    } else if (_weeksSinceLaunch > 3) {
       _speedBonus = _redeemAmount.mul(108).div(100).sub(_redeemAmount);
-    } else if(_weeksSinceLaunch > 1) {
+    } else if (_weeksSinceLaunch > 1) {
       _speedBonus = _redeemAmount.mul(109).div(100).sub(_redeemAmount);
     } else if (_weeksSinceLaunch >= 0) {
       _speedBonus = _redeemAmount.mul(110).div(100).sub(_redeemAmount);
@@ -409,6 +409,9 @@ contract UTXORedeemableToken is StandardToken {
       )
     );
 
+    /* Track total redeemed tokens. This needs to be logged before scaling */
+    totalRedeemed = totalRedeemed.add(_satoshis);
+
     /* Mark the UTXO as redeemed. */
     redeemedUTXOs[_merkleLeafHash] = true;
 
@@ -416,9 +419,6 @@ contract UTXORedeemableToken is StandardToken {
 
     /* Sanity check. */
     require(totalRedeemed.add(_tokensRedeemed) <= maximumRedeemable);
-
-    /* Track total redeemed tokens. */
-    totalRedeemed = totalRedeemed.add(_tokensRedeemed);
 
     /* Credit the redeemer. */ 
     balances[msg.sender] = balances[msg.sender].add(_tokensRedeemed).add(_speedBonus);
