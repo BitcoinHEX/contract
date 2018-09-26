@@ -278,14 +278,14 @@ contract StakeableToken is UTXORedeemableToken {
     @param _stakeAmount the base amount to stake for calculations
   */
   function calculateViralRewards(
-    uint256 _stakeAmount
+    uint256 _stakePayout
   ) 
     public 
     view 
     returns (uint256)
   {
     // Add bonus percentage to _rewards from 0-10% based on adoption
-    return _stakeAmount
+    return _stakePayout
       .mul(redeemedCount)
       .div(UTXOCountAtFork)
       .div(10);
@@ -297,14 +297,14 @@ contract StakeableToken is UTXORedeemableToken {
     @param _stakeAmount the base amount to stake for calculations
   */
   function calculateCritMassRewards(
-    uint256 _stakeAmount
+    uint256 _stakePayout
   ) 
     public 
     view 
     returns (uint256)
   {
     // Add bonus percentage to _rewards from 0-10% based on adoption
-    return _stakeAmount
+    return _stakePayout
       .mul(totalRedeemed)
       .div(maximumRedeemable)
       .div(10);
@@ -429,7 +429,7 @@ contract StakeableToken is UTXORedeemableToken {
             _staker,
             _stakeIndex,
             _stakingRewards
-          )
+          ).add(_stakingRewards)
       );
     } else {
       return _stake;
