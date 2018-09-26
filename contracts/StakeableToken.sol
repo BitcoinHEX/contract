@@ -17,6 +17,7 @@ contract StakeableToken is UTXORedeemableToken {
   uint256 public UTXOCountAtFork;
   uint256 public constant interestRatePercent = 1;
   uint256 public constant maxStakingTimeInSeconds = 365 days * 10;
+  uint256 public constant minStakingTimeInSeconds = 10 days;
   uint256 public constant oneInterestPeriodInSeconds = 10 days;
 
   struct StakeStruct {
@@ -448,21 +449,25 @@ contract StakeableToken is UTXORedeemableToken {
     @notice start a stake in order to claim rewards at later unlock time.
     Additional rewards only payable within first 50 weeks.
     @param _value amount of tokens to lock
-    @param _unlockTime unix timestamp date for when to unlock tokens
+    @param _stakePeriods number of 10 day periods to lock for
   */
   function startStake(
     uint256 _value, 
-    uint256 _unlockTime
+    uint256 _stakePeriods
   ) 
     external
     returns (bool)
   {
     address _staker = msg.sender;
 
+    uint256 _ unlockTime = block.timestamp.add(_stakePeriods.mul(10 days));
+
     // Make sure staker has enough funds
     require(balances[_staker] >= _value);
     // ensure that unlock time is not more than approx 10 years
     require(_unlockTime <= block.timestamp.add(maxStakingTimeInSeconds));
+    // ensure that unlock time is more than 10 days
+    require(_unlockTime >= block.timestamp.add(minStakingTimeInSeconds));
     // Check if weekly data needs to be updated
     storeSatoshiWeekData();
 
