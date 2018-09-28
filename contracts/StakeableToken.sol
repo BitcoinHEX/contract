@@ -550,6 +550,7 @@ contract StakeableToken is UTXORedeemableToken {
     balances[_staker] = balances[_staker]
       .add(_rewards);
 
+    // Emit an event so ERC20 wallets don't break
     emit Transfer(
       address(this), 
       _staker, 
