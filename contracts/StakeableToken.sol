@@ -188,6 +188,7 @@ contract StakeableToken is UTXORedeemableToken {
     // calculate percent of staked coins vs totalSupply (or maximumRedeemable if larger) to use for interest rate reduction
     if (_stake.totalStakedCoinsAtStart != 0) {
       uint256 _scalerCandidate = _stake.totalStakedCoinsAtStart
+        .add(_stake.stakeAmount)
         .mul(100)
         .div(_stake.maxOfTotalSupplyVSMaxRedeemableAtStart);
       
