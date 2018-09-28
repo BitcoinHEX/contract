@@ -463,7 +463,7 @@ contract StakeableToken is UTXORedeemableToken {
     for (lastUpdatedWeek; _weeksSinceLaunch > lastUpdatedWeek; lastUpdatedWeek++) {
       uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
       satoshiRewardDataByWeek[_weeksSinceLaunch] = SatoshiWeekData(
-        _unclaimedCoins, 
+        _unclaimedCoins,
         totalStakedCoins
       );
       balances[origin] = balances[origin]
@@ -478,7 +478,7 @@ contract StakeableToken is UTXORedeemableToken {
     @param _stakePeriods number of 10 day periods to lock for
   */
   function startStake(
-    uint256 _value, 
+    uint256 _value,
     uint256 _stakePeriods
   ) 
     external
