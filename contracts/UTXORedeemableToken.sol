@@ -31,8 +31,9 @@ contract UTXORedeemableToken is StandardToken {
   address public origin;
   /* Store time of launch for contract */
   uint256 public launchTime;
-  /* Store last updated week */
+  /* Store last week storeWeeklyUnclaimedCoins() ran */
   uint256 public lastUpdatedWeek;
+  /* Counter of all coins currently staked */
   uint256 public totalStakedCoins;
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
