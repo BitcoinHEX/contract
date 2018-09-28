@@ -14,7 +14,8 @@ contract StakeableToken is UTXORedeemableToken {
 
   event Mint(address indexed _address, uint _reward);
 
-  uint256 public UTXOCountAtFork;
+  uint256 UTXOCountAtFork;
+  uint256 _maximumRedeemable;
   uint256 public constant interestRatePercent = 1;
   uint256 public constant maxStakingTimeInSeconds = 365 days * 10;
   uint256 public constant oneInterestPeriodInSeconds = 10 days;
@@ -275,7 +276,7 @@ contract StakeableToken is UTXORedeemableToken {
     bonus period and will give a non-zero value which
     could be misleading. It does not affect functionality
     of the contract however.
-    @param _stakeAmount the base amount to stake for calculations
+    @param _stakePayout the base amount to stake for calculations
   */
   function calculateViralRewards(
     uint256 _stakePayout
@@ -294,7 +295,7 @@ contract StakeableToken is UTXORedeemableToken {
   /**
     @notice A utility function which calculates the crit mass
     component of additional rewards
-    @param _stakeAmount the base amount to stake for calculations
+    @param _stakePayout the base amount to stake for calculations
   */
   function calculateCritMassRewards(
     uint256 _stakePayout
