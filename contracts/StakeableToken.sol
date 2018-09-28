@@ -546,7 +546,7 @@ contract StakeableToken is UTXORedeemableToken {
     balances[address(this)] = balances[address(this)]
       .sub(_stake.stakeAmount);
     
-    // Add staked coins to staker
+    // Add Stake rewards to staker
     balances[_staker] = balances[_staker]
       .add(_rewards);
 
