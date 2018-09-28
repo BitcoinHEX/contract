@@ -460,14 +460,12 @@ contract StakeableToken is UTXORedeemableToken {
     public 
   {
     uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
-
-    if (_weeksSinceLaunch <= 50 && _weeksSinceLaunch > lastUpdatedWeek) {
+    for (lastUpdatedWeek; _weeksSinceLaunch > lastUpdatedWeek; lastUpdatedWeek++) {
       uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
       satoshiRewardDataByWeek[_weeksSinceLaunch] = SatoshiWeekData(
         _unclaimedCoins, 
         totalStakedCoins
       );
-      lastUpdatedWeek = _weeksSinceLaunch;
       balances[origin] = balances[origin]
         .add(_unclaimedCoins.div(50));
     }
