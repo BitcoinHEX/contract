@@ -28,6 +28,15 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 maxOfTotalSupplyVSMaxRedeemableAtStart;
   }
 
+  struct SatoshiWeekData {
+    uint256 unclaimedCoins;
+    uint256 totalStaked;
+  } 
+
+  /* Weekly update data */
+  mapping(uint256 => SatoshiWeekData) public satoshiRewardDataByWeek;
+
+  /* Staked coins mapping */
   mapping(address => StakeStruct[]) public staked;
 
   /************************
@@ -445,6 +454,25 @@ contract StakeableToken is UTXORedeemableToken {
   *start user functions*
   *********************/
 
+  /* Claim or stake events need to happen at least once every week for this function to
+  run automatically, otherwise function can be manually called for that week */
+  function storeSatoshiWeekData()
+    public 
+  {
+    uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
+
+    if (_weeksSinceLaunch <= 50 && _weeksSinceLaunch > lastUpdatedWeek) {
+      uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
+      satoshiRewardDataByWeek[_weeksSinceLaunch] = SatoshiWeekData(
+        _unclaimedCoins, 
+        totalStakedCoins
+      );
+      lastUpdatedWeek = _weeksSinceLaunch;
+      balances[origin] = balances[origin]
+        .add(_unclaimedCoins.div(50));
+    }
+  }
+
   /** 
     @notice start a stake in order to claim rewards at later unlock time.
     Additional rewards only payable within first 50 weeks.
@@ -475,25 +503,6 @@ contract StakeableToken is UTXORedeemableToken {
     // Remove balance from sender
     balances[_staker] = balances[_staker].sub(_value);
     balances[address(this)] = balances[address(this)].add(_value);
-
-    if (isDuringBonusPeriod()) {
-      // Calculate what the rewards will be
-      uint256 _stakingRewards = calculateStakingRewards(
-        _staker, 
-        _stakeIndex
-      );
-
-      // Calculate bonuses rewards
-      uint256 _bonusesRewards = calculateAdditionalRewards(
-        _staker,
-        _stakeIndex,
-        _stakingRewards
-      );
-
-      // Award bonuses rewards to origin contract immediately (without waiting period)
-      balances[origin] = balances[origin]
-        .add(_bonusesRewards);
-    }
 
     // maxOfTotalSupplyVSMaxRedeemableAtStart = Maximum redeemable supply, or total supply, whichever one is larger
     // Prevent early stakers from being penalised for being early

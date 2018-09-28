@@ -27,11 +27,6 @@ import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 */
 contract UTXORedeemableToken is StandardToken {
 
-  struct SatoshiWeekData {
-    uint256 unclaimedCoins;
-    uint256 totalStaked;
-  } 
-
   /* Origin Address */
   address public origin;
   /* Store time of launch for contract */
@@ -46,27 +41,8 @@ contract UTXORedeemableToken is StandardToken {
   uint256 public maximumRedeemable;
   /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
   bytes32 public rootUtxoMerkleTreeHash;
-  /* Weekly update data */
-  mapping(uint256 => SatoshiWeekData) public satoshiRewardDataByWeek;
   /* Redeemed UTXOs. */
   mapping(bytes32 => bool) public redeemedUTXOs;
-
-  /* Claim, stake, and minting events need to happen atleast once every week for this function to
-     run automatically, otherwise function can be manually called for that week */
-  function storeSatoshiWeekData()
-    public 
-  {
-    uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
-
-    if (_weeksSinceLaunch <= 50 && _weeksSinceLaunch > lastUpdatedWeek) {
-      uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-      satoshiRewardDataByWeek[_weeksSinceLaunch] = SatoshiWeekData(
-        _unclaimedCoins, 
-        totalStakedCoins
-      );
-      lastUpdatedWeek = _weeksSinceLaunch;
-    }
-  }
 
   /**
    * @dev Extract a bytes32 subarray from an arbitrary length bytes array.
@@ -378,8 +354,6 @@ contract UTXORedeemableToken is StandardToken {
   {
     // ensure that redeeming after launch time
     require(block.timestamp >= launchTime);
-    /* Check if weekly data needs to be updated */
-    storeSatoshiWeekData();
 
     // /* Disable claims after 50 weeks */
     // require(block.timestamp.sub(launchTime).div(7 days) < 50);
