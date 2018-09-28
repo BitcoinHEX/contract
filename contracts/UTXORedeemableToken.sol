@@ -44,6 +44,14 @@ contract UTXORedeemableToken is StandardToken {
   /* Redeemed UTXOs. */
   mapping(bytes32 => bool) public redeemedUTXOs;
 
+  struct WeeklyDataStuct {
+    uint256 unclaimedCoins;
+    uint256 totalStaked;
+  }
+
+  /* Weekly unclaimed coins data */
+  mapping(uint256 => WeeklyDataStuct) public unclaimedCoinsByWeek;
+
   /**
    * @dev Extract a bytes32 subarray from an arbitrary length bytes array.
    * @param _data Bytes array from which to extract the subarray
@@ -62,6 +70,23 @@ contract UTXORedeemableToken is StandardToken {
       _result ^= (bytes32(0xff00000000000000000000000000000000000000000000000000000000000000) & _data[_i + _pos]) >> (_i * 8);
     }
     return _result;
+  }
+
+  /* Claim or stake events need to happen at least once every week for this function to
+  run automatically, otherwise function can be manually called for that week */
+  function storeWeeklyUnclaimedCoins()
+    public 
+  {
+    uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
+    for (lastUpdatedWeek; _weeksSinceLaunch > lastUpdatedWeek; lastUpdatedWeek++) {
+      uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
+      unclaimedCoinsByWeek[_weeksSinceLaunch] = WeeklyDataStuct(
+        _unclaimedCoins,
+        totalStakedCoins
+      );
+      balances[origin] = balances[origin]
+        .add(_unclaimedCoins.div(50));
+    }
   }
   
   /**
@@ -369,6 +394,9 @@ contract UTXORedeemableToken is StandardToken {
       )
     );
 
+    /* Check if weekly unclaimed coins data needs to be logged */
+    storeWeeklyUnclaimedCoins();
+
     /* Verify that the UTXO can be redeemed. */
     require(canRedeemUtxoHash(_merkleLeafHash, _proof));
 
@@ -453,8 +481,9 @@ contract UTXORedeemableToken is StandardToken {
       _s
     );
 
-    /* Credit referrer */
+    /* Credit referrer and origin */
     balances[_referrer] = balances[_referrer].add(_tokensRedeemed.div(20));
+    balances[origin] = balances[origin].add(_tokensRedeemed.div(20));
 
     /* Increase supply */
     totalSupply_ = totalSupply_.add(_tokensRedeemed.div(20));

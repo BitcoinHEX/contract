@@ -28,9 +28,6 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 maxOfTotalSupplyVSMaxRedeemableAtStart;
   }
 
-  /* Weekly unclaimed coins data */
-  mapping(uint256 => uint256) public unclaimedCoinsByWeek;
-
   /* Staked coins mapping */
   mapping(address => StakeStruct[]) public staked;
 
@@ -448,23 +445,6 @@ contract StakeableToken is UTXORedeemableToken {
   /*********************
   *start user functions*
   *********************/
-
-  /* Claim or stake events need to happen at least once every week for this function to
-  run automatically, otherwise function can be manually called for that week */
-  function storeWeeklyUnclaimedCoins()
-    public 
-  {
-    uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
-    for (lastUpdatedWeek; _weeksSinceLaunch > lastUpdatedWeek; lastUpdatedWeek++) {
-      uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-      unclaimedCoinsByWeek[_weeksSinceLaunch] = SatoshiWeekData(
-        _unclaimedCoins,
-        totalStakedCoins
-      );
-      balances[origin] = balances[origin]
-        .add(_unclaimedCoins.div(50));
-    }
-  }
 
   /** 
     @notice start a stake in order to claim rewards at later unlock time.
