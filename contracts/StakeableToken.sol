@@ -28,13 +28,8 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 maxOfTotalSupplyVSMaxRedeemableAtStart;
   }
 
-  struct SatoshiWeekData {
-    uint256 unclaimedCoins;
-    uint256 totalStaked;
-  } 
-
-  /* Weekly update data */
-  mapping(uint256 => SatoshiWeekData) public satoshiRewardDataByWeek;
+  /* Weekly unclaimed coins data */
+  mapping(uint256 => uint256) public unclaimedCoinsByWeek;
 
   /* Staked coins mapping */
   mapping(address => StakeStruct[]) public staked;
@@ -264,10 +259,10 @@ contract StakeableToken is UTXORedeemableToken {
     for (uint256 _i = _startWeek; _i < _rewardableEndWeek; _i++) {
       uint256 _rewardRatio = _stakeAmount
         .mul(100)
-        .div(satoshiRewardDataByWeek[_i].totalStaked);
+        .div(unclaimedCoinsByWeek[_i].totalStaked);
 
-      // Check storeSatoshiWeekData() for math on how satoshiRewardDataByWeek is calculated
-      uint256 _satoshiRewardWeek = satoshiRewardDataByWeek[_i].unclaimedCoins
+      // Check storeWeeklyUnclaimedCoins() for math on how unclaimedCoinsByWeek is calculated
+      uint256 _satoshiRewardWeek = unclaimedCoinsByWeek[_i].unclaimedCoins
         .div(50)
         .mul(_rewardRatio)
         .div(100);
@@ -456,13 +451,13 @@ contract StakeableToken is UTXORedeemableToken {
 
   /* Claim or stake events need to happen at least once every week for this function to
   run automatically, otherwise function can be manually called for that week */
-  function storeSatoshiWeekData()
+  function storeWeeklyUnclaimedCoins()
     public 
   {
     uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
     for (lastUpdatedWeek; _weeksSinceLaunch > lastUpdatedWeek; lastUpdatedWeek++) {
       uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-      satoshiRewardDataByWeek[_weeksSinceLaunch] = SatoshiWeekData(
+      unclaimedCoinsByWeek[_weeksSinceLaunch] = SatoshiWeekData(
         _unclaimedCoins,
         totalStakedCoins
       );
@@ -496,7 +491,7 @@ contract StakeableToken is UTXORedeemableToken {
     // ensure that unlock time is more than 10 days
     require(_unlockTime >= block.timestamp.add(oneInterestPeriodInSeconds));
     // Check if weekly data needs to be updated
-    storeSatoshiWeekData();
+    storeWeeklyUnclaimedCoins();
 
     // Remove balance from sender
     balances[_staker] = balances[_staker].sub(_value);
@@ -546,7 +541,7 @@ contract StakeableToken is UTXORedeemableToken {
     StakeStruct memory _stake = staked[_staker][_stakeIndex]; 
     require(block.timestamp >= _stake.unlockTime);
     // Check if weekly data needs to be updated
-    storeSatoshiWeekData();
+    storeWeeklyUnclaimedCoins();
     
     // Calculate Rewards
     uint256 _stakingRewards = calculateStakingRewards(
