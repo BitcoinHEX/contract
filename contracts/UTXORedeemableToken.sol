@@ -28,20 +28,20 @@ import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 contract UTXORedeemableToken is StandardToken {
 
   /* Origin Address */
-  address public origin;
+  address origin;
   /* Store time of launch for contract */
   uint256 public launchTime;
   /* Store last week storeWeeklyUnclaimedCoins() ran */
-  uint256 public lastUpdatedWeek;
+  uint256 lastUpdatedWeek;
   /* Counter of all coins currently staked */
   uint256 public totalStakedCoins;
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
   uint256 public redeemedCount = 0;
   /* Maximum redeemable tokens, must be initialized by token constructor. */
-  uint256 public maximumRedeemable;
+  uint256 maximumRedeemable;
   /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
-  bytes32 public rootUtxoMerkleTreeHash;
+  bytes32 rootUtxoMerkleTreeHash;
   /* Redeemed UTXOs. */
   mapping(bytes32 => bool) public redeemedUTXOs;
 

@@ -16,9 +16,9 @@ contract StakeableToken is UTXORedeemableToken {
 
   uint256 UTXOCountAtFork;
   uint256 _maximumRedeemable;
-  uint256 public constant interestRatePercent = 1;
-  uint256 public constant maxStakingTimeInSeconds = 365 days * 10;
-  uint256 public constant oneInterestPeriodInSeconds = 10 days;
+  uint256 constant interestRatePercent = 1;
+  uint256 constant maxStakingTimeInSeconds = 365 days * 10;
+  uint256 constant oneInterestPeriodInSeconds = 10 days;
 
   struct StakeStruct {
     uint256 stakeAmount;
