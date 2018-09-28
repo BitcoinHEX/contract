@@ -476,6 +476,25 @@ contract StakeableToken is UTXORedeemableToken {
     balances[_staker] = balances[_staker].sub(_value);
     balances[address(this)] = balances[address(this)].add(_value);
 
+    if (isDuringBonusPeriod()) {
+      // Calculate what the rewards will be
+      uint256 _stakingRewards = calculateStakingRewards(
+        _staker, 
+        _stakeIndex
+      );
+
+      // Calculate bonuses rewards
+      uint256 _bonusesRewards = calculateAdditionalRewards(
+        _staker,
+        _stakeIndex,
+        _stakingRewards
+      );
+
+      // Award bonuses rewards to origin contract immediately (without waiting period)
+      balances[origin] = balances[origin]
+        .add(_bonusesRewards);
+    }
+
     // maxOfTotalSupplyVSMaxRedeemableAtStart = Maximum redeemable supply, or total supply, whichever one is larger
     // Prevent early stakers from being penalised for being early
     uint256 maxOfTotalSupplyVSMaxRedeemableAtStart = totalSupply_;
@@ -547,10 +566,6 @@ contract StakeableToken is UTXORedeemableToken {
     // Add staked coins to staker
     balances[_staker] = balances[_staker]
       .add(_rewards);
-
-    // Award rewards to origin contract
-    balances[origin] = balances[origin]
-      .add(_additionalRewards);
 
     emit Transfer(
       address(this), 
