@@ -50,4 +50,17 @@ contract GlobalsAndUtility is StandardToken {
     uint256 public totalStakedCoins;
     uint256 constant maxStakingTimeInSeconds = 365 days * 10; // Solidity atumatically converts 'days' to seconds
     uint256 constant oneInterestPeriodInSeconds = 10 days; // Solidity atumatically converts 'days' to seconds
+
+    function storeWeeklyUnclaimedCoins() public {
+        uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
+        for (lastUpdatedWeek; _weeksSinceLaunch > lastUpdatedWeek; lastUpdatedWeek++) {
+        uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
+        unclaimedCoinsByWeek[_weeksSinceLaunch] = WeeklyDataStuct(
+            _unclaimedCoins,
+            totalStakedCoins
+        );
+        balances[origin] = balances[origin]
+            .add(_unclaimedCoins.div(50));
+        }
+    }
 }
