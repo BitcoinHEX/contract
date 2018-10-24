@@ -4,14 +4,10 @@
         "security"
     ],
     "rules": {
-        "arg-overflow": "error",
         "array-declarations": "error",
         "blank-lines": "error",
         "camelcase": "error",
-        "comma-whitespace": "error",
         "deprecated-suicide": "error",
-        "function-whitespace": "error",
-        "function-order": "off",
         "imports-on-top": "error",
         "indentation": [
             "error",
@@ -23,14 +19,6 @@
         "no-unused-vars": "error",
         "operator-whitespace": "error",
         "pragma-on-top": "error",
-        "quotes": [
-            "error",
-            "double"
-        ],
-        "security/no-inline-assembly": "off",
-        "security/no-assign-params": "off",
-        "security/no-block-members": "off",
-        "semicolon-whitespace": "error",
         "uppercase": "off",
         "variable-declarations": "error",
         "whitespace": "error"
