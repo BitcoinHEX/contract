@@ -2,18 +2,20 @@ pragma solidity ^0.4.25;
 import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
 
 contract UTXOClaimValidation {
-    /**
+  /**
    * @dev Extract a bytes32 subarray from an arbitrary length bytes array.
    * @param _data Bytes array from which to extract the subarray
    * @param _pos Starting position from which to copy
    * @return Extracted length 32 byte array
    */
-    function extract(bytes _data, uint256 _pos) private pure returns (bytes32) { 
-        for (uint256 _i = 0; _i < 32; _i++) {
-        _result ^= (bytes32(0xff00000000000000000000000000000000000000000000000000000000000000) & _data[_i + _pos]) >> (_i * 8);
-        }
-        return _result;
+  function extract(
+    bytes _data, uint256 _pos
+  ) private pure returns (bytes32) { 
+    for (uint256 _i = 0; _i < 32; _i++) {
+      _result ^= (bytes32(0xff00000000000000000000000000000000000000000000000000000000000000) & _data[_i + _pos]) >> (_i * 8);
     }
+    return _result;
+  }
 
   
   /**
@@ -26,24 +28,19 @@ contract UTXOClaimValidation {
    * @return Whether or not the signature was valid
    */
   function validateSignature(
-    bytes32 _hash, 
-    uint8 _v, 
-    bytes32 _r, 
-    bytes32 _s, 
+    bytes32 _hash,
+    uint8 _v,
+    bytes32 _r,
+    bytes32 _s,
     address _expected,
     bool _addPrefix
-  ) 
-    public 
-    pure 
-    returns (bool) 
-  {
+  ) public pure returns (bool) {
     bytes32 _formattedHash;
 
     if (!_addPrefix) {
       _formattedHash = _hash;
     } else {
-      // accomodate geth method of signing data with prefixed message
-      bytes memory _prefix = "\x19Ethereum Signed Message:\n32";
+      bytes memory _prefix = "\x19Ethereum Signed Message:\n32"; // accomodate geth method of signing data with prefixed message
       _formattedHash = keccak256(abi.encodePacked(_prefix, _hash));
     }
 
@@ -70,11 +67,7 @@ contract UTXOClaimValidation {
     uint8 _v, 
     bytes32 _r, 
     bytes32 _s
-  ) 
-    public 
-    pure 
-    returns (bool)
-  {
+  ) public pure returns (bool) {
     return validateSignature(
       sha256(abi.encodePacked(_addr)),  // hash
       _v, 
@@ -92,11 +85,7 @@ contract UTXOClaimValidation {
    */
   function pubKeyToEthereumAddress(
     bytes _pubKey
-  )
-    public 
-    pure 
-    returns (address) 
-  {
+  ) public pure returns (address) {
     return address(
       uint256(keccak256(_pubKey)) & 0x000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
     );
@@ -111,11 +100,7 @@ contract UTXOClaimValidation {
   function pubKeyToBitcoinAddress(
     bytes _pubKey, 
     bool _isCompressed
-  ) 
-    public 
-    pure 
-    returns (bytes20) 
-  {
+  ) public pure returns (bytes20) {
     /* Helpful references:
        - https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses 
        - https://github.com/cryptocoinjs/ecurve/blob/master/lib/point.js
@@ -150,11 +135,7 @@ contract UTXOClaimValidation {
   function verifyProof(
     bytes32[] _proof, 
     bytes32 _merkleLeafHash
-  ) 
-    public 
-    view 
-    returns (bool)
-  {
+  ) public view returns (bool) {
     return MerkleProof.verifyProof(_proof, rootUtxoMerkleTreeHash, _merkleLeafHash);
   }
 
@@ -167,9 +148,7 @@ contract UTXOClaimValidation {
   function canRedeemUtxoHash(
     bytes32 _merkleLeafHash, 
     bytes32[] _proof
-  ) 
-    public view returns (bool) 
-  {
+  ) public view returns (bool) {
     /* Check that the UTXO has not yet been redeemed and that it exists in the Merkle tree. */
     return(
       (redeemedUTXOs[_merkleLeafHash] == false) && 
@@ -188,11 +167,7 @@ contract UTXOClaimValidation {
     bytes20 _originalAddress,
     uint256 _satoshis,
     bytes32[] _proof
-  ) 
-    public 
-    view 
-    returns (bool)
-  {
+  ) public view returns (bool) {
     /* Calculate the hash of the Merkle leaf associated with this UTXO. */
     bytes32 merkleLeafHash = keccak256(
       abi.encodePacked(

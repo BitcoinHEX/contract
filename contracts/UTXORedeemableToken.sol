@@ -4,15 +4,97 @@ import "./GlobalsAndUtility.sol";
 import "./UTXOClaimValidation.sol";
 
 contract UTXORedeemableToken is GlobalsAndUtility, UTXOClaimValidation {
-    function calculateBonuses(uint256 amount) public view returns (uint256) {
+  function getRedeemAmount(uint256 _satoshis) public view returns (uint256) {
 
+  }
+
+  /**
+   * @dev PUBLIC FACING: Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
+   * @param _satoshis Amount of UTXO in satoshis
+   * @param _proof Merkle tree proof
+   * @param _pubKey Uncompressed ECDSA public key to which the UTXO was sent
+   * @param _isCompressed Whether the Bitcoin address was generated from a compressed public key
+   * @param _v v parameter of ECDSA signature
+   * @param _r r parameter of ECDSA signature
+   * @param _s s parameter of ECDSA signature
+   * @param _referrer (optional, send 0x0 for default) addresss of referring persons
+   * @return The number of tokens redeemed, if successfu
+   */
+  function redeemUTXO(
+    uint256 _satoshis,
+    bytes32[] _proof,
+    bytes _pubKey,
+    bool _isCompressed,
+    uint8 _v,
+    bytes32 _r,
+    bytes32 _s,
+    address _referrer
+  ) public returns (uint256) {
+    /* Calculate original Bitcoin-style address associated with the provided public key. */
+    bytes20 _originalAddress = pubKeyToBitcoinAddress(_pubKey, _isCompressed);
+
+    /* Calculate the UTXO Merkle leaf hash. */
+    bytes32 _merkleLeafHash = keccak256(
+      abi.encodePacked(
+        _originalAddress, 
+        _satoshis
+      )
+    );
+
+     /* Verify that the UTXO can be redeemed. */
+    require(canRedeemUtxoHash(_merkleLeafHash, _proof));
+
+    /* Check if weekly unclaimed coins data needs to be logged */
+    storeWeeklyUnclaimedCoins();
+
+    /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
+    require(
+      ecdsaVerify(
+        msg.sender, 
+        _pubKey, 
+        _v, 
+        _r, 
+        _s
+      )
+    );
+
+    /* Sanity check. */
+    require(totalRedeemed.add(_tokensRedeemed) <= maximumRedeemable);
+
+    /* Track total redeemed tokens. This needs to be logged before scaling */
+    totalRedeemed = totalRedeemed.add(_satoshis);
+
+    /* Mark the UTXO as redeemed. */
+    redeemedUTXOs[_merkleLeafHash] = true;
+
+    /* Fetch value of claim */
+    (uint256 _tokensRedeemed, uint256 _bonuses) = getRedeemAmount(_satoshis);
+
+    /* Credit the redeemer, and award bonuses to origin. */ 
+    balances[msg.sender] = balances[msg.sender].add(_tokensRedeemed).add(_bonuses);
+    balances[origin] = balances[origin].add(_bonuses);
+
+    /* Increase supply */
+    totalSupply_ = totalSupply_.add(_tokensRedeemed).add(_bonuses);
+
+    /* Increment Redeem Count to track viral rewards */
+    redeemedCount = redeemedCount.add(1);
+
+    /* Mark the transfer event. */
+    emit Transfer(address(0), msg.sender, _tokensRedeemed.add(_bonuses));
+    emit Transfer(address(0), origin, _bonuses);
+
+    /* Check if non-zero referral address has been passed */
+    if (_referrer != address(0)) {
+      /* Credit referrer and origin */
+      balances[_referrer] = balances[_referrer].add(_tokensRedeemed.div(20));
+      balances[origin] = balances[origin].add(_tokensRedeemed.div(20));
+
+       /* Increase supply */
+      totalSupply_ = totalSupply_.add(_tokensRedeemed.div(20));
     }
-
-    function verifyClaim() public view returns (bool) {
-
-    }
-
-    function claim(address _staker) public returns (bool) {
-
-    }
+    
+    /* Return the number of tokens redeemed. */
+    return _tokensRedeemed.add(_bonuses);
+  }
 }
