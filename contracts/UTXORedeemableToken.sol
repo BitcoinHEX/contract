@@ -4,8 +4,31 @@ import "./GlobalsAndUtility.sol";
 import "./UTXOClaimValidation.sol";
 
 contract UTXORedeemableToken is GlobalsAndUtility, UTXOClaimValidation {
-  function getRedeemAmount(uint256 _satoshis) public view returns (uint256) {
+  /**
+  * @dev PUBLIC FACING: Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
+  * @param _satoshis Amount of UTXO in satoshis
+  * @return Adjusted claim amount
+  */
+  function getSpeedBonus(uint256 _satoshis) internal view returns (uint256) {
 
+  }
+
+  /**
+  * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
+  * @param _satoshis Amount of UTXO in satoshis
+  * @return Adjusted claim amount
+  */
+  function getDelayAdjustedClaimAmount(uint256 _satoshis) internal view returns (uint256) {
+
+  }
+
+  /**
+  * @dev PUBLIC FACING: Get post-adjustment redeem amount if claim of x satoshis redeemed
+  * @param _satoshis Amount of UTXO in satoshis
+  * @return 1: Adjusted claim amount; 2: Total claim bonuses
+  */
+  function getRedeemAmount(uint256 _satoshis) public view returns (uint256, uint256) {
+    return (getDelayAdjustedClaimAmount(_satoshis), getSpeedBonus(_satoshis))
   }
 
   /**
@@ -18,7 +41,7 @@ contract UTXORedeemableToken is GlobalsAndUtility, UTXOClaimValidation {
    * @param _r r parameter of ECDSA signature
    * @param _s s parameter of ECDSA signature
    * @param _referrer (optional, send 0x0 for default) addresss of referring persons
-   * @return The number of tokens redeemed, if successfu
+   * @return The number of tokens redeemed, if successful
    */
   function redeemUTXO(
     uint256 _satoshis,
