@@ -11,7 +11,8 @@ contract UTXORedeemableToken is UTXOClaimValidation {
   * @return Speed bonus amount
   */
   function getSpeedBonus(uint256 _satoshis) internal view returns (uint256) {
-    uint256 _bonus;
+    uint256 _bonus = _satoshis;
+    return _bonus;
   }
 
   /**
@@ -20,7 +21,8 @@ contract UTXORedeemableToken is UTXOClaimValidation {
   * @return Adjusted claim amount
   */
   function getDelayAdjustedClaimAmount(uint256 _satoshis) internal view returns (uint256) {
-    uint256 _amount;
+    uint256 _amount = _satoshis;
+    return _amount;
   }
 
   /**
