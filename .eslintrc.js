@@ -57,14 +57,6 @@ module.exports = {
         'import/prefer-default-export': 'error',
         'import/no-named-as-default': 'off',
         'import/no-unresolved': 'error',
-        'prettier/prettier': [
-            'error',
-            {
-                semi: false,
-                singleQuote: true,
-                trailingComma: 'none'
-            }
-        ],
         'promise/avoid-new': 'off',
         'security/detect-object-injection': 'off',
         'arrow-body-style': 'off',

@@ -1,7 +1,9 @@
-pragma solidity ^0.4.25;
-import "../node_modules/openzeppelin-solidity/contracts/MerkleProof.sol";
+pragma solidity ^0.4.24;
 
-contract UTXOClaimValidation {
+import "./GlobalsAndUtility.sol";
+import "../node_modules/openzeppelin-solidity/contracts/cryptography/MerkleProof.sol";
+
+contract UTXOClaimValidation is GlobalsAndUtility {
   /**
    * @dev Extract a bytes32 subarray from an arbitrary length bytes array.
    * @param _data Bytes array from which to extract the subarray
@@ -10,7 +12,8 @@ contract UTXOClaimValidation {
    */
   function extract(
     bytes _data, uint256 _pos
-  ) private pure returns (bytes32) { 
+  ) private pure returns (bytes32) {
+    bytes32 _result;
     for (uint256 _i = 0; _i < 32; _i++) {
       _result ^= (bytes32(0xff00000000000000000000000000000000000000000000000000000000000000) & _data[_i + _pos]) >> (_i * 8);
     }
@@ -136,7 +139,7 @@ contract UTXOClaimValidation {
     bytes32[] _proof, 
     bytes32 _merkleLeafHash
   ) public view returns (bool) {
-    return MerkleProof.verifyProof(_proof, rootUtxoMerkleTreeHash, _merkleLeafHash);
+    return MerkleProof.verify(_proof, rootUtxoMerkleTreeHash, _merkleLeafHash);
   }
 
   /**

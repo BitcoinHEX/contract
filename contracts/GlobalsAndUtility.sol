@@ -1,45 +1,51 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.4.24;
 
-import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
-contract GlobalsAndUtility is StandardToken {
+contract GlobalsAndUtility is ERC20 {
   /* Origin Address */
-  address origin;
+  address internal origin;
 
   /* Conversion Constants */
-  uint256 bweiToHex = 10**18;
+  uint256 internal constant bhweiToBH = 10**18;
+  uint256 internal constant bhweiToBHSatoshi = 10**10;
+
+  /* ERC20 Constants */
+  string public constant name = "BitcoinHex"; 
+  string public constant symbol = "BHX";
+  uint public constant decimals = 18;
 
   /* Store time of launch for contract */
   uint256 public launchTime;
 
   /* Store last week storeWeeklyUnclaimedCoins() ran */
-  uint256 lastUpdatedWeek;
+  uint256 internal lastUpdatedWeek;
 
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
   uint256 public redeemedCount = 0;
 
   /* Maximum redeemable tokens, must be initialized by token constructor. */
-  uint256 maximumRedeemable;
+  uint256 internal maximumRedeemable;
 
   /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
-  bytes32 rootUtxoMerkleTreeHash;
+  bytes32 public rootUtxoMerkleTreeHash;
 
   /* Redeemed UTXOs. */
-  mapping(bytes32 => bool) public redeemedUTXOs;
+  mapping(bytes32 => bool) internal redeemedUTXOs;
 
   /* Weekly unclaimed coins data */
   struct WeeklyDataStuct {
     uint256 unclaimedCoins;
     uint256 totalStaked;
   }
-  mapping(uint256 => WeeklyDataStuct) public unclaimedCoinsByWeek;
+  mapping(uint256 => WeeklyDataStuct) internal unclaimedCoinsByWeek;
 
   /* Total number of UTXO's at fork */
-  uint256 UTXOCountAtFork;
+  uint256 internal UTXOCountAtFork;
 
   /* Maximum redeemable coins at fork */
-  uint256 _maximumRedeemable;
+  uint256 internal _maximumRedeemable;
 
   /* Stakes Storage */
   struct StakeStruct {
@@ -51,8 +57,8 @@ contract GlobalsAndUtility is StandardToken {
   }
   mapping(address => StakeStruct[]) public staked;
   uint256 public totalStakedCoins;
-  uint256 constant maxStakingTimeInSeconds = 365 days * 10; // Solidity automatically converts 'days' to seconds
-  uint256 constant oneInterestPeriodInSeconds = 10 days; // Solidity automatically converts 'days' to seconds
+  uint256 internal constant maxStakingTimeInSeconds = 365 days * 10; // Solidity automatically converts 'days' to seconds
+  uint256 internal constant oneInterestPeriodInSeconds = 10 days; // Solidity automatically converts 'days' to seconds
 
   function storeWeeklyUnclaimedCoins() public {
     uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
@@ -62,8 +68,7 @@ contract GlobalsAndUtility is StandardToken {
         _unclaimedCoins,
         totalStakedCoins
     );
-    balances[origin] = balances[origin]
-        .add(_unclaimedCoins.div(50));
+    _mint(origin, _unclaimedCoins.div(50));
     }
   }
 }

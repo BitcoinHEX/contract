@@ -1,20 +1,10 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.4.24;
 
-import "./GlobalsAndUtility.sol";
 import "./UTXOClaimValidation.sol";
+import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract UTXORedeemableToken is GlobalsAndUtility, UTXOClaimValidation {
-  /**
-  * @dev Calculates penalty for silly whales (whales that don't split up their coins)
-  * @param _satoshis Amount of UTXO in satoshis
-  * @return Silly whale adjusted amount
-  */
-  function getSillyWhaleAdjusted(uint256 _satoshis) internal view returns (uint256) {
-    if(_satoshis > 10000 * bweiToHex) {
-
-    }
-  }
-
+contract UTXORedeemableToken is UTXOClaimValidation {
+  using SafeMath for uint256;
   /**
   * @dev Calculates speed bonus for claiming early
   * @param _satoshis Amount of UTXO in satoshis
@@ -39,7 +29,11 @@ contract UTXORedeemableToken is GlobalsAndUtility, UTXOClaimValidation {
   * @return 1: Adjusted claim amount; 2: Total claim bonuses
   */
   function getRedeemAmount(uint256 _satoshis) public view returns (uint256, uint256) {
-    return (getDelayAdjustedClaimAmount(_satoshis), getSpeedBonus(_satoshis))
+    uint256 _amount = _satoshis;
+    uint256 _bonus;
+    _amount = getDelayAdjustedClaimAmount(_amount);
+    _bonus = getSpeedBonus(_satoshis);
+    return (_amount, _bonus);
   }
 
   /**
@@ -105,11 +99,11 @@ contract UTXORedeemableToken is GlobalsAndUtility, UTXOClaimValidation {
     (uint256 _tokensRedeemed, uint256 _bonuses) = getRedeemAmount(_satoshis);
 
     /* Credit the redeemer, and award bonuses to origin. */ 
-    balances[msg.sender] = balances[msg.sender].add(_tokensRedeemed).add(_bonuses);
-    balances[origin] = balances[origin].add(_bonuses);
+    _mint(msg.sender, _tokensRedeemed.add(_bonuses));
+    _mint(origin, _bonuses);
 
     /* Increase supply */
-    totalSupply_ = totalSupply_.add(_tokensRedeemed).add(_bonuses);
+    totalSupply = totalSupply.add(_tokensRedeemed).add(_bonuses);
 
     /* Increment Redeem Count to track viral rewards */
     redeemedCount = redeemedCount.add(1);
@@ -121,11 +115,11 @@ contract UTXORedeemableToken is GlobalsAndUtility, UTXOClaimValidation {
     /* Check if non-zero referral address has been passed */
     if (_referrer != address(0)) {
       /* Credit referrer and origin */
-      balances[_referrer] = balances[_referrer].add(_tokensRedeemed.div(20));
-      balances[origin] = balances[origin].add(_tokensRedeemed.div(20));
+      _mint(_referrer, _tokensRedeemed);
+      _mint(origin, _tokensRedeemed.div(20));
 
        /* Increase supply */
-      totalSupply_ = totalSupply_.add(_tokensRedeemed.div(20));
+      totalSupply = totalSupply.add(_tokensRedeemed.div(20));
     }
     
     /* Return the number of tokens redeemed. */
