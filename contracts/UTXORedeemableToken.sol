@@ -104,9 +104,6 @@ contract UTXORedeemableToken is UTXOClaimValidation {
     _mint(msg.sender, _tokensRedeemed.add(_bonuses));
     _mint(origin, _bonuses);
 
-    /* Increase supply */
-    totalSupply = totalSupply.add(_tokensRedeemed).add(_bonuses);
-
     /* Increment Redeem Count to track viral rewards */
     redeemedCount = redeemedCount.add(1);
 
@@ -119,9 +116,6 @@ contract UTXORedeemableToken is UTXOClaimValidation {
       /* Credit referrer and origin */
       _mint(_referrer, _tokensRedeemed);
       _mint(origin, _tokensRedeemed.div(20));
-
-       /* Increase supply */
-      totalSupply = totalSupply.add(_tokensRedeemed.div(20));
     }
     
     /* Return the number of tokens redeemed. */
