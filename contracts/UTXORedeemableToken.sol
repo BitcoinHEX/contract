@@ -21,7 +21,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
   * @param _satoshis Amount of UTXO in satoshis
   * @return Adjusted claim amount
   */
-  function getDelayAdjustedClaimAmount(uint256 _satoshis) internal view returns (uint256) {
+  function getLateClaimAdjustedAmount(uint256 _satoshis) internal view returns (uint256) {
     uint256 _amount = _satoshis;
 
     return _amount;
@@ -33,7 +33,9 @@ contract UTXORedeemableToken is UTXOClaimValidation {
   * @return 1: Adjusted claim amount; 2: Total claim bonuses
   */
   function getRedeemAmount(uint256 _satoshis) public view returns (uint256, uint256) {
-    return (getDelayAdjustedClaimAmount(_amount), getSpeedBonus(_satoshis));
+    uint256 _amount = getLateClaimAdjustedAmount(_satoshis);
+    uint256 _bonus = getSpeedBonus(_amount);
+    return (_amount, _bonus);
   }
 
   /**
