@@ -22,9 +22,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
   * @return Adjusted claim amount
   */
   function getLateClaimAdjustedAmount(uint256 _satoshis) internal view returns (uint256) {
-    uint256 _amount = _satoshis;
-
-    return _amount;
+    return _satoshis.mul(weeksSinceLaunch().mul(2)).div(100); // This math breaks after 50 weeks, claims disabled after 50 weeks, no issue
   }
 
   /**
