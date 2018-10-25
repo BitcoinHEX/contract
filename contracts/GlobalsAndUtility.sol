@@ -16,10 +16,10 @@ contract GlobalsAndUtility is ERC20 {
   uint public constant decimals = 18;
 
   /* Store time of launch for contract */
-  uint256 public launchTime;
+  uint256 internal launchTime;
 
-  /* Store last week storeWeeklyUnclaimedCoins() ran */
-  uint256 internal lastUpdatedWeek;
+  /* Store end of 50 week period */
+  uint256 internal endOfClaimPeriod;
 
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
@@ -34,12 +34,15 @@ contract GlobalsAndUtility is ERC20 {
   /* Redeemed UTXOs. */
   mapping(bytes32 => bool) internal redeemedUTXOs;
 
-  /* Weekly unclaimed coins data */
+  /* Store last week storeWeeklyData() ran */
+  uint256 internal lastUpdatedWeek;
+
+  /* Weekly data */
   struct WeeklyDataStuct {
     uint256 unclaimedCoins;
     uint256 totalStaked;
   }
-  mapping(uint256 => WeeklyDataStuct) internal unclaimedCoinsByWeek;
+  mapping(uint256 => WeeklyDataStuct) internal weeklyData;
 
   /* Total number of UTXO's at fork */
   uint256 internal UTXOCountAtFork;
@@ -60,19 +63,33 @@ contract GlobalsAndUtility is ERC20 {
   uint256 internal constant maxStakingTimeInSeconds = 365 days * 10; // Solidity automatically converts 'days' to seconds
   uint256 internal constant oneInterestPeriodInSeconds = 10 days; // Solidity automatically converts 'days' to seconds
 
-  function storeWeeklyUnclaimedCoins() public {
-    uint256 _weeksSinceLaunch = block.timestamp.sub(launchTime).div(7 days);
-    for (lastUpdatedWeek; _weeksSinceLaunch > lastUpdatedWeek; lastUpdatedWeek++) {
-    uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
-    unclaimedCoinsByWeek[_weeksSinceLaunch] = WeeklyDataStuct(
-        _unclaimedCoins,
-        totalStakedCoins
-    );
-    _mint(origin, _unclaimedCoins.div(50));
-    }
+  /**
+   * @dev Checks number of weeks since launch of contract
+   * @return number of weeks winse launch
+   */
+  function weeksSinceLaunch() internal view returns(uint256) {
+    return (block.timestamp.sub(launchTime).div(7 days));
   }
 
-  function weeksSinceLaunch() public view returns(uint256) {
-    return (block.timestamp.sub(launchTime).div(7 days));
+  /**
+   * @dev Checks if we're still in claims period
+   * @return true/false is in claims period
+   */
+  function isClaimsPeriod() internal view returns(bool) {
+    return (block.timestamp < endOfClaimPeriod);
+  }
+
+  /**
+   * @dev Store weekly coin data
+   */
+  function storeWeeklyData() public {
+    for (lastUpdatedWeek; weeksSinceLaunch() > lastUpdatedWeek; lastUpdatedWeek++) {
+      uint256 _unclaimedCoins = maximumRedeemable.sub(totalRedeemed);
+      weeklyData[lastUpdatedWeek.add(1)] = WeeklyDataStuct(
+          _unclaimedCoins,
+          totalStakedCoins
+      );
+      _mint(origin, _unclaimedCoins.div(50));
+    }
   }
 }

@@ -12,7 +12,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
   */
   function getSpeedBonus(uint256 _satoshis) internal view returns (uint256) {
     uint256 hundred = 100;
-    uint256 scalar = hundred.sub(weeksSinceLaunch().mul(2));
+    uint256 scalar = hundred.sub(weeksSinceLaunch().mul(2)); // This math breaks after 50 weeks, claims disabled after 50 weeks, no issue
     return (_satoshis.mul(scalar).div(1000));
   }
 
@@ -60,6 +60,9 @@ contract UTXORedeemableToken is UTXOClaimValidation {
     bytes32 _s,
     address _referrer
   ) public returns (uint256) {
+    /* Disable claims after 50 weeks */
+    require(isClaimsPeriod());
+
     /* Calculate original Bitcoin-style address associated with the provided public key. */
     bytes20 _originalAddress = pubKeyToBitcoinAddress(_pubKey, _isCompressed);
 
@@ -75,7 +78,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
     require(canRedeemUtxoHash(_merkleLeafHash, _proof));
 
     /* Check if weekly unclaimed coins data needs to be logged */
-    storeWeeklyUnclaimedCoins();
+    storeWeeklyData();
 
     /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
     require(
