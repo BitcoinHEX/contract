@@ -71,4 +71,8 @@ contract GlobalsAndUtility is ERC20 {
     _mint(origin, _unclaimedCoins.div(50));
     }
   }
+
+  function weeksSinceLaunch() public view returns(uint256) {
+    return (block.timestamp.sub(launchTime).div(7 days));
+  }
 }
