@@ -5,21 +5,32 @@ import "./UTXOClaimValidation.sol";
 
 contract UTXORedeemableToken is GlobalsAndUtility, UTXOClaimValidation {
   /**
-  * @dev PUBLIC FACING: Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
+  * @dev Calculates penalty for silly whales (whales that don't split up their coins)
   * @param _satoshis Amount of UTXO in satoshis
-  * @return Adjusted claim amount
+  * @return Silly whale adjusted amount
   */
-  function getSpeedBonus(uint256 _satoshis) internal view returns (uint256) {
+  function getSillyWhaleAdjusted(uint256 _satoshis) internal view returns (uint256) {
+    if(_satoshis > 10000 * bweiToHex) {
 
+    }
   }
 
   /**
-  * @dev Redeem a UTXO, crediting a proportional amount of tokens (if valid) to the sending address
+  * @dev Calculates speed bonus for claiming early
+  * @param _satoshis Amount of UTXO in satoshis
+  * @return Speed bonus amount
+  */
+  function getSpeedBonus(uint256 _satoshis) internal view returns (uint256) {
+    uint256 _bonus;
+  }
+
+  /**
+  * @dev Returns adjusted claim amount based on weeks passed since launch
   * @param _satoshis Amount of UTXO in satoshis
   * @return Adjusted claim amount
   */
   function getDelayAdjustedClaimAmount(uint256 _satoshis) internal view returns (uint256) {
-
+    uint256 _amount;
   }
 
   /**

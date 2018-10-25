@@ -140,7 +140,7 @@ contract UTXOClaimValidation {
   }
 
   /**
-   * @dev Verify that a UTXO with the specified Merkle leaf hash can be redeemed
+   * @dev PUBLIC FACING: Verify that a UTXO with the specified Merkle leaf hash can be redeemed
    * @param _merkleLeafHash Merkle tree hash of the UTXO to be checked
    * @param _proof Merkle tree proof
    * @return Whether or not the UTXO with the specified hash can be redeemed
@@ -157,7 +157,7 @@ contract UTXOClaimValidation {
   }
 
   /**
-   * @dev Convenience helper function to check if a UTXO can be redeemed
+   * @dev PUBLIC FACING: Convenience helper function to check if a UTXO can be redeemed
    * @param _originalAddress Raw Bitcoin address (no base58-check encoding)
    * @param _satoshis Amount of UTXO in satoshis
    * @param _proof Merkle tree proof

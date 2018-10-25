@@ -6,6 +6,9 @@ contract GlobalsAndUtility is StandardToken {
   /* Origin Address */
   address origin;
 
+  /* Conversion Constants */
+  uint256 bweiToHex = 10**18;
+
   /* Store time of launch for contract */
   uint256 public launchTime;
 
