@@ -18,7 +18,6 @@
     "eth-gas-reporter": "^0.1.10",
     "ethereumjs-util": "^5.2.0",
     "merkle-tree-solidity": "^1.0.8",
-    "prettier": "^1.13.4",
     "rimraf": "^2.6.2",
     "solium": "^1.1.7",
     "truffle": "^4.1.11",

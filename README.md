@@ -13,12 +13,16 @@ Contracts are written in Solidity and tested using Truffle. Library contracts so
 This file is **NOT** checked in. You will need to supply a secrets.js that includes an InfuraKey and private key for accountPK. 
 Sample format:
 ```
-var infuraKey = "get-this-from-infura-io";
-var accountPK = "your-64-character-private-hex-key-goes-here-do-not-share-with-others";
-var mainnetPK = accountPK;
-var ropstenPK = accountPK;
+const infuraKey = 'get-this-from-infura-io'
+const accountPK = 'your-64-character-private-hex-key-goes-here-do-not-share-with-others'
+const mainnetPK = accountPK
+const ropstenPK = accountPK
 
-module.exports = {infuraKey: infuraKey, mainnetPK: mainnetPK, ropstenPK:ropstenPK};
+module.exports = {
+  infuraKey: infuraKey,
+  mainnetPK: mainnetPK,
+  ropstenPK: ropstenPK
+}
 ```
 
 ### Installation

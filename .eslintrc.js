@@ -14,7 +14,7 @@ module.exports = {
         'plugin:import/warnings',
         'plugin:promise/recommended'
     ],
-    plugins: ['compat', 'prettier', 'promise'],
+    plugins: ['compat', 'promise'],
     settings: {
       polyfills: ['fetch', 'promises']
     },
