@@ -6,14 +6,10 @@ contract GlobalsAndUtility is ERC20 {
   /* Origin Address */
   address internal origin;
 
-  /* Conversion Constants */
-  uint256 internal constant bhweiToBH = 10**18;
-  uint256 internal constant bhweiToBHSatoshi = 10**10;
-
   /* ERC20 Constants */
   string public constant name = "BitcoinHex"; 
   string public constant symbol = "BHX";
-  uint public constant decimals = 18;
+  uint public constant decimals = 8;
 
   /* Store time of launch for contract */
   uint256 internal launchTime;
