@@ -92,4 +92,12 @@ contract GlobalsAndUtility is ERC20 {
       _mint(origin, _unclaimedCoins.div(50));
     }
   }
+
+  /**
+   * @dev A convenience function to get circulating supply.
+   * @return
+  */
+  function getCirculatingSupply() public view returns (uint256) {
+    return totalSupply_.sub(totalStakedCoins);
+  }
 }
