@@ -3,6 +3,17 @@ import "./UTXORedeemableToken.sol";
 
 contract StakeableToken is UTXORedeemableToken {
   /**
+   * @dev PUBLIC FACING: Calculates total bonuses for a given stake
+   * @param _stake Stake to calculate bonuses for
+   * @return bonus amount
+   */
+  function calculateBonuses(
+    StakeStruct _stake
+  ) public returns (uint256) {
+
+  }
+
+  /**
    * @dev PUBLIC FACING: Open a stake
    * @param _satoshis Amount of satoshi to stake
    * @param _periods Number of 10 day periods to stake
