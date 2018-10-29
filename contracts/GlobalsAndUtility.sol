@@ -17,6 +17,9 @@ contract GlobalsAndUtility is ERC20 {
   /* Store end of 50 week period */
   uint256 internal endOfClaimPeriod;
 
+  /* Address to store coins in stake */
+  uint256 stakingAddress = 0x0000000000000000000000000000000000000000;
+
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
   uint256 public redeemedCount = 0;
