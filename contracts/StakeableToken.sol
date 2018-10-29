@@ -14,6 +14,17 @@ contract StakeableToken is UTXORedeemableToken {
   }
 
   /**
+   * @dev PUBLIC FACING: Calculates normal stake payouts for a given stake
+   * @param _stake Stake to calculate payout for
+   * @return payout amount
+   */
+  function calculatePayout(
+    StakeStruct _stake
+  ) public returns (uint256) {
+
+  }
+
+  /**
    * @dev PUBLIC FACING: Open a stake
    * @param _satoshis Amount of satoshi to stake
    * @param _periods Number of 10 day periods to stake
