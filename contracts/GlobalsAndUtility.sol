@@ -1,8 +1,11 @@
 pragma solidity ^0.4.24;
 
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract GlobalsAndUtility is ERC20 {
+  using SafeMath for uint256;
+  
   /* Origin Address */
   address internal origin;
 
@@ -18,16 +21,13 @@ contract GlobalsAndUtility is ERC20 {
   uint256 internal endOfClaimPeriod;
 
   /* Address to store coins in stake */
-  uint256 stakingAddress = 0x0;
+  address stakingAddress = 0x0;
 
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
   uint256 public redeemedCount = 0;
 
-  /* Maximum redeemable tokens, must be initialized by token constructor. */
-  uint256 internal maximumRedeemable;
-
-  /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */
+  /* Root hash of the UTXO Merkle tree */
   bytes32 public rootUtxoMerkleTreeHash;
 
   /* Redeemed UTXOs. */
@@ -47,7 +47,7 @@ contract GlobalsAndUtility is ERC20 {
   uint256 internal UTXOCountAtFork;
 
   /* Maximum redeemable coins at fork */
-  uint256 internal _maximumRedeemable;
+  uint256 internal maximumRedeemable;
 
   /* Stakes Storage */
   struct StakeStruct {
@@ -95,7 +95,7 @@ contract GlobalsAndUtility is ERC20 {
    * @return
   */
   function getCirculatingSupply() public view returns (uint256) {
-    return totalSupply_.sub(totalStakedCoins);
+    return totalSupply().sub(totalStakedCoins);
   }
 
   /**
@@ -103,7 +103,7 @@ contract GlobalsAndUtility is ERC20 {
     @param _principle base amount being compounded
     @param _periods amount of periods to compound principle
     @param _rate rate given as uint percent
-    @return result
+    @return result of compounding
   */
   function compound(
     uint256 _principle,

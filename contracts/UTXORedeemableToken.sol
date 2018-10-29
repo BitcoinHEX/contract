@@ -5,6 +5,7 @@ import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract UTXORedeemableToken is UTXOClaimValidation {
   using SafeMath for uint256;
+  
   /**
   * @dev Calculates speed bonus for claiming early
   * @param _satoshis Amount of UTXO in satoshis
