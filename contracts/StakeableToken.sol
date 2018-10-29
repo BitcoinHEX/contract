@@ -21,7 +21,7 @@ contract StakeableToken is UTXORedeemableToken {
   function calculatePayout(
     StakeStruct _stake
   ) public returns (uint256) {
-
+    uint256 _payout;
   }
 
   /**
@@ -52,7 +52,7 @@ contract StakeableToken is UTXORedeemableToken {
 
     // maxOfTotalSupplyVSMaxRedeemableAtStart = Maximum redeemable supply, or total supply, whichever one is larger
     // Prevent early stakers from being penalised for being early
-    uint256 maxOfTotalSupplyVSMaxRedeemableAtStart = totalSupply_;
+    uint256 maxOfTotalSupplyVSMaxRedeemable = totalSupply_;
     if (totalSupply_ < _maximumRedeemable) {
       maxOfTotalSupplyVSMaxRedeemableAtStart = _maximumRedeemable;
     }
@@ -60,11 +60,9 @@ contract StakeableToken is UTXORedeemableToken {
     // Create Stake
     staked[_staker].push(
       StakeStruct(
-        _value, 
-        block.timestamp, 
-        _unlockTime, 
-        totalStakedCoins.add(_value),
-        maxOfTotalSupplyVSMaxRedeemableAtStart
+        _value,
+        block.timestamp,
+        _unlockTime
       )
     );
 

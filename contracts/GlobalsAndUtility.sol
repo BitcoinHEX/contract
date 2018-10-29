@@ -51,11 +51,9 @@ contract GlobalsAndUtility is ERC20 {
 
   /* Stakes Storage */
   struct StakeStruct {
-    uint256 stakeAmount;
+    uint256 amount;
     uint256 stakeTime;
     uint256 unlockTime;
-    uint256 totalStakedCoinsAtStart;
-    uint256 maxOfTotalSupplyVSMaxRedeemableAtStart;
   }
   mapping(address => StakeStruct[]) public staked;
   uint256 public totalStakedCoins;
