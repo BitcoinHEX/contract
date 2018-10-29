@@ -96,4 +96,42 @@ contract GlobalsAndUtility is ERC20 {
   function getCirculatingSupply() public view returns (uint256) {
     return totalSupply_.sub(totalStakedCoins);
   }
+
+  /**
+    @dev compound groups up compounding periods by 10 in order to avoid uint overflows when taking (100 + rate) ** periods. Accuracy is also brought down by 10 decimals in order to avoid uint overflows when running: compounded * ((100  + rate) ** periods).
+    @param _principle base amount being compounded
+    @param _periods amount of periods to compound principle
+    @param _rate rate given as uint percent
+    @return result
+  */
+  function compound(
+    uint256 _principle,
+    uint256 _periods,
+    uint256 _rate
+  )
+    public
+    pure
+    returns (uint256)
+  {
+    // bring up by 1e4 in order to get an accurate percent
+    uint256 _interestRate = _rate.add(1e4);
+    uint256 _maxGroupPeriods = 10;
+    uint256 _remainingPeriods = _periods % _maxGroupPeriods;
+    uint256 _groupings = _periods.div(_maxGroupPeriods);
+    uint256 _compounded = _principle.div(1e10);
+
+    for (uint256 _i = 0; _i < _groupings; _i = _i.add(1)) {
+      _compounded = _compounded
+        .mul(_interestRate ** _maxGroupPeriods)
+        .div(1e4 ** _maxGroupPeriods);
+    }
+
+    if (_remainingPeriods != 0) {
+      _compounded = _compounded
+        .mul(_interestRate ** _remainingPeriods)
+        .div(1e4 ** _remainingPeriods);
+    }
+
+    return _compounded.mul(1e10);
+  }
 }
