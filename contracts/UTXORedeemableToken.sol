@@ -45,7 +45,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
    * @param _v v parameter of ECDSA signature
    * @param _r r parameter of ECDSA signature
    * @param _s s parameter of ECDSA signature
-   * @param _referrer (optional, send 0x0 for default) addresss of referring persons
+   * @param _referrer (optional, send 0x0 for no referrer) addresss of referring persons
    * @return The number of tokens redeemed, if successful
    */
   function redeemUTXO(
