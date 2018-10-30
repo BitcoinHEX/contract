@@ -76,8 +76,9 @@ contract UTXORedeemableToken is UTXOClaimValidation {
      /* Verify that the UTXO can be redeemed. */
     require(canRedeemUtxoHash(_merkleLeafHash, _proof));
 
-    /* Check if weekly unclaimed coins data needs to be logged */
+    /* Check if log data needs to be updated */
     storeWeeklyData();
+    storePeriodData();
 
     /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
     require(

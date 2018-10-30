@@ -37,32 +37,23 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _satoshis,
     uint256 _periods
   ) external {
-    // Calculate Unlock time
+    /* Calculate Unlock time */
     uint256 _unlockTime = block.timestamp.add(_periods.mul(10 days));
 
-    // Make sure staker has enough funds
+    /* Make sure staker has enough funds */
     require(balanceOf(msg.sender) >= _satoshis);
     
-    // ensure that unlock time is not more than approx 10 years
+    /* ensure that unlock time is not more than approx 10 years */
     require(_unlockTime <= block.timestamp.add(maxStakingTimeInSeconds));
 
-    // ensure that unlock time is more than 10 days
+    /* ensure that unlock time is more than 10 days */
     require(_unlockTime >= block.timestamp.add(oneInterestPeriodInSeconds));
 
-    // Check if weekly data needs to be updated
+    /* Check if log data needs to be updated */
     storeWeeklyData();
+    storePeriodData();
 
-    // Move coins to staking address to store
-    _transfer(msg.sender, stakingAddress, _satoshis);
-
-    // maxOfTotalSupplyVSMaxRedeemableAtStart = Maximum redeemable supply, or total supply, whichever one is larger
-    // Prevent early stakers from being penalised for being early
-    uint256 maxOfTotalSupplyVSMaxRedeemable = totalSupply();
-    if (totalSupply() < maximumRedeemable) {
-      maxOfTotalSupplyVSMaxRedeemable = maximumRedeemable;
-    }
-
-    // Create Stake
+    /* Create Stake */
     staked[msg.sender].push(
       StakeStruct(
         _satoshis,
@@ -71,8 +62,11 @@ contract StakeableToken is UTXORedeemableToken {
       )
     );
 
-    // Add staked coins to global stake counter
+    /* Add staked coins to global stake counter */
     totalStakedCoins = totalStakedCoins.add(_satoshis);
+
+    /* Move coins to staking address to store */
+    _transfer(msg.sender, stakingAddress, _satoshis);
   }
 
   /**

@@ -71,6 +71,18 @@ contract GlobalsAndUtility is ERC20 {
   uint256 internal constant oneInterestPeriodInSeconds = 10 days; // Solidity automatically converts 'days' to seconds
 
   /**
+   * @dev Calculates maximum of Total Supply and MaxRedeemable, this is to keep calculations in the early rounds sane
+   * @return Maximum of Total Supply and MaxRedeemable
+   */
+  function maxOfTotalSupplyVSMaxRedeemable() internal view {
+    uint256 _maxOfTotalSupplyVSMaxRedeemable = totalSupply();
+    if (totalSupply() < maximumRedeemable) {
+      _maxOfTotalSupplyVSMaxRedeemable = maximumRedeemable;
+    }
+    return _maxOfTotalSupplyVSMaxRedeemable;
+  }
+
+  /**
    * @dev Checks number of weeks since launch of contract
    * @return number of weeks since launch
    */
@@ -113,7 +125,7 @@ contract GlobalsAndUtility is ERC20 {
    */
   function storePeriodData() public {
     for (lastUpdatedPeriod; periodsSinceLaunch() > lastUpdatedPeriod; lastUpdatedPeriod++) {
-      uint256 _payoutRound = maximumRedeemable.sub(totalRedeemed);
+      uint256 _payoutRound = maxOfTotalSupplyVSMaxRedeemable().div(1046); // Gives approximately 0.09561% inflation per period, which equals 3.5% per year inflation
       periodData[lastUpdatedPeriod.add(1)] = PeriodDataStuct(
           _payoutRound,
           totalStakedCoins
