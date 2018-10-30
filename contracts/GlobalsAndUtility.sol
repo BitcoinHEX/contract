@@ -36,12 +36,22 @@ contract GlobalsAndUtility is ERC20 {
   /* Store last week storeWeeklyData() ran */
   uint256 internal lastUpdatedWeek;
 
+  /* Store last period storePeriodData() ran */
+  uint256 internal lastUpdatedPeriod;
+
   /* Weekly data */
   struct WeeklyDataStuct {
     uint256 unclaimedCoins;
     uint256 totalStaked;
   }
   mapping(uint256 => WeeklyDataStuct) internal weeklyData;
+
+  /* Period data */
+  struct PeriodDataStuct {
+    uint256 payoutRoundAmount;
+    uint256 totalStaked;
+  }
+  mapping(uint256 => PeriodDataStuct) internal periodData;
 
   /* Total number of UTXO's at fork */
   uint256 internal UTXOCountAtFork;
@@ -62,10 +72,18 @@ contract GlobalsAndUtility is ERC20 {
 
   /**
    * @dev Checks number of weeks since launch of contract
-   * @return number of weeks winse launch
+   * @return number of weeks since launch
    */
   function weeksSinceLaunch() internal view returns(uint256) {
     return (block.timestamp.sub(launchTime).div(7 days));
+  }
+
+  /**
+  * @dev Checks number of periods since launch of contract
+  * @return number of periods since launch
+  */
+  function periodsSinceLaunch() internal view returns(uint256) {
+    return (block.timestamp.sub(launchTime).div(10 days));
   }
 
   /**
@@ -91,48 +109,23 @@ contract GlobalsAndUtility is ERC20 {
   }
 
   /**
+   * @dev Store period coin data
+   */
+  function storePeriodData() public {
+    for (lastUpdatedPeriod; periodsSinceLaunch() > lastUpdatedPeriod; lastUpdatedPeriod++) {
+      uint256 _payoutRound = maximumRedeemable.sub(totalRedeemed);
+      periodData[lastUpdatedPeriod.add(1)] = PeriodDataStuct(
+          _payoutRound,
+          totalStakedCoins
+      );
+    }
+  }
+
+  /**
    * @dev A convenience function to get circulating supply.
    * @return
   */
   function getCirculatingSupply() public view returns (uint256) {
     return totalSupply().sub(totalStakedCoins);
-  }
-
-  /**
-    @dev compound groups up compounding periods by 10 in order to avoid uint overflows when taking (100 + rate) ** periods. Accuracy is also brought down by 10 decimals in order to avoid uint overflows when running: compounded * ((100  + rate) ** periods).
-    @param _principle base amount being compounded
-    @param _periods amount of periods to compound principle
-    @param _rate rate given as uint percent
-    @return result of compounding
-  */
-  function compound(
-    uint256 _principle,
-    uint256 _periods,
-    uint256 _rate
-  )
-    public
-    pure
-    returns (uint256)
-  {
-    // bring up by 1e4 in order to get an accurate percent
-    uint256 _interestRate = _rate.add(1e4);
-    uint256 _maxGroupPeriods = 10;
-    uint256 _remainingPeriods = _periods % _maxGroupPeriods;
-    uint256 _groupings = _periods.div(_maxGroupPeriods);
-    uint256 _compounded = _principle.div(1e10);
-
-    for (uint256 _i = 0; _i < _groupings; _i = _i.add(1)) {
-      _compounded = _compounded
-        .mul(_interestRate ** _maxGroupPeriods)
-        .div(1e4 ** _maxGroupPeriods);
-    }
-
-    if (_remainingPeriods != 0) {
-      _compounded = _compounded
-        .mul(_interestRate ** _remainingPeriods)
-        .div(1e4 ** _remainingPeriods);
-    }
-
-    return _compounded.mul(1e10);
   }
 }
