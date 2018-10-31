@@ -74,7 +74,7 @@ contract GlobalsAndUtility is ERC20 {
    * @dev Calculates maximum of Total Supply and MaxRedeemable, this is to keep calculations in the early rounds sane
    * @return Maximum of Total Supply and MaxRedeemable
    */
-  function maxOfTotalSupplyVSMaxRedeemable() internal view {
+  function maxOfTotalSupplyVSMaxRedeemable() internal view returns(uint256) {
     uint256 _maxOfTotalSupplyVSMaxRedeemable = totalSupply();
     if (totalSupply() < maximumRedeemable) {
       _maxOfTotalSupplyVSMaxRedeemable = maximumRedeemable;

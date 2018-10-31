@@ -14,7 +14,7 @@ contract StakeableToken is UTXORedeemableToken {
   function calculateBonuses(
     StakeStruct _stake
   ) public returns (uint256) {
-
+    uint256 _bonus;
   }
 
   /**
@@ -23,9 +23,26 @@ contract StakeableToken is UTXORedeemableToken {
    * @return payout amount
    */
   function calculatePayout(
-    StakeStruct _stake
+    _stakeTime
+    _unlockTime
+    _amount
   ) public returns (uint256) {
-    uint256 _payout;
+    uint256 _payout = 0;
+
+    /* Calculate what period stake was opened */
+    uint256 _startPeriod = _stakeTime.sub(launchTime).div(10 days);
+
+    /* Calculate what period stake was closed */
+    uint256 _endPeriod = _unlockTime.sub(launchTime).div(10 days);
+
+    /* TODO: Fix decimal precision problem with below */
+    for (uint256 _i = _startPeriod; _i < _endPeriod; _i++) {
+      uint256 _payoutRatio = _amount.mul(100).div(periodData[_i].totalStaked);
+      uint256 _weekPayout = periodData[_i].payoutRoundAmount.div(50).mul(_payoutRatio).div(100);
+      _payout = _payout.add(_weekPayout);
+    }
+
+    return _payout;
   }
 
   /**
