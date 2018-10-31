@@ -99,15 +99,15 @@ contract GlobalsAndUtility is ERC20 {
   }
 
   /**
-   * @dev Checks if we're still in claims period
+   * @dev PUBLIC FACING: Checks if we're still in claims period
    * @return true/false is in claims period
    */
-  function isClaimsPeriod() internal view returns(bool) {
+  function isClaimsPeriod() public view returns(bool) {
     return (block.timestamp < endOfClaimPeriod);
   }
 
   /**
-   * @dev Store weekly coin data
+   * @dev PUBLIC FACING: Store weekly coin data
    */
   function storeWeeklyData() public {
     for (lastUpdatedWeek; weeksSinceLaunch() > lastUpdatedWeek; lastUpdatedWeek++) {
@@ -121,7 +121,7 @@ contract GlobalsAndUtility is ERC20 {
   }
 
   /**
-   * @dev Store period coin data
+   * @dev PUBLIC FACING: Store period coin data
    */
   function storePeriodData() public {
     for (lastUpdatedPeriod; periodsSinceLaunch() > lastUpdatedPeriod; lastUpdatedPeriod++) {
@@ -134,8 +134,8 @@ contract GlobalsAndUtility is ERC20 {
   }
 
   /**
-   * @dev A convenience function to get circulating supply.
-   * @return
+   * @dev PUBLIC FACING: A convenience function to get circulating supply.
+   * @return Total Supply
   */
   function getCirculatingSupply() public view returns (uint256) {
     return totalSupply().sub(totalStakedCoins);

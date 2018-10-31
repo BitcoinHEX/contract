@@ -8,24 +8,31 @@ contract StakeableToken is UTXORedeemableToken {
   
   /**
    * @dev PUBLIC FACING: Calculates total bonuses for a given stake
-   * @param _stake Stake to calculate bonuses for
+   * @param _stakeTime param of Stake to calculate bonuses for
+   * @param _unlockTime param of Stake to calculate bonuses for
+   * @param _amount param of Stake to calculate bonuses for
    * @return bonus amount
    */
   function calculateBonuses(
-    StakeStruct _stake
+    uint256 _stakeTime,
+    uint256 _unlockTime,
+    uint256 _amount
   ) public returns (uint256) {
     uint256 _bonus;
+    return _bonus;
   }
 
   /**
    * @dev PUBLIC FACING: Calculates stake payouts for a given stake
-   * @param _stake Stake to calculate payout for
+   * @param _stakeTime param of Stake to calculate bonuses for
+   * @param _unlockTime param of Stake to calculate bonuses for
+   * @param _amount param of Stake to calculate bonuses for
    * @return payout amount
    */
   function calculatePayout(
-    _stakeTime
-    _unlockTime
-    _amount
+    uint256 _stakeTime,
+    uint256 _unlockTime,
+    uint256 _amount
   ) public returns (uint256) {
     uint256 _payout = 0;
 
@@ -35,11 +42,13 @@ contract StakeableToken is UTXORedeemableToken {
     /* Calculate what period stake was closed */
     uint256 _endPeriod = _unlockTime.sub(launchTime).div(10 days);
 
-    /* TODO: Fix decimal precision problem with below */
+    /* Loop though each period and tally payout */
     for (uint256 _i = _startPeriod; _i < _endPeriod; _i++) {
-      uint256 _payoutRatio = _amount.mul(100).div(periodData[_i].totalStaked);
-      uint256 _weekPayout = periodData[_i].payoutRoundAmount.div(50).mul(_payoutRatio).div(100);
-      _payout = _payout.add(_weekPayout);
+      /* Calculate payout from week */
+      uint256 _periodPayout = periodData[_i].payoutRoundAmount.mul(_amount).div(periodData[_i].totalStaked);
+
+      /* Add to tally */
+      _payout = _payout.add(_periodPayout);
     }
 
     return _payout;
