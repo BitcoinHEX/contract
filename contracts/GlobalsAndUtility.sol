@@ -17,9 +17,6 @@ contract GlobalsAndUtility is ERC20 {
   /* Store time of launch for contract */
   uint256 internal launchTime;
 
-  /* Store end of 50 week period */
-  uint256 internal endOfClaimPeriod;
-
   /* Address to store coins in stake */
   address stakingAddress = 0x0;
 
@@ -62,19 +59,21 @@ contract GlobalsAndUtility is ERC20 {
   /* Stakes Storage */
   struct StakeStruct {
     uint256 amount;
+    uint256 stakeShares;
     uint256 stakeTime;
     uint256 unlockTime;
   }
   mapping(address => StakeStruct[]) public staked;
   uint256 public totalStakedCoins;
-  uint256 internal constant maxStakingTimeInSeconds = 365 days * 10; // Solidity automatically converts 'days' to seconds
-  uint256 internal constant oneInterestPeriodInSeconds = 10 days; // Solidity automatically converts 'days' to seconds
+  uint256 public totalStakeShares;
+  uint256 internal constant maxStakingTime = 365 days * 10; // Solidity automatically converts 'days' to seconds
+  uint256 internal constant oneInterestPeriod = 10 days; // Solidity automatically converts 'days' to seconds
 
   /**
    * @dev Calculates maximum of Total Supply and MaxRedeemable, this is to keep calculations in the early rounds sane
    * @return Maximum of Total Supply and MaxRedeemable
    */
-  function maxOfTotalSupplyVSMaxRedeemable() internal view returns(uint256) {
+  function maxOfTotalSupplyVSMaxRedeemable() internal view returns (uint256) {
     uint256 _maxOfTotalSupplyVSMaxRedeemable = totalSupply();
     if (totalSupply() < maximumRedeemable) {
       _maxOfTotalSupplyVSMaxRedeemable = maximumRedeemable;
@@ -83,27 +82,49 @@ contract GlobalsAndUtility is ERC20 {
   }
 
   /**
+   * @dev Converts timestamp to number of weeks into contract
+   * @param _timestamp timestamp to convert
+   * @return number of weeks into contract
+   */
+  function timestampToWeeks(
+    uint256 _timestamp
+  ) internal view returns (uint256) {
+    return (_timestamp.sub(launchTime).div(7 days));
+  }
+
+  /**
    * @dev Checks number of weeks since launch of contract
    * @return number of weeks since launch
    */
-  function weeksSinceLaunch() internal view returns(uint256) {
-    return (block.timestamp.sub(launchTime).div(7 days));
+  function weeksSinceLaunch() internal view returns (uint256) {
+    return (timestampToWeeks(block.timestamp));
+  }
+
+  /**
+   * @dev Converts timestamp to number of periods into contract
+   * @param _timestamp timestamp to convert
+   * @return number of periods into contract
+   */
+  function timestampToPeriods(
+    uint256 _timestamp
+  ) internal view returns (uint256) {
+    return (_timestamp.sub(launchTime).div(10 days));
   }
 
   /**
   * @dev Checks number of periods since launch of contract
   * @return number of periods since launch
   */
-  function periodsSinceLaunch() internal view returns(uint256) {
-    return (block.timestamp.sub(launchTime).div(10 days));
+  function periodsSinceLaunch() internal view returns (uint256) {
+    return (timestampToPeriods(block.timestamp));
   }
 
   /**
    * @dev PUBLIC FACING: Checks if we're still in claims period
    * @return true/false is in claims period
    */
-  function isClaimsPeriod() public view returns(bool) {
-    return (block.timestamp < endOfClaimPeriod);
+  function isClaimsPeriod() public view returns (bool) {
+    return (weeksSinceLaunch() < 50);
   }
 
   /**

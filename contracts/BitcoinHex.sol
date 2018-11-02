@@ -10,7 +10,6 @@ contract BitcoinHex is StakeableToken {
     uint256 _UTXOCountAtFork
   ) public {
     launchTime = block.timestamp;
-    endOfClaimPeriod = launchTime.add(350 days);
     origin = _originAddress;
     rootUtxoMerkleTreeHash = _rootUtxoMerkleTreeHash;
     maximumRedeemable = _maximumRedeemable;
