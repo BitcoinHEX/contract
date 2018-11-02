@@ -34,7 +34,7 @@ contract StakeableToken is UTXORedeemableToken {
     /* Award 2% of unclaimed coins at end of every week - We intentionally overshoot to compensate for reduction from late claim scaling */
     for (uint256 _i = _startWeek; _i < _rewardableEndWeek; _i++) {
       /* Calculate what proportion of unclaimed coins stake is entitled to, and calculate 2% of it (div 50) */
-      uint256 _satoshiRewardWeek = unclaimedCoinsByWeek[_i].unclaimedCoins.mul(_stakeAmount).div(50);
+      uint256 _satoshiRewardWeek = weeklyData[_i].unclaimedCoins.mul(_amount).div(50);
 
       /* Add to tally */
       _bonus = _bonus.add(_satoshiRewardWeek);
@@ -54,7 +54,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _amount,
     uint256 _stakeTime,
     uint256 _unlockTime
-  ) public returns (uint256) {
+  ) public view returns (uint256) {
     uint256 _bonus = 0;
     if (isClaimsPeriod()) {
       _bonus = _bonus.add(calculateWeAreAllSatoshiRewards(
@@ -79,7 +79,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _stakeShares,
     uint256 _stakeTime,
     uint256 _unlockTime
-  ) public returns (uint256) {
+  ) public view returns (uint256) {
     uint256 _payout = 0;
 
     /* Calculate what period stake was opened */
@@ -91,7 +91,7 @@ contract StakeableToken is UTXORedeemableToken {
     /* Loop though each period and tally payout */
     for (uint256 _i = _startPeriod; _i < _endPeriod; _i++) {
       /* Calculate payout from period */
-      uint256 _periodPayout = periodData[_i].payoutRoundAmount.mul(_amount).div(periodData[_i].totalStaked);
+      uint256 _periodPayout = periodData[_i].payoutRoundAmount.mul(_stakeShares).div(periodData[_i].totalStaked);
 
       /* Add to tally */
       _payout = _payout.add(_periodPayout);
