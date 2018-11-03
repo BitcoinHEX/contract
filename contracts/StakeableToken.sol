@@ -126,7 +126,7 @@ contract StakeableToken is UTXORedeemableToken {
     storePeriodData();
 
     /* Calculate stake shares */
-    uint256 _sharesModifier = _periods.mul(200).div(360);
+    uint256 _sharesModifier = _periods.mul(200).div(360); // 0.55% bonus shares for each extra period staked
     uint256 _stakeShares = _satoshis.add(_satoshis.mul(_sharesModifier).div(100));
 
     /* Create Stake */
