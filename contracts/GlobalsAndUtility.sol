@@ -147,6 +147,15 @@ contract GlobalsAndUtility is ERC20 {
   function storePeriodData() public {
     for (lastUpdatedPeriod; periodsSinceLaunch() > lastUpdatedPeriod; lastUpdatedPeriod++) {
       uint256 _payoutRound = maxOfTotalSupplyVSMaxRedeemable().div(1046); // Gives approximately 0.09561% inflation per period, which equals 3.5% per year inflation
+      if (isClaimsPeriod()) {
+        _payoutRound = _payoutRound.add(
+          /* VIRAL REWARDS: Add bonus percentage to _rewards from 0-10% based on adoption */
+          _payoutRound.mul(redeemedCount).div(UTXOCountAtFork).div(10)
+        ).add (
+          /* CRIT MASS REWARDS: Add bonus percentage to _rewards from 0-10% based on adoption */
+          _payoutRound.mul(totalRedeemed).div(maximumRedeemable).div(10)
+        );
+      }
       periodData[lastUpdatedPeriod.add(1)] = PeriodDataStuct(
           _payoutRound,
           totalStakedCoins

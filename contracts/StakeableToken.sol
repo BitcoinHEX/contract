@@ -17,7 +17,7 @@ contract StakeableToken is UTXORedeemableToken {
     uint256 _amount,
     uint256 _stakeTime,
     uint256 _unlockTime
-  ) private view returns(uint256) {
+  ) private view returns (uint256) {
     uint256 _bonus = 0;
 
     /* Calculate what week stake was opened */
