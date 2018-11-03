@@ -17,9 +17,6 @@ contract GlobalsAndUtility is ERC20 {
   /* Store time of launch for contract */
   uint256 internal launchTime;
 
-  /* Address to store coins in stake */
-  address stakingAddress = 0x0;
-
   /* Total tokens redeemed so far. */
   uint256 public totalRedeemed = 0;
   uint256 public redeemedCount = 0;
@@ -164,10 +161,10 @@ contract GlobalsAndUtility is ERC20 {
   }
 
   /**
-   * @dev PUBLIC FACING: A convenience function to get circulating supply.
+   * @dev PUBLIC FACING: A convenience function to get supply and staked.
    * @return Total Supply
   */
-  function getCirculatingSupply() public view returns (uint256) {
-    return totalSupply().sub(totalStakedCoins);
+  function getSupplyPlusStaked() public view returns (uint256) {
+    return totalSupply().add(totalStakedCoins);
   }
 }

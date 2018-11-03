@@ -68,14 +68,12 @@ contract StakeableToken is UTXORedeemableToken {
 
   /**
    * @dev PUBLIC FACING: Calculates stake payouts for a given stake
-   * @param _amount param of stake to calculate bonuses for
    * @param _stakeShares param of stake to calculate bonuses for
    * @param _stakeTime param of stake to calculate bonuses for
    * @param _unlockTime param of stake to calculate bonuses for
    * @return payout amount
    */
   function calculatePayout(
-    uint256 _amount,
     uint256 _stakeShares,
     uint256 _stakeTime,
     uint256 _unlockTime
@@ -145,8 +143,8 @@ contract StakeableToken is UTXORedeemableToken {
     /* Add staked shares to global stake counter */
     totalStakeShares = totalStakeShares.add(_stakeShares);
 
-    /* Move coins to staking address to store */
-    _transfer(msg.sender, stakingAddress, _satoshis);
+    /* Remove staked coins */
+    _burn(msg.sender, _satoshis);
   }
 
   /**
@@ -156,6 +154,24 @@ contract StakeableToken is UTXORedeemableToken {
   function endStake(
     uint256 _stakeIndex
   ) external {
+    StakeStruct storage _stake = staked[msg.sender][_stakeIndex];
+    
+    /* Calculate Payout */
+    uint256 _payout = calculatePayout(
+      _stake.stakeShares,
+      _stake.stakeTime,
+      _stake.unlockTime
+    ).add(calculateBonuses(
+      _stake.amount,
+      _stake.stakeTime,
+      _stake.unlockTime
+    ));
 
+    if (block.timestamp > _stake.unlockTime) {
+      /* Early Unstake Penalty */
+    }
+
+    /* Payout */
+    _mint(msg.sender, _stake.amount.add(_payout));
   }
 }
