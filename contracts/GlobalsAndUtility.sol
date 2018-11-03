@@ -40,6 +40,9 @@ contract GlobalsAndUtility is ERC20 {
   }
   mapping(uint256 => WeeklyDataStuct) internal weeklyData;
 
+  /* Accumulated Emergency unstake pool to go into next period pool */
+  uint256 internal emergencyUnstakePool;
+
   /* Period data */
   struct PeriodDataStuct {
     uint256 payoutRoundAmount;
@@ -143,7 +146,11 @@ contract GlobalsAndUtility is ERC20 {
    */
   function storePeriodData() public {
     for (lastUpdatedPeriod; periodsSinceLaunch() > lastUpdatedPeriod; lastUpdatedPeriod++) {
+
+      /* Calculate payout round */
       uint256 _payoutRound = maxOfTotalSupplyVSMaxRedeemable().div(1046); // Gives approximately 0.09561% inflation per period, which equals 3.5% per year inflation
+
+      /* Calculate Viral and Crit rewards */
       if (isClaimsPeriod()) {
         _payoutRound = _payoutRound.add(
           /* VIRAL REWARDS: Add bonus percentage to _rewards from 0-10% based on adoption */
@@ -153,6 +160,12 @@ contract GlobalsAndUtility is ERC20 {
           _payoutRound.mul(totalRedeemed).div(maximumRedeemable).div(10)
         );
       }
+
+      /* Add emergency unstake pool to payout round */
+      _payoutRound = _payoutRound.add(emergencyUnstakePool);
+      emergencyUnstakePool = 0;
+
+      /* Store data */
       periodData[lastUpdatedPeriod.add(1)] = PeriodDataStuct(
           _payoutRound,
           totalStakedCoins

@@ -149,6 +149,7 @@ contract StakeableToken is UTXORedeemableToken {
 
   /**
    * @dev PUBLIC FACING: Closes a stake
+   * @notice SafeMath prevents any cases where these calculations go below 0, effectively disabling emergency unstaking for these cases
    * @param _stakeIndex Index of stake to close
    */
   function endStake(
@@ -167,8 +168,52 @@ contract StakeableToken is UTXORedeemableToken {
       _stake.unlockTime
     ));
 
+    /* Early Unstake Penalty */
     if (block.timestamp > _stake.unlockTime) {
-      /* Early Unstake Penalty */
+      /* Calculate periods to penalise for early unstaking */
+      uint256 _penaltyPeriods = timestampToWeeks(_stake.unlockTime).sub(_stake.stakeTime).div(2);
+      if (timestampToWeeks(_stake.unlockTime).sub(_stake.stakeTime) < 9) {
+        _penaltyPeriods = 4;
+      }
+      if (timestampToWeeks(_stake.unlockTime).sub(_stake.stakeTime) > 36) {
+        _penaltyPeriods = 18;
+      }
+
+      /* Calculate start of penalty period */
+      uint256 _penaltyStart = block.timestamp.sub(_penaltyPeriods.mul(oneInterestPeriod));
+
+      uint256 _penalty;
+
+      if (_penaltyStart > _stake.stakeTime) {
+        /* If stake has already served more than penalty periods, take penatly from start */
+        uint256 _penaltyEnd = _stake.stakeTime.add(_penaltyPeriods.mul(oneInterestPeriod));
+        _penalty = calculatePayout(
+          _stake.stakeShares,
+          block.timestamp,
+          _penaltyEnd
+        ).add(calculateBonuses(
+          _stake.amount,
+          block.timestamp,
+          _penaltyEnd
+        ));
+      } else {
+        /* Else use historical stake data to make up to penalty period */
+        _penalty = calculatePayout(
+          _stake.stakeShares,
+          _penaltyStart,
+          block.timestamp
+        ).add(calculateBonuses(
+          _stake.amount,
+          _penaltyStart,
+          block.timestamp
+        ));
+      }
+
+      /* Add penalty to payout pool */
+      emergencyUnstakePool = emergencyUnstakePool.add(_penalty);
+
+      /* Remove penalty from this stake's payout */
+      _payout = _payout.sub(_penalty);
     }
 
     /* Payout */
