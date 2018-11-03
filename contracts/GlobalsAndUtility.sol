@@ -161,10 +161,10 @@ contract GlobalsAndUtility is ERC20 {
   }
 
   /**
-   * @dev PUBLIC FACING: A convenience function to get supply and staked.
-   * @return Total Supply
+   * @dev PUBLIC FACING: A convenience function to get supply and staked (true supply).
+   * @return True Supply
   */
-  function getSupplyPlusStaked() public view returns (uint256) {
+  function geTrueSupply() public view returns (uint256) {
     return totalSupply().add(totalStakedCoins);
   }
 }
