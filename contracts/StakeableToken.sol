@@ -69,12 +69,14 @@ contract StakeableToken is UTXORedeemableToken {
   /**
    * @dev PUBLIC FACING: Calculates stake payouts for a given stake
    * @param _amount param of stake to calculate bonuses for
+   * @param _stakeShares param of stake to calculate bonuses for
    * @param _stakeTime param of stake to calculate bonuses for
    * @param _unlockTime param of stake to calculate bonuses for
    * @return payout amount
    */
   function calculatePayout(
     uint256 _amount,
+    uint256 _stakeShares,
     uint256 _stakeTime,
     uint256 _unlockTime
   ) public view returns (uint256) {
@@ -89,7 +91,7 @@ contract StakeableToken is UTXORedeemableToken {
     /* Loop though each period and tally payout */
     for (uint256 _i = _startPeriod; _i < _endPeriod; _i++) {
       /* Calculate payout from period */
-      uint256 _periodPayout = periodData[_i].payoutRoundAmount.mul(_amount).div(periodData[_i].totalStaked);
+      uint256 _periodPayout = periodData[_i].payoutRoundAmount.mul(_stakeShares).div(periodData[_i].totalStaked);
 
       /* Add to tally */
       _payout = _payout.add(_periodPayout);
@@ -123,10 +125,15 @@ contract StakeableToken is UTXORedeemableToken {
     storeWeeklyData();
     storePeriodData();
 
+    /* Calculate stake shares */
+    uint256 _sharesModifier = _periods.mul(200).div(360);
+    uint256 _stakeShares = _satoshis.add(_satoshis.mul(_sharesModifier).div(100));
+
     /* Create Stake */
     staked[msg.sender].push(
       StakeStruct(
         _satoshis,
+        _stakeShares,
         block.timestamp,
         _unlockTime
       )
@@ -134,6 +141,9 @@ contract StakeableToken is UTXORedeemableToken {
 
     /* Add staked coins to global stake counter */
     totalStakedCoins = totalStakedCoins.add(_satoshis);
+
+    /* Add staked shares to global stake counter */
+    totalStakeShares = totalStakeShares.add(_stakeShares);
 
     /* Move coins to staking address to store */
     _transfer(msg.sender, stakingAddress, _satoshis);

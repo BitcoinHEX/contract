@@ -59,11 +59,13 @@ contract GlobalsAndUtility is ERC20 {
   /* Stakes Storage */
   struct StakeStruct {
     uint256 amount;
+    uint256 stakeShares;
     uint256 stakeTime;
     uint256 unlockTime;
   }
   mapping(address => StakeStruct[]) public staked;
   uint256 public totalStakedCoins;
+  uint256 public totalStakeShares;
   uint256 internal constant maxStakingTime = 365 days * 10; // Solidity automatically converts 'days' to seconds
   uint256 internal constant oneInterestPeriod = 10 days; // Solidity automatically converts 'days' to seconds
 
