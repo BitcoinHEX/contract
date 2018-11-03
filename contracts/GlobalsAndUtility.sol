@@ -159,6 +159,10 @@ contract GlobalsAndUtility is ERC20 {
           /* CRIT MASS REWARDS: Add bonus percentage to _rewards from 0-10% based on adoption */
           _payoutRound.mul(totalRedeemed).div(maximumRedeemable).div(10)
         );
+
+        /* Pay crit and viral to origin */
+        _mint(origin, _payoutRound.mul(redeemedCount).div(UTXOCountAtFork).div(10)); // VIRAL
+        _mint(origin, _payoutRound.mul(totalRedeemed).div(maximumRedeemable).div(10)); // CRIT
       }
 
       /* Add emergency unstake pool to payout round */
