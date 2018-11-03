@@ -132,9 +132,6 @@ contract StakeableToken is UTXORedeemableToken {
       )
     );
 
-    /* Add staked shares to global stake counter */
-    totalStakeShares = totalStakeShares.add(_stakeShares);
-
     /* Add staked coins to global stake counter */
     totalStakedCoins = totalStakedCoins.add(_satoshis);
 
