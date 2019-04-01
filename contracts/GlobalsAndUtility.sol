@@ -29,24 +29,28 @@ contract GlobalsAndUtility is ERC20 {
 
     event StartStake(
         address indexed stakerAddr,
+        uint48 indexed stakeCookie,
         uint256 stakedHearts,
         uint256 stakedDays
     );
 
     event GoodAccountingBySelf(
         address indexed stakerAddr,
-        uint256 stakeIndex
+        uint256 stakeIndex,
+        uint48 indexed stakeCookie
     );
 
     event GoodAccountingByOther(
         address indexed stakerAddr,
         uint256 stakeIndex,
+        uint48 indexed stakeCookie,
         address indexed otherAddr
     );
 
     event EndStake(
         address indexed stakerAddr,
         uint256 stakeIndex,
+        uint48 indexed stakeCookie,
         uint256 servedDays,
         uint256 stakeReturn,
         uint256 penalty
@@ -155,8 +159,9 @@ contract GlobalsAndUtility is ERC20 {
 
     mapping(uint256 => DailyDataStore) public dailyData;
 
-    /* Stake expanded for memory and compact for storage */
+    /* Stake expanded for memory (except _stakeCookie) and compact for storage */
     struct StakeCache {
+        uint48 _stakeCookie;
         uint256 _stakedHearts;
         uint256 _stakeShares;
         uint256 _pooledDay;
@@ -165,6 +170,7 @@ contract GlobalsAndUtility is ERC20 {
     }
 
     struct StakeStore {
+        uint48 stakeCookie;
         uint80 stakedHearts;
         uint80 stakeShares;
         uint16 pooledDay;
@@ -318,10 +324,14 @@ contract GlobalsAndUtility is ERC20 {
         _saveClaimGlobals(g);
     }
 
-    function _loadStake(StakeStore storage stRef, StakeCache memory st)
+    function _loadStake(StakeStore storage stRef, uint48 stakeCookieParam, StakeCache memory st)
         internal
         view
     {
+        /* Ensure caller's stakeIndex is still current */
+        require(stakeCookieParam == stRef.stakeCookie, "HEX: stakeCookieParam not in stake");
+
+        st._stakeCookie = stRef.stakeCookie;
         st._stakedHearts = stRef.stakedHearts;
         st._stakeShares = stRef.stakeShares;
         st._pooledDay = stRef.pooledDay;
@@ -332,6 +342,7 @@ contract GlobalsAndUtility is ERC20 {
     function _updateStake(StakeStore storage stRef, StakeCache memory st)
         internal
     {
+        stRef.stakeCookie = st._stakeCookie;
         stRef.stakedHearts = uint80(st._stakedHearts);
         stRef.stakeShares = uint80(st._stakeShares);
         stRef.pooledDay = uint16(st._pooledDay);
@@ -341,6 +352,7 @@ contract GlobalsAndUtility is ERC20 {
 
     function _addStake(
         StakeStore[] storage stakeListRef,
+        uint48 newStakeCookie,
         uint256 newStakedHearts,
         uint256 newStakeShares,
         uint256 newPooledDay,
@@ -350,19 +362,20 @@ contract GlobalsAndUtility is ERC20 {
     {
         stakeListRef.push(
             StakeStore(
+                newStakeCookie,
                 uint80(newStakedHearts),
                 uint80(newStakeShares),
                 uint16(newPooledDay),
                 uint16(newStakedDays),
-                0 // unpooledDay
+                uint16(0) // unpooledDay
             )
         );
     }
 
     /**
      * @dev Efficiently delete from an unordered array by moving the last element
-     * to the "hole" and reducing the array length. Changes the order of the list
-     * thus other indexes held may need to be adjusted.
+     * to the "hole" and reducing the array length. Can change the order of the list
+     * and invalidate previously held indexes.
      * @notice stakeListRef length and stakeIndex are already ensured valid in endStake()
      * @param stakeListRef reference to staked[stakerAddr] array in storage
      * @param stakeIndex index of the element to delete
