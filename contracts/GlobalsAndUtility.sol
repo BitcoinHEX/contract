@@ -67,7 +67,7 @@ contract GlobalsAndUtility is ERC20 {
     string public constant symbol = "HEX";
     uint8 public constant decimals = 8;
 
-    /* Hearts per Satoshi = 10,000 * 1e8 / 1e8 = 1e14 */
+    /* Hearts per Satoshi = 10,000 * 1e8 / 1e8 = 1e4 */
     uint256 private constant HEARTS_PER_HEX = 10 ** uint256(decimals); // 1e8
     uint256 private constant HEX_PER_BTC = 1e4;
     uint256 private constant SATOSHIS_PER_BTC = 1e8;
