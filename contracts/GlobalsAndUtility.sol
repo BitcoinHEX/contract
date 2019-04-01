@@ -74,7 +74,8 @@ contract GlobalsAndUtility is ERC20 {
     uint256 internal constant LAUNCH_TIME = 1551657600;
 
     /* Time of end of claim phase */
-    uint256 internal constant CLAIM_REWARD_DAYS = 50 * 7;
+    uint256 private constant CLAIM_REWARD_WEEKS = 50;
+    uint256 internal constant CLAIM_REWARD_DAYS = CLAIM_REWARD_WEEKS * 7;
     uint256 internal constant CLAIM_PHASE_DAYS = CLAIM_REWARD_DAYS + 1; // Skip launch day
 
     /* Root hash of the UTXO Merkle tree */
@@ -94,10 +95,17 @@ contract GlobalsAndUtility is ERC20 {
 
     /* Stake timing parameters */
     uint256 internal constant MIN_STAKE_DAYS = 1;
-    uint256 internal constant MAX_STAKE_DAYS = 50 * 52 * 7; // Approx 50 years
+
+    uint256 private constant MAX_STAKE_WEEKS = 50 * 52; // Approx 50 years
+    uint256 internal constant MAX_STAKE_DAYS = MAX_STAKE_WEEKS * 7;
+
     uint256 internal constant EARLY_PENALTY_MIN_DAYS = 90;
-    uint256 internal constant LATE_PENALTY_GRACE_DAYS = 2 * 7;
-    uint256 internal constant LATE_PENALTY_SCALE_DAYS = 100 * 7;
+
+    uint256 private constant LATE_PENALTY_GRACE_WEEKS = 2;
+    uint256 internal constant LATE_PENALTY_GRACE_DAYS = LATE_PENALTY_GRACE_WEEKS * 7;
+
+    uint256 private constant LATE_PENALTY_SCALE_WEEKS = 100;
+    uint256 internal constant LATE_PENALTY_SCALE_DAYS = LATE_PENALTY_SCALE_WEEKS * 7;
 
     /* Hex digits used by createHexStringFromAddress() */
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
