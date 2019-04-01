@@ -45,8 +45,7 @@ contract StakeableToken is UTXORedeemableToken {
         emit StartStake(
             msg.sender,
             newStakedHearts,
-            newStakedDays,
-            newStakeShares
+            newStakedDays
         );
 
         /* Stake is added to pool in next round, not current round */
@@ -100,16 +99,14 @@ contract StakeableToken is UTXORedeemableToken {
         _applyPayoutAndPenalty(g, st, st._stakedDays, false);
 
         if (msg.sender == stakerAddr) {
-            emit GoodAccounting(
+            emit GoodAccountingBySelf(
                 stakerAddr,
-                st._stakeShares,
-                st._unpooledDay
+                stakeIndex
             );
         } else {
             emit GoodAccountingByOther(
                 stakerAddr,
-                st._stakeShares,
-                st._unpooledDay,
+                stakeIndex,
                 msg.sender
             );
         }
@@ -177,8 +174,7 @@ contract StakeableToken is UTXORedeemableToken {
 
         emit EndStake(
             msg.sender,
-            st._stakedHearts,
-            st._stakedDays,
+            stakeIndex,
             servedDays,
             stakeReturn,
             penalty

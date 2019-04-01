@@ -7,50 +7,49 @@ contract GlobalsAndUtility is ERC20 {
     /* Define events */
     event Claim(
         address indexed claimToAddr,
-        uint256 claimedSatoshis,
+        uint256 rawSatoshis,
+        uint256 adjSatoshis,
         uint256 claimedHearts
     );
 
-    event SelfReferredClaim(
+    event ClaimReferredBySelf(
         address indexed claimToAddr,
-        uint256 claimedSatoshis,
+        uint256 rawSatoshis,
+        uint256 adjSatoshis,
         uint256 claimedHearts
     );
 
-    event ReferredClaim(
+    event ClaimReferredByOther(
         address indexed claimToAddr,
-        uint256 claimedSatoshis,
+        uint256 rawSatoshis,
+        uint256 adjSatoshis,
         uint256 claimedHearts,
-        address indexed referrer
+        address indexed referrerAddr
     );
 
     event StartStake(
         address indexed stakerAddr,
         uint256 stakedHearts,
-        uint256 stakedDays,
-        uint256 stakeShares
+        uint256 stakedDays
     );
 
-    event EndStake(
+    event GoodAccountingBySelf(
         address indexed stakerAddr,
-        uint256 stakedHearts,
-        uint256 stakedDays,
-        uint256 servedDays,
-        uint256 stakeReturn,
-        uint256 penalty
-    );
-
-    event GoodAccounting(
-        address indexed stakerAddr,
-        uint256 stakeShares,
-        uint256 unpooledDay
+        uint256 stakeIndex
     );
 
     event GoodAccountingByOther(
         address indexed stakerAddr,
-        uint256 stakeShares,
-        uint256 unpooledDay,
+        uint256 stakeIndex,
         address indexed otherAddr
+    );
+
+    event EndStake(
+        address indexed stakerAddr,
+        uint256 stakeIndex,
+        uint256 servedDays,
+        uint256 stakeReturn,
+        uint256 penalty
     );
 
     /* Origin address */

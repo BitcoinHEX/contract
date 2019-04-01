@@ -18,7 +18,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
      * @param v v parameter of ECDSA signature
      * @param r r parameter of ECDSA signature
      * @param s s parameter of ECDSA signature
-     * @param referrer Eth address of referring user (optional; 0x0 for no referrer)
+     * @param referrerAddr Eth address of referring user (optional; 0x0 for no referrer)
      * @return Total number of Hearts credited, if successful
      */
     function claimBtcAddress(
@@ -31,7 +31,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         uint8 v,
         bytes32 r,
         bytes32 s,
-        address referrer
+        address referrerAddr
     )
         external
         returns (uint256)
@@ -60,10 +60,10 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         /* Mark BTC address as claimed */
         claimedBtcAddresses[btcAddress] = true;
 
-        return _claimSatoshisSync(rawSatoshis, claimToAddr, referrer);
+        return _claimSatoshisSync(rawSatoshis, claimToAddr, referrerAddr);
     }
 
-    function _claimSatoshisSync(uint256 rawSatoshis, address claimToAddr, address referrer)
+    function _claimSatoshisSync(uint256 rawSatoshis, address claimToAddr, address referrerAddr)
         private
         returns (uint256 claimedHearts)
     {
@@ -72,7 +72,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         _loadGlobals(g);
         _snapshotGlobalsCache(g, gSnapshot);
 
-        claimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, referrer);
+        claimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, referrerAddr);
 
         _syncStakeGlobals(g, gSnapshot);
         _saveClaimGlobals(g);
@@ -84,14 +84,14 @@ contract UTXORedeemableToken is UTXOClaimValidation {
      * @dev Credit an Eth address with the Hearts value of a raw Satoshis balance
      * @param rawSatoshis Raw BTC address balance in Satoshis
      * @param claimToAddr Destination Eth address for the claimed Hearts to be sent
-     * @param referrer (optional, send 0x0 for no referrer) Eth address of referring user
+     * @param referrerAddr (optional, send 0x0 for no referrer) Eth address of referring user
      * @return Total number of Hearts credited, if successful
      */
     function _claimSatoshis(
         GlobalsCache memory g,
         uint256 rawSatoshis,
         address claimToAddr,
-        address referrer
+        address referrerAddr
     )
         private
         returns (uint256)
@@ -138,13 +138,14 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         /* Now merge bonus into amount for total */
         claimedHearts += claimBonusHearts;
 
-        if (referrer == address(0)) {
+        if (referrerAddr == address(0)) {
             /* No referrer */
             _mint(claimToAddr, claimBonusHearts);
             _mint(ORIGIN_ADDR, claimBonusHearts);
 
             emit Claim(
                 claimToAddr,
+                rawSatoshis,
                 adjSatoshis,
                 claimedHearts
             );
@@ -156,27 +157,29 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         uint256 combinedBonusHearts = claimBonusHearts + referBonusHearts;
 
         _mint(ORIGIN_ADDR, combinedBonusHearts);
-        if (referrer == claimToAddr) {
+        if (referrerAddr == claimToAddr) {
             /* Self-refer can use one mint() instead of two */
             _mint(claimToAddr, combinedBonusHearts);
 
             claimedHearts += referBonusHearts;
 
-            emit SelfReferredClaim(
+            emit ClaimReferredBySelf(
                 claimToAddr,
+                rawSatoshis,
                 adjSatoshis,
                 claimedHearts
             );
         } else {
             /* Referred by different address */
             _mint(claimToAddr, claimBonusHearts);
-            _mint(referrer, referBonusHearts);
+            _mint(referrerAddr, referBonusHearts);
 
-            emit ReferredClaim(
+            emit ClaimReferredByOther(
                 claimToAddr,
+                rawSatoshis,
                 adjSatoshis,
                 claimedHearts,
-                referrer
+                referrerAddr
             );
         }
         return claimedHearts;
