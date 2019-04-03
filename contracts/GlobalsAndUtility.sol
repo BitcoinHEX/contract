@@ -283,8 +283,6 @@ contract GlobalsAndUtility is ERC20 {
         gSnapshot._unclaimedSatoshisTotal = g._unclaimedSatoshisTotal;
         gSnapshot._claimedSatoshisTotal = g._claimedSatoshisTotal;
         gSnapshot._claimedBtcAddrCount = g._claimedBtcAddrCount;
-        //
-        gSnapshot._currentDay = g._currentDay;
     }
 
     function _saveGlobals1(GlobalsCache memory g)
