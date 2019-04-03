@@ -124,9 +124,9 @@ contract GlobalsAndUtility is ERC20 {
         uint256 _daysStored;
         uint256 _stakeSharesTotal;
         uint256 _nextStakeSharesTotal;
-        uint256 _stakePenaltyPool;
-        // 2
         uint48 _latestStakeId;
+        // 2
+        uint256 _stakePenaltyPool;
         uint256 _unclaimedSatoshisTotal;
         uint256 _claimedSatoshisTotal;
         uint256 _claimedBtcAddrCount;
@@ -139,9 +139,9 @@ contract GlobalsAndUtility is ERC20 {
         uint16 daysStored;
         uint80 stakeSharesTotal;
         uint80 nextStakeSharesTotal;
-        uint80 stakePenaltyPool;
-        // 2
         uint48 latestStakeId;
+        // 2
+        uint80 stakePenaltyPool;
         uint64 unclaimedSatoshisTotal;
         uint64 claimedSatoshisTotal;
         uint32 claimedBtcAddrCount;
@@ -255,16 +255,17 @@ contract GlobalsAndUtility is ERC20 {
         internal
         view
     {
+        // 1
         g._daysStored = globals.daysStored;
         g._stakeSharesTotal = globals.stakeSharesTotal;
         g._nextStakeSharesTotal = globals.nextStakeSharesTotal;
-        g._stakePenaltyPool = globals.stakePenaltyPool;
-
         g._latestStakeId = globals.latestStakeId;
+        // 2
+        g._stakePenaltyPool = globals.stakePenaltyPool;
         g._unclaimedSatoshisTotal = globals.unclaimedSatoshisTotal;
         g._claimedSatoshisTotal = globals.claimedSatoshisTotal;
         g._claimedBtcAddrCount = uint256(globals.claimedBtcAddrCount);
-
+        //
         g._currentDay = _getCurrentDay();
     }
 
@@ -272,16 +273,17 @@ contract GlobalsAndUtility is ERC20 {
         internal
         pure
     {
+        // 1
         gSnapshot._daysStored = g._daysStored;
         gSnapshot._stakeSharesTotal = g._stakeSharesTotal;
         gSnapshot._nextStakeSharesTotal = g._nextStakeSharesTotal;
-        gSnapshot._stakePenaltyPool = g._stakePenaltyPool;
-
         gSnapshot._latestStakeId = g._latestStakeId;
+        // 2
+        gSnapshot._stakePenaltyPool = g._stakePenaltyPool;
         gSnapshot._unclaimedSatoshisTotal = g._unclaimedSatoshisTotal;
         gSnapshot._claimedSatoshisTotal = g._claimedSatoshisTotal;
         gSnapshot._claimedBtcAddrCount = g._claimedBtcAddrCount;
-
+        //
         gSnapshot._currentDay = g._currentDay;
     }
 
@@ -291,7 +293,7 @@ contract GlobalsAndUtility is ERC20 {
         globals.daysStored = uint16(g._daysStored);
         globals.stakeSharesTotal = uint80(g._stakeSharesTotal);
         globals.nextStakeSharesTotal = uint80(g._nextStakeSharesTotal);
-        globals.stakePenaltyPool = uint80(g._stakePenaltyPool);
+        globals.latestStakeId = g._latestStakeId;
     }
 
     function _syncGlobals1(GlobalsCache memory g, GlobalsCache memory gSnapshot)
@@ -300,7 +302,7 @@ contract GlobalsAndUtility is ERC20 {
         if (g._daysStored == gSnapshot._daysStored
             && g._stakeSharesTotal == gSnapshot._stakeSharesTotal
             && g._nextStakeSharesTotal == gSnapshot._nextStakeSharesTotal
-            && g._stakePenaltyPool == gSnapshot._stakePenaltyPool) {
+            && g._latestStakeId == gSnapshot._latestStakeId) {
             return;
         }
         _saveGlobals1(g);
@@ -309,7 +311,7 @@ contract GlobalsAndUtility is ERC20 {
     function _saveGlobals2(GlobalsCache memory g)
         internal
     {
-        globals.latestStakeId = g._latestStakeId;
+        globals.stakePenaltyPool = uint80(g._stakePenaltyPool);
         globals.unclaimedSatoshisTotal = uint64(g._unclaimedSatoshisTotal);
         globals.claimedSatoshisTotal = uint64(g._claimedSatoshisTotal);
         globals.claimedBtcAddrCount = uint32(g._claimedBtcAddrCount);
@@ -318,7 +320,7 @@ contract GlobalsAndUtility is ERC20 {
     function _syncGlobals2(GlobalsCache memory g, GlobalsCache memory gSnapshot)
         internal
     {
-        if (g._latestStakeId == gSnapshot._latestStakeId
+        if (g._stakePenaltyPool == gSnapshot._stakePenaltyPool
             && g._unclaimedSatoshisTotal == gSnapshot._unclaimedSatoshisTotal
             && g._claimedSatoshisTotal == gSnapshot._claimedSatoshisTotal
             && g._claimedBtcAddrCount == gSnapshot._claimedBtcAddrCount) {

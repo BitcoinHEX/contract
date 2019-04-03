@@ -599,12 +599,12 @@
         "type": "uint80"
       },
       {
-        "name": "stakePenaltyPool",
-        "type": "uint80"
-      },
-      {
         "name": "latestStakeId",
         "type": "uint48"
+      },
+      {
+        "name": "stakePenaltyPool",
+        "type": "uint80"
       },
       {
         "name": "unclaimedSatoshisTotal",
