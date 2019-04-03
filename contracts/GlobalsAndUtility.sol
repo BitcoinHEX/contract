@@ -36,21 +36,25 @@ contract GlobalsAndUtility is ERC20 {
 
     event GoodAccountingBySelf(
         address indexed stakerAddr,
-        uint48 indexed stakeId
+        uint48 indexed stakeId,
+        uint256 payout,
+        uint256 penalty
     );
 
     event GoodAccountingByOther(
         address indexed stakerAddr,
         uint48 indexed stakeId,
+        uint256 payout,
+        uint256 penalty,
         address indexed otherAddr
     );
 
     event EndStake(
         address indexed stakerAddr,
         uint48 indexed stakeId,
-        uint256 servedDays,
-        uint256 stakeReturn,
-        uint256 penalty
+        uint256 payout,
+        uint256 penalty,
+        uint256 servedDays
     );
 
     /* Origin address */

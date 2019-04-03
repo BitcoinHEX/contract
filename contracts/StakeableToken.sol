@@ -105,18 +105,22 @@ contract StakeableToken is UTXORedeemableToken {
         /* Remove stake from global pool */
         _unpoolStake(g, st);
 
-        /* Return values are unused here */
-        _applyPayoutAndPenalty(g, st, st._stakedDays, false);
+        /* stakeReturn value is unused here */
+        (, uint256 payout, uint256 penalty) = _applyPayoutAndPenalty(g, st, st._stakedDays, false);
 
         if (msg.sender == stakerAddr) {
             emit GoodAccountingBySelf(
                 stakerAddr,
-                stakeIdParam
+                stakeIdParam,
+                payout,
+                penalty
             );
         } else {
             emit GoodAccountingByOther(
                 stakerAddr,
                 stakeIdParam,
+                payout,
+                penalty,
                 msg.sender
             );
         }
@@ -158,6 +162,7 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 servedDays = 0;
 
         uint256 stakeReturn;
+        uint256 payout = 0;
         uint256 penalty = 0;
 
         if (g._currentDay >= st._pooledDay) {
@@ -175,7 +180,12 @@ contract StakeableToken is UTXORedeemableToken {
                 }
             }
 
-            (stakeReturn, penalty) = _applyPayoutAndPenalty(g, st, servedDays, prevUnpooled);
+            (stakeReturn, payout, penalty) = _applyPayoutAndPenalty(
+                g,
+                st,
+                servedDays,
+                prevUnpooled
+            );
         } else {
             /* Stake hasn't been added to the global pool yet, so no penalties or rewards apply */
             g._nextStakeSharesTotal -= st._stakeShares;
@@ -186,9 +196,9 @@ contract StakeableToken is UTXORedeemableToken {
         emit EndStake(
             msg.sender,
             stakeIdParam,
-            servedDays,
-            stakeReturn,
-            penalty
+            payout,
+            penalty,
+            servedDays
         );
 
         if (stakeReturn != 0) {
@@ -294,38 +304,34 @@ contract StakeableToken is UTXORedeemableToken {
         bool prevUnpooled
     )
         private
-        returns (uint256 stakeReturn, uint256 penalty)
+        returns (uint256 stakeReturn, uint256 payout, uint256 penalty)
     {
-        (stakeReturn, penalty) = _calcStakeReturnAndPenalty(g, st, servedDays);
+        (stakeReturn, payout, penalty) = _calcStakeReturn(g, st, servedDays);
 
         if (penalty != 0) {
-            if (penalty > stakeReturn) {
+            uint256 cappedPenalty = penalty;
+
+            if (cappedPenalty > stakeReturn) {
                 /* Cannot have a negative stake return */
-                penalty = stakeReturn;
+                cappedPenalty = stakeReturn;
                 stakeReturn = 0;
             } else {
                 /* Remove penalty from the stake return */
-                stakeReturn -= penalty;
+                stakeReturn -= cappedPenalty;
             }
             /* Split penalty proceeds only if not previously unpooled by goodAccounting() */
             if (!prevUnpooled) {
-                _splitPenaltyProceeds(g, penalty);
+                _splitPenaltyProceeds(g, cappedPenalty);
             }
         }
-        return (stakeReturn, penalty);
+        return (stakeReturn, payout, penalty);
     }
 
-    function _calcStakeReturnAndPenalty(
-        GlobalsCache memory g,
-        StakeCache memory st,
-        uint256 servedDays
-    )
+    function _calcStakeReturn(GlobalsCache memory g, StakeCache memory st, uint256 servedDays)
         private
         view
-        returns (uint256 stakeReturn, uint256 penalty)
+        returns (uint256 stakeReturn, uint256 payout, uint256 penalty)
     {
-        uint256 payout;
-
         if (servedDays < st._stakedDays) {
             (payout, penalty) = _calcPayoutAndEarlyPenalty(
                 g,
@@ -345,7 +351,7 @@ contract StakeableToken is UTXORedeemableToken {
                 stakeReturn
             );
         }
-        return (stakeReturn, penalty);
+        return (stakeReturn, payout, penalty);
     }
 
     /**

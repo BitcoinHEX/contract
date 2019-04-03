@@ -855,6 +855,16 @@
         "indexed": true,
         "name": "stakeId",
         "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "name": "payout",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "penalty",
+        "type": "uint256"
       }
     ],
     "name": "GoodAccountingBySelf",
@@ -872,6 +882,16 @@
         "indexed": true,
         "name": "stakeId",
         "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "name": "payout",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "penalty",
+        "type": "uint256"
       },
       {
         "indexed": true,
@@ -897,17 +917,17 @@
       },
       {
         "indexed": false,
-        "name": "servedDays",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "name": "stakeReturn",
+        "name": "payout",
         "type": "uint256"
       },
       {
         "indexed": false,
         "name": "penalty",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "servedDays",
         "type": "uint256"
       }
     ],
