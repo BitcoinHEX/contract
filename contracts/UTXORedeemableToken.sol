@@ -74,8 +74,8 @@ contract UTXORedeemableToken is UTXOClaimValidation {
 
         claimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, referrerAddr);
 
-        _syncStakeGlobals(g, gSnapshot);
-        _saveClaimGlobals(g);
+        _syncGlobals1(g, gSnapshot);
+        _saveGlobals2(g);
 
         return claimedHearts;
     }

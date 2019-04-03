@@ -123,11 +123,12 @@ contract GlobalsAndUtility is ERC20 {
 
     /* Globals expanded for memory and compact for storage */
     struct GlobalsCache {
+        // 1
         uint256 _daysStored;
         uint256 _stakeSharesTotal;
         uint256 _nextStakeSharesTotal;
         uint256 _stakePenaltyPool;
-        //
+        // 2
         uint256 _unclaimedSatoshisTotal;
         uint256 _claimedSatoshisTotal;
         uint256 _claimedBtcAddrCount;
@@ -136,11 +137,12 @@ contract GlobalsAndUtility is ERC20 {
     }
 
     struct GlobalsStore {
+        // 1
         uint16 daysStored;
         uint80 stakeSharesTotal;
         uint80 nextStakeSharesTotal;
         uint80 stakePenaltyPool;
-        //
+        // 2
         uint64 unclaimedSatoshisTotal;
         uint64 claimedSatoshisTotal;
         uint32 claimedBtcAddrCount;
@@ -213,8 +215,8 @@ contract GlobalsAndUtility is ERC20 {
             _storeDailyDataBefore(g, g._currentDay);
         }
 
-        _syncStakeGlobals(g, gSnapshot);
-        _syncClaimGlobals(g, gSnapshot);
+        _syncGlobals1(g, gSnapshot);
+        _syncGlobals2(g, gSnapshot);
     }
 
     /**
@@ -259,13 +261,11 @@ contract GlobalsAndUtility is ERC20 {
         g._nextStakeSharesTotal = globals.nextStakeSharesTotal;
         g._stakePenaltyPool = globals.stakePenaltyPool;
 
-        g._currentDay = _getCurrentDay();
+        g._unclaimedSatoshisTotal = globals.unclaimedSatoshisTotal;
+        g._claimedSatoshisTotal = globals.claimedSatoshisTotal;
+        g._claimedBtcAddrCount = uint256(globals.claimedBtcAddrCount);
 
-        if (g._daysStored < CLAIM_PHASE_DAYS) {
-            g._unclaimedSatoshisTotal = globals.unclaimedSatoshisTotal;
-            g._claimedSatoshisTotal = globals.claimedSatoshisTotal;
-            g._claimedBtcAddrCount = uint256(globals.claimedBtcAddrCount);
-        }
+        g._currentDay = _getCurrentDay();
     }
 
     function _snapshotGlobalsCache(GlobalsCache memory g, GlobalsCache memory gSnapshot)
@@ -284,7 +284,7 @@ contract GlobalsAndUtility is ERC20 {
         gSnapshot._currentDay = g._currentDay;
     }
 
-    function _saveStakeGlobals(GlobalsCache memory g)
+    function _saveGlobals1(GlobalsCache memory g)
         internal
     {
         globals.daysStored = uint16(g._daysStored);
@@ -293,15 +293,7 @@ contract GlobalsAndUtility is ERC20 {
         globals.stakePenaltyPool = uint80(g._stakePenaltyPool);
     }
 
-    function _saveClaimGlobals(GlobalsCache memory g)
-        internal
-    {
-        globals.unclaimedSatoshisTotal = uint64(g._unclaimedSatoshisTotal);
-        globals.claimedSatoshisTotal = uint64(g._claimedSatoshisTotal);
-        globals.claimedBtcAddrCount = uint32(g._claimedBtcAddrCount);
-    }
-
-    function _syncStakeGlobals(GlobalsCache memory g, GlobalsCache memory gSnapshot)
+    function _syncGlobals1(GlobalsCache memory g, GlobalsCache memory gSnapshot)
         internal
     {
         if (g._daysStored == gSnapshot._daysStored
@@ -310,10 +302,18 @@ contract GlobalsAndUtility is ERC20 {
             && g._stakePenaltyPool == gSnapshot._stakePenaltyPool) {
             return;
         }
-        _saveStakeGlobals(g);
+        _saveGlobals1(g);
     }
 
-    function _syncClaimGlobals(GlobalsCache memory g, GlobalsCache memory gSnapshot)
+    function _saveGlobals2(GlobalsCache memory g)
+        internal
+    {
+        globals.unclaimedSatoshisTotal = uint64(g._unclaimedSatoshisTotal);
+        globals.claimedSatoshisTotal = uint64(g._claimedSatoshisTotal);
+        globals.claimedBtcAddrCount = uint32(g._claimedBtcAddrCount);
+    }
+
+    function _syncGlobals2(GlobalsCache memory g, GlobalsCache memory gSnapshot)
         internal
     {
         if (g._unclaimedSatoshisTotal == gSnapshot._unclaimedSatoshisTotal
@@ -321,7 +321,7 @@ contract GlobalsAndUtility is ERC20 {
             && g._claimedBtcAddrCount == gSnapshot._claimedBtcAddrCount) {
             return;
         }
-        _saveClaimGlobals(g);
+        _saveGlobals2(g);
     }
 
     function _loadStake(StakeStore storage stRef, uint48 stakeCookieParam, StakeCache memory st)

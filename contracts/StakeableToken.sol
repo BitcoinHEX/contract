@@ -68,8 +68,8 @@ contract StakeableToken is UTXORedeemableToken {
         /* Transfer staked Hearts to contract */
         _transfer(msg.sender, address(this), newStakedHearts);
 
-        _saveStakeGlobals(g);
-        _syncClaimGlobals(g, gSnapshot);
+        _saveGlobals1(g);
+        _syncGlobals2(g, gSnapshot);
     }
 
     /**
@@ -131,8 +131,8 @@ contract StakeableToken is UTXORedeemableToken {
         /* st._unpooledDay has changed */
         _updateStake(stRef, st);
 
-        _saveStakeGlobals(g);
-        _syncClaimGlobals(g, gSnapshot);
+        _saveGlobals1(g);
+        _syncGlobals2(g, gSnapshot);
     }
 
     /**
@@ -206,8 +206,8 @@ contract StakeableToken is UTXORedeemableToken {
 
         _removeStakeFromList(stakeListRef, stakeIndex);
 
-        _saveStakeGlobals(g);
-        _syncClaimGlobals(g, gSnapshot);
+        _saveGlobals1(g);
+        _syncGlobals2(g, gSnapshot);
     }
 
     /**
