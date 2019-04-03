@@ -5,23 +5,17 @@ import "./UTXORedeemableToken.sol";
 
 contract StakeableToken is UTXORedeemableToken {
     /**
-     * @dev PUBLIC FACING: Open a stake. The order of the stake list can change when
-     * a stake is removed, so the stake cookie allows the contract to reject invalidated
-     * indexes to protect callers from themselves.
-     * @param newStakeCookie Random or unique value to reference this stake (caller-provided)
+     * @dev PUBLIC FACING: Open a stake.
      * @param newStakedHearts Number of Hearts to stake
      * @param newStakedDays Number of days to stake
      */
-    function startStake(uint48 newStakeCookie, uint256 newStakedHearts, uint256 newStakedDays)
+    function startStake(uint256 newStakedHearts, uint256 newStakedDays)
         external
     {
         GlobalsCache memory g;
         GlobalsCache memory gSnapshot;
         _loadGlobals(g);
         _snapshotGlobalsCache(g, gSnapshot);
-
-        /* Make sure cookie is non-zero */
-        require(newStakeCookie != 0, "HEX: newStakeCookie must be non-zero");
 
         /* Make sure staked amount is non-zero */
         require(newStakedHearts != 0, "HEX: newStakedHearts must be non-zero");
@@ -46,9 +40,10 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 newPooledDay = g._currentDay + 1;
 
         /* Create Stake */
+        uint48 newStakeId = ++g._latestStakeId;
         _addStake(
             staked[msg.sender],
-            newStakeCookie,
+            newStakeId,
             newStakedHearts,
             newStakeShares,
             newPooledDay,
@@ -57,7 +52,7 @@ contract StakeableToken is UTXORedeemableToken {
 
         emit StartStake(
             msg.sender,
-            newStakeCookie,
+            newStakeId,
             newStakedHearts,
             newStakedDays
         );
@@ -78,9 +73,9 @@ contract StakeableToken is UTXORedeemableToken {
      * still call endStake() to retrieve their stake return (if any).
      * @param stakerAddr Address of staker
      * @param stakeIndex Index of stake within stake list
-     * @param stakeCookieParam The stake's cookie value
+     * @param stakeIdParam The stake's id
      */
-    function goodAccounting(address stakerAddr, uint256 stakeIndex, uint48 stakeCookieParam)
+    function goodAccounting(address stakerAddr, uint256 stakeIndex, uint48 stakeIdParam)
         external
     {
         GlobalsCache memory g;
@@ -96,7 +91,7 @@ contract StakeableToken is UTXORedeemableToken {
 
         /* Get stake copy */
         StakeCache memory st;
-        _loadStake(stRef, stakeCookieParam, st);
+        _loadStake(stRef, stakeIdParam, st);
 
         /* Stake must have served full term */
         require(g._currentDay >= st._pooledDay + st._stakedDays, "HEX: Stake not fully served");
@@ -116,14 +111,12 @@ contract StakeableToken is UTXORedeemableToken {
         if (msg.sender == stakerAddr) {
             emit GoodAccountingBySelf(
                 stakerAddr,
-                stakeIndex,
-                stakeCookieParam
+                stakeIdParam
             );
         } else {
             emit GoodAccountingByOther(
                 stakerAddr,
-                stakeIndex,
-                stakeCookieParam,
+                stakeIdParam,
                 msg.sender
             );
         }
@@ -137,11 +130,11 @@ contract StakeableToken is UTXORedeemableToken {
 
     /**
      * @dev PUBLIC FACING: Closes a stake. The order of the stake list can change so
-     * a stake cookie is used to reject stale indexes.
+     * a stake id is used to reject stale indexes.
      * @param stakeIndex Index of stake within stake list
-     * @param stakeCookieParam The stake's cookie value
+     * @param stakeIdParam The stake's id
      */
-    function endStake(uint256 stakeIndex, uint48 stakeCookieParam)
+    function endStake(uint256 stakeIndex, uint48 stakeIdParam)
         external
     {
         GlobalsCache memory g;
@@ -157,7 +150,7 @@ contract StakeableToken is UTXORedeemableToken {
 
         /* Get stake copy */
         StakeCache memory st;
-        _loadStake(stakeListRef[stakeIndex], stakeCookieParam, st);
+        _loadStake(stakeListRef[stakeIndex], stakeIdParam, st);
 
         /* Check if log data needs to be updated */
         _storeDailyDataBefore(g, g._currentDay);
@@ -192,8 +185,7 @@ contract StakeableToken is UTXORedeemableToken {
 
         emit EndStake(
             msg.sender,
-            stakeIndex,
-            stakeCookieParam,
+            stakeIdParam,
             servedDays,
             stakeReturn,
             penalty

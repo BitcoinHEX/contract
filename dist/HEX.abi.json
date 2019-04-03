@@ -37,6 +37,24 @@
     "type": "function"
   },
   {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "newStakedHearts",
+        "type": "uint256"
+      },
+      {
+        "name": "newStakedDays",
+        "type": "uint256"
+      }
+    ],
+    "name": "startStake",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "constant": true,
     "inputs": [],
     "name": "totalSupply",
@@ -336,7 +354,7 @@
         "type": "uint256"
       },
       {
-        "name": "stakeCookieParam",
+        "name": "stakeIdParam",
         "type": "uint48"
       }
     ],
@@ -385,7 +403,7 @@
         "type": "uint256"
       },
       {
-        "name": "stakeCookieParam",
+        "name": "stakeIdParam",
         "type": "uint48"
       }
     ],
@@ -438,7 +456,7 @@
     "name": "staked",
     "outputs": [
       {
-        "name": "stakeCookie",
+        "name": "stakeId",
         "type": "uint48"
       },
       {
@@ -564,28 +582,6 @@
     "type": "function"
   },
   {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "newStakeCookie",
-        "type": "uint48"
-      },
-      {
-        "name": "newStakedHearts",
-        "type": "uint256"
-      },
-      {
-        "name": "newStakedDays",
-        "type": "uint256"
-      }
-    ],
-    "name": "startStake",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "constant": true,
     "inputs": [],
     "name": "globals",
@@ -605,6 +601,10 @@
       {
         "name": "stakePenaltyPool",
         "type": "uint80"
+      },
+      {
+        "name": "latestStakeId",
+        "type": "uint48"
       },
       {
         "name": "unclaimedSatoshisTotal",
@@ -826,7 +826,7 @@
       },
       {
         "indexed": true,
-        "name": "stakeCookie",
+        "name": "stakeId",
         "type": "uint48"
       },
       {
@@ -852,13 +852,8 @@
         "type": "address"
       },
       {
-        "indexed": false,
-        "name": "stakeIndex",
-        "type": "uint256"
-      },
-      {
         "indexed": true,
-        "name": "stakeCookie",
+        "name": "stakeId",
         "type": "uint48"
       }
     ],
@@ -874,13 +869,8 @@
         "type": "address"
       },
       {
-        "indexed": false,
-        "name": "stakeIndex",
-        "type": "uint256"
-      },
-      {
         "indexed": true,
-        "name": "stakeCookie",
+        "name": "stakeId",
         "type": "uint48"
       },
       {
@@ -901,13 +891,8 @@
         "type": "address"
       },
       {
-        "indexed": false,
-        "name": "stakeIndex",
-        "type": "uint256"
-      },
-      {
         "indexed": true,
-        "name": "stakeCookie",
+        "name": "stakeId",
         "type": "uint48"
       },
       {

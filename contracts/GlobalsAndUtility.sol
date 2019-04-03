@@ -29,28 +29,25 @@ contract GlobalsAndUtility is ERC20 {
 
     event StartStake(
         address indexed stakerAddr,
-        uint48 indexed stakeCookie,
+        uint48 indexed stakeId,
         uint256 stakedHearts,
         uint256 stakedDays
     );
 
     event GoodAccountingBySelf(
         address indexed stakerAddr,
-        uint256 stakeIndex,
-        uint48 indexed stakeCookie
+        uint48 indexed stakeId
     );
 
     event GoodAccountingByOther(
         address indexed stakerAddr,
-        uint256 stakeIndex,
-        uint48 indexed stakeCookie,
+        uint48 indexed stakeId,
         address indexed otherAddr
     );
 
     event EndStake(
         address indexed stakerAddr,
-        uint256 stakeIndex,
-        uint48 indexed stakeCookie,
+        uint48 indexed stakeId,
         uint256 servedDays,
         uint256 stakeReturn,
         uint256 penalty
@@ -121,7 +118,7 @@ contract GlobalsAndUtility is ERC20 {
     uint8 internal constant BTC_ADDR_TYPE_P2WPKH_IN_P2SH = 2;
     uint8 internal constant BTC_ADDR_TYPE_COUNT = 3;
 
-    /* Globals expanded for memory and compact for storage */
+    /* Globals expanded for memory (except _latestStakeId) and compact for storage */
     struct GlobalsCache {
         // 1
         uint256 _daysStored;
@@ -129,6 +126,7 @@ contract GlobalsAndUtility is ERC20 {
         uint256 _nextStakeSharesTotal;
         uint256 _stakePenaltyPool;
         // 2
+        uint48 _latestStakeId;
         uint256 _unclaimedSatoshisTotal;
         uint256 _claimedSatoshisTotal;
         uint256 _claimedBtcAddrCount;
@@ -143,6 +141,7 @@ contract GlobalsAndUtility is ERC20 {
         uint80 nextStakeSharesTotal;
         uint80 stakePenaltyPool;
         // 2
+        uint48 latestStakeId;
         uint64 unclaimedSatoshisTotal;
         uint64 claimedSatoshisTotal;
         uint32 claimedBtcAddrCount;
@@ -161,9 +160,9 @@ contract GlobalsAndUtility is ERC20 {
 
     mapping(uint256 => DailyDataStore) public dailyData;
 
-    /* Stake expanded for memory (except _stakeCookie) and compact for storage */
+    /* Stake expanded for memory (except _stakeId) and compact for storage */
     struct StakeCache {
-        uint48 _stakeCookie;
+        uint48 _stakeId;
         uint256 _stakedHearts;
         uint256 _stakeShares;
         uint256 _pooledDay;
@@ -172,7 +171,7 @@ contract GlobalsAndUtility is ERC20 {
     }
 
     struct StakeStore {
-        uint48 stakeCookie;
+        uint48 stakeId;
         uint80 stakedHearts;
         uint80 stakeShares;
         uint16 pooledDay;
@@ -261,6 +260,7 @@ contract GlobalsAndUtility is ERC20 {
         g._nextStakeSharesTotal = globals.nextStakeSharesTotal;
         g._stakePenaltyPool = globals.stakePenaltyPool;
 
+        g._latestStakeId = globals.latestStakeId;
         g._unclaimedSatoshisTotal = globals.unclaimedSatoshisTotal;
         g._claimedSatoshisTotal = globals.claimedSatoshisTotal;
         g._claimedBtcAddrCount = uint256(globals.claimedBtcAddrCount);
@@ -277,6 +277,7 @@ contract GlobalsAndUtility is ERC20 {
         gSnapshot._nextStakeSharesTotal = g._nextStakeSharesTotal;
         gSnapshot._stakePenaltyPool = g._stakePenaltyPool;
 
+        gSnapshot._latestStakeId = g._latestStakeId;
         gSnapshot._unclaimedSatoshisTotal = g._unclaimedSatoshisTotal;
         gSnapshot._claimedSatoshisTotal = g._claimedSatoshisTotal;
         gSnapshot._claimedBtcAddrCount = g._claimedBtcAddrCount;
@@ -308,6 +309,7 @@ contract GlobalsAndUtility is ERC20 {
     function _saveGlobals2(GlobalsCache memory g)
         internal
     {
+        globals.latestStakeId = g._latestStakeId;
         globals.unclaimedSatoshisTotal = uint64(g._unclaimedSatoshisTotal);
         globals.claimedSatoshisTotal = uint64(g._claimedSatoshisTotal);
         globals.claimedBtcAddrCount = uint32(g._claimedBtcAddrCount);
@@ -316,7 +318,8 @@ contract GlobalsAndUtility is ERC20 {
     function _syncGlobals2(GlobalsCache memory g, GlobalsCache memory gSnapshot)
         internal
     {
-        if (g._unclaimedSatoshisTotal == gSnapshot._unclaimedSatoshisTotal
+        if (g._latestStakeId == gSnapshot._latestStakeId
+            && g._unclaimedSatoshisTotal == gSnapshot._unclaimedSatoshisTotal
             && g._claimedSatoshisTotal == gSnapshot._claimedSatoshisTotal
             && g._claimedBtcAddrCount == gSnapshot._claimedBtcAddrCount) {
             return;
@@ -324,14 +327,14 @@ contract GlobalsAndUtility is ERC20 {
         _saveGlobals2(g);
     }
 
-    function _loadStake(StakeStore storage stRef, uint48 stakeCookieParam, StakeCache memory st)
+    function _loadStake(StakeStore storage stRef, uint48 stakeIdParam, StakeCache memory st)
         internal
         view
     {
         /* Ensure caller's stakeIndex is still current */
-        require(stakeCookieParam == stRef.stakeCookie, "HEX: stakeCookieParam not in stake");
+        require(stakeIdParam == stRef.stakeId, "HEX: stakeIdParam not in stake");
 
-        st._stakeCookie = stRef.stakeCookie;
+        st._stakeId = stRef.stakeId;
         st._stakedHearts = stRef.stakedHearts;
         st._stakeShares = stRef.stakeShares;
         st._pooledDay = stRef.pooledDay;
@@ -342,7 +345,7 @@ contract GlobalsAndUtility is ERC20 {
     function _updateStake(StakeStore storage stRef, StakeCache memory st)
         internal
     {
-        stRef.stakeCookie = st._stakeCookie;
+        stRef.stakeId = st._stakeId;
         stRef.stakedHearts = uint80(st._stakedHearts);
         stRef.stakeShares = uint80(st._stakeShares);
         stRef.pooledDay = uint16(st._pooledDay);
@@ -352,7 +355,7 @@ contract GlobalsAndUtility is ERC20 {
 
     function _addStake(
         StakeStore[] storage stakeListRef,
-        uint48 newStakeCookie,
+        uint48 newStakeId,
         uint256 newStakedHearts,
         uint256 newStakeShares,
         uint256 newPooledDay,
@@ -362,7 +365,7 @@ contract GlobalsAndUtility is ERC20 {
     {
         stakeListRef.push(
             StakeStore(
-                newStakeCookie,
+                newStakeId,
                 uint80(newStakedHearts),
                 uint80(newStakeShares),
                 uint16(newPooledDay),
