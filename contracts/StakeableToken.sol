@@ -137,7 +137,7 @@ contract StakeableToken is UTXORedeemableToken {
 
     /**
      * @dev PUBLIC FACING: Closes a stake. The order of the stake list can change so
-     * a stake cookie is used reject stale indexes.
+     * a stake cookie is used to reject stale indexes.
      * @param stakeIndex Index of stake within stake list
      * @param stakeCookieParam The stake's cookie value
      */
