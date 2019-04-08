@@ -55,7 +55,7 @@ contract StakeableToken is UTXORedeemableToken {
             msg.sender,
             newStakeId,
             newStakedHearts,
-            newStakedDays
+            uint16(newStakedDays)
         );
 
         /* Stake is added to pool in next round, not current round */
@@ -202,7 +202,7 @@ contract StakeableToken is UTXORedeemableToken {
             stakeIdParam,
             payout,
             penalty,
-            servedDays
+            uint16(servedDays)
         );
 
         if (stakeReturn != 0) {

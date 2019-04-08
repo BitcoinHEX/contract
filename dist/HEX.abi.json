@@ -857,7 +857,7 @@
       {
         "indexed": false,
         "name": "stakedDays",
-        "type": "uint256"
+        "type": "uint16"
       }
     ],
     "name": "StartStake",
@@ -963,7 +963,7 @@
       {
         "indexed": false,
         "name": "servedDays",
-        "type": "uint256"
+        "type": "uint16"
       }
     ],
     "name": "EndStake",

@@ -35,7 +35,7 @@ contract GlobalsAndUtility is ERC20 {
         address indexed stakerAddr,
         uint48 indexed stakeId,
         uint256 stakedHearts,
-        uint256 stakedDays
+        uint16 stakedDays
     );
 
     event GoodAccountingBySelf(
@@ -61,7 +61,7 @@ contract GlobalsAndUtility is ERC20 {
         uint48 indexed stakeId,
         uint256 payout,
         uint256 penalty,
-        uint256 servedDays
+        uint16 servedDays
     );
 
     /* Origin address */
