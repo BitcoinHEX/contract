@@ -673,6 +673,43 @@
     "constant": true,
     "inputs": [
       {
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256"
+      }
+    ],
+    "name": "getDailyDataRange",
+    "outputs": [
+      {
+        "name": "list",
+        "type": "uint256[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "getGlobalInfo",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[11]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
         "name": "owner",
         "type": "address"
       },

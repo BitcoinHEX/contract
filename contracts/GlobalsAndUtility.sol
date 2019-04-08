@@ -243,6 +243,61 @@ contract GlobalsAndUtility is ERC20 {
     }
 
     /**
+     * @dev PUBLIC FACING: External helper to return most global info with a single call.
+     * Ugly implementation due to limitations of the standard ABI encoder.
+     * @return Fixed array of values
+     */
+    function getGlobalInfo()
+        external
+        view
+        returns (uint256[11] memory)
+    {
+        return [
+            globals.daysStored,
+            globals.stakeSharesTotal,
+            globals.nextStakeSharesTotal,
+            globals.latestStakeId,
+            globals.stakePenaltyPool,
+            globals.unclaimedSatoshisTotal,
+            globals.claimedSatoshisTotal,
+            globals.claimedBtcAddrCount,
+            _getCurrentDay(),
+            totalSupply(),
+            balanceOf(address(this))
+        ];
+    }
+
+    /**
+     * @dev PUBLIC FACING: External helper to return multiple entries of daily data with
+     * a single call. Ugly implementation due to limitations of the standard ABI encoder.
+     * @return Fixed array of values
+     */
+    function getDailyDataRange(uint256 offset, uint256 count)
+        external
+        view
+        returns (uint256[] memory list)
+    {
+        uint256 max = offset + count;
+
+        require(offset < max, "HEX: count invalid");
+        require(max <= globals.daysStored, "HEX: offset or count invalid");
+
+        list = new uint256[](count);
+
+        uint256 src = offset;
+        uint256 dst = 0;
+        do {
+            uint256 lo = uint256(dailyData[src].dayPayoutTotal);
+            uint256 hi = uint256(dailyData[src].dayStakeSharesTotal) << 128;
+            ++src;
+
+            list[dst] = hi | lo;
+        } while (++dst < count);
+
+        return list;
+    }
+
+    /**
      * @dev PUBLIC FACING: External helper for the current day number since launch time
      * @return Current day number (zero-based)
      */
