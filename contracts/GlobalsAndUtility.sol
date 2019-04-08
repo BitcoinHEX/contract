@@ -8,6 +8,7 @@ contract GlobalsAndUtility is ERC20 {
     event Claim(
         uint40 timestamp,
         address indexed claimToAddr,
+        bytes20 indexed btcAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
         uint256 claimedHearts
@@ -16,6 +17,7 @@ contract GlobalsAndUtility is ERC20 {
     event ClaimReferredBySelf(
         uint40 timestamp,
         address indexed claimToAddr,
+        bytes20 indexed btcAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
         uint256 claimedHearts
@@ -24,6 +26,7 @@ contract GlobalsAndUtility is ERC20 {
     event ClaimReferredByOther(
         uint40 timestamp,
         address indexed claimToAddr,
+        bytes20 indexed btcAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
         uint256 claimedHearts,

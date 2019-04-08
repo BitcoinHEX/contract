@@ -60,10 +60,15 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         /* Mark BTC address as claimed */
         claimedBtcAddresses[btcAddr] = true;
 
-        return _claimSatoshisSync(rawSatoshis, claimToAddr, referrerAddr);
+        return _claimSatoshisSync(rawSatoshis, claimToAddr, btcAddr, referrerAddr);
     }
 
-    function _claimSatoshisSync(uint256 rawSatoshis, address claimToAddr, address referrerAddr)
+    function _claimSatoshisSync(
+        uint256 rawSatoshis,
+        address claimToAddr,
+        bytes20 btcAddr,
+        address referrerAddr
+    )
         private
         returns (uint256 totalClaimedHearts)
     {
@@ -72,7 +77,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         _loadGlobals(g);
         _snapshotGlobalsCache(g, gSnapshot);
 
-        totalClaimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, referrerAddr);
+        totalClaimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, btcAddr, referrerAddr);
 
         _syncGlobals1(g, gSnapshot);
         _saveGlobals2(g);
@@ -84,6 +89,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
      * @dev Credit an Eth address with the Hearts value of a raw Satoshis balance
      * @param rawSatoshis Raw BTC address balance in Satoshis
      * @param claimToAddr Destination Eth address for the claimed Hearts to be sent
+     * @param btcAddr Bitcoin address (binary; no base58-check encoding)
      * @param referrerAddr (optional, send 0x0 for no referrer) Eth address of referring user
      * @return Total number of Hearts credited, if successful
      */
@@ -91,6 +97,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         GlobalsCache memory g,
         uint256 rawSatoshis,
         address claimToAddr,
+        bytes20 btcAddr,
         address referrerAddr
     )
         private
@@ -125,6 +132,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
             emit Claim(
                 uint40(block.timestamp),
                 claimToAddr,
+                btcAddr,
                 rawSatoshis,
                 adjSatoshis,
                 totalClaimedHearts
@@ -143,6 +151,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
                 emit ClaimReferredBySelf(
                     uint40(block.timestamp),
                     claimToAddr,
+                    btcAddr,
                     rawSatoshis,
                     adjSatoshis,
                     totalClaimedHearts
@@ -152,6 +161,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
                 emit ClaimReferredByOther(
                     uint40(block.timestamp),
                     claimToAddr,
+                    btcAddr,
                     rawSatoshis,
                     adjSatoshis,
                     totalClaimedHearts,

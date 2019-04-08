@@ -781,6 +781,11 @@
         "type": "address"
       },
       {
+        "indexed": true,
+        "name": "btcAddr",
+        "type": "bytes20"
+      },
+      {
         "indexed": false,
         "name": "rawSatoshis",
         "type": "uint256"
@@ -813,6 +818,11 @@
         "type": "address"
       },
       {
+        "indexed": true,
+        "name": "btcAddr",
+        "type": "bytes20"
+      },
+      {
         "indexed": false,
         "name": "rawSatoshis",
         "type": "uint256"
@@ -843,6 +853,11 @@
         "indexed": true,
         "name": "claimToAddr",
         "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "btcAddr",
+        "type": "bytes20"
       },
       {
         "indexed": false,
