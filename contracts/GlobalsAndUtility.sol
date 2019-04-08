@@ -6,6 +6,7 @@ import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 contract GlobalsAndUtility is ERC20 {
     /* Define events */
     event Claim(
+        uint40 timestamp,
         address indexed claimToAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
@@ -13,6 +14,7 @@ contract GlobalsAndUtility is ERC20 {
     );
 
     event ClaimReferredBySelf(
+        uint40 timestamp,
         address indexed claimToAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
@@ -20,6 +22,7 @@ contract GlobalsAndUtility is ERC20 {
     );
 
     event ClaimReferredByOther(
+        uint40 timestamp,
         address indexed claimToAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
@@ -28,6 +31,7 @@ contract GlobalsAndUtility is ERC20 {
     );
 
     event StartStake(
+        uint40 timestamp,
         address indexed stakerAddr,
         uint48 indexed stakeId,
         uint256 stakedHearts,
@@ -35,6 +39,7 @@ contract GlobalsAndUtility is ERC20 {
     );
 
     event GoodAccountingBySelf(
+        uint40 timestamp,
         address indexed stakerAddr,
         uint48 indexed stakeId,
         uint256 payout,
@@ -42,6 +47,7 @@ contract GlobalsAndUtility is ERC20 {
     );
 
     event GoodAccountingByOther(
+        uint40 timestamp,
         address indexed stakerAddr,
         uint48 indexed stakeId,
         uint256 payout,
@@ -50,6 +56,7 @@ contract GlobalsAndUtility is ERC20 {
     );
 
     event EndStake(
+        uint40 timestamp,
         address indexed stakerAddr,
         uint48 indexed stakeId,
         uint256 payout,

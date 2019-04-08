@@ -51,6 +51,7 @@ contract StakeableToken is UTXORedeemableToken {
         );
 
         emit StartStake(
+            uint40(block.timestamp),
             msg.sender,
             newStakeId,
             newStakedHearts,
@@ -110,6 +111,7 @@ contract StakeableToken is UTXORedeemableToken {
 
         if (msg.sender == stakerAddr) {
             emit GoodAccountingBySelf(
+                uint40(block.timestamp),
                 stakerAddr,
                 stakeIdParam,
                 payout,
@@ -117,6 +119,7 @@ contract StakeableToken is UTXORedeemableToken {
             );
         } else {
             emit GoodAccountingByOther(
+                uint40(block.timestamp),
                 stakerAddr,
                 stakeIdParam,
                 payout,
@@ -194,6 +197,7 @@ contract StakeableToken is UTXORedeemableToken {
         }
 
         emit EndStake(
+            uint40(block.timestamp),
             msg.sender,
             stakeIdParam,
             payout,

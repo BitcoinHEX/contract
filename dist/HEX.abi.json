@@ -734,6 +734,11 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint40"
+      },
+      {
         "indexed": true,
         "name": "claimToAddr",
         "type": "address"
@@ -761,6 +766,11 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint40"
+      },
+      {
         "indexed": true,
         "name": "claimToAddr",
         "type": "address"
@@ -787,6 +797,11 @@
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint40"
+      },
       {
         "indexed": true,
         "name": "claimToAddr",
@@ -820,6 +835,11 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint40"
+      },
+      {
         "indexed": true,
         "name": "stakerAddr",
         "type": "address"
@@ -847,6 +867,11 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint40"
+      },
+      {
         "indexed": true,
         "name": "stakerAddr",
         "type": "address"
@@ -873,6 +898,11 @@
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint40"
+      },
       {
         "indexed": true,
         "name": "stakerAddr",
@@ -905,6 +935,11 @@
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint40"
+      },
       {
         "indexed": true,
         "name": "stakerAddr",

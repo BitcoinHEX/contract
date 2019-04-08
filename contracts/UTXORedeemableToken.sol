@@ -144,6 +144,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
             _mint(ORIGIN_ADDR, claimBonusHearts);
 
             emit Claim(
+                uint40(block.timestamp),
                 claimToAddr,
                 rawSatoshis,
                 adjSatoshis,
@@ -164,6 +165,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
             claimedHearts += referBonusHearts;
 
             emit ClaimReferredBySelf(
+                uint40(block.timestamp),
                 claimToAddr,
                 rawSatoshis,
                 adjSatoshis,
@@ -175,6 +177,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
             _mint(referrerAddr, referBonusHearts);
 
             emit ClaimReferredByOther(
+                uint40(block.timestamp),
                 claimToAddr,
                 rawSatoshis,
                 adjSatoshis,
