@@ -108,26 +108,10 @@ contract UTXORedeemableToken is UTXOClaimValidation {
             "HEX: CHK: _claimedBtcAddrCount"
         );
 
-        /* Apply Silly Whale reduction */
-        uint256 adjSatoshis = _adjustSillyWhale(rawSatoshis);
-        require(
-            g._claimedSatoshisTotal + adjSatoshis <= CLAIMABLE_SATOSHIS_TOTAL,
-            "HEX: CHK: _claimedSatoshisTotal"
+        (uint256 adjSatoshis, uint256 claimedHearts, uint256 claimBonusHearts) = _calcClaimValues(
+            g,
+            rawSatoshis
         );
-        g._claimedSatoshisTotal += adjSatoshis;
-
-        uint256 phaseDaysRemaining = CLAIM_REWARD_DAYS - g._currentDay;
-        uint256 rewardDaysRemaining = phaseDaysRemaining < CLAIM_REWARD_DAYS
-            ? phaseDaysRemaining + 1
-            : CLAIM_REWARD_DAYS;
-
-        /* Apply late-claim reduction */
-        adjSatoshis = _adjustLateClaim(adjSatoshis, rewardDaysRemaining);
-        g._unclaimedSatoshisTotal -= adjSatoshis;
-
-        /* Convert to Hearts and calculate speed bonus */
-        uint256 claimedHearts = adjSatoshis * HEARTS_PER_SATOSHI;
-        uint256 claimBonusHearts = _calcSpeedBonus(claimedHearts, phaseDaysRemaining);
 
         totalClaimedHearts = claimedHearts + claimBonusHearts;
 
@@ -185,6 +169,35 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         _transfer(address(this), claimToAddr, claimedHearts);
 
         return totalClaimedHearts;
+    }
+
+    function _calcClaimValues(GlobalsCache memory g, uint256 rawSatoshis)
+        private
+        pure
+        returns (uint256 adjSatoshis, uint256 claimedHearts, uint256 claimBonusHearts)
+    {
+        /* Apply Silly Whale reduction */
+        adjSatoshis = _adjustSillyWhale(rawSatoshis);
+        require(
+            g._claimedSatoshisTotal + adjSatoshis <= CLAIMABLE_SATOSHIS_TOTAL,
+            "HEX: CHK: _claimedSatoshisTotal"
+        );
+        g._claimedSatoshisTotal += adjSatoshis;
+
+        uint256 phaseDaysRemaining = CLAIM_REWARD_DAYS - g._currentDay;
+        uint256 rewardDaysRemaining = phaseDaysRemaining < CLAIM_REWARD_DAYS
+            ? phaseDaysRemaining + 1
+            : CLAIM_REWARD_DAYS;
+
+        /* Apply late-claim reduction */
+        adjSatoshis = _adjustLateClaim(adjSatoshis, rewardDaysRemaining);
+        g._unclaimedSatoshisTotal -= adjSatoshis;
+
+        /* Convert to Hearts and calculate speed bonus */
+        claimedHearts = adjSatoshis * HEARTS_PER_SATOSHI;
+        claimBonusHearts = _calcSpeedBonus(claimedHearts, phaseDaysRemaining);
+
+        return (adjSatoshis, claimedHearts, claimBonusHearts);
     }
 
     /**
