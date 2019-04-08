@@ -107,7 +107,11 @@ contract StakeableToken is UTXORedeemableToken {
         _unpoolStake(g, st);
 
         /* stakeReturn value is unused here */
-        (, uint256 payout, uint256 penalty) = _applyPayoutAndPenalty(g, st, st._stakedDays, false);
+        (, uint256 payout, uint256 penalty, uint256 cappedPenalty) = _calcStakeReturn(
+            g,
+            st,
+            st._stakedDays
+        );
 
         if (msg.sender == stakerAddr) {
             emit GoodAccountingBySelf(
@@ -126,6 +130,10 @@ contract StakeableToken is UTXORedeemableToken {
                 penalty,
                 msg.sender
             );
+        }
+
+        if (cappedPenalty != 0) {
+            _splitPenaltyProceeds(g, cappedPenalty);
         }
 
         /* st._unpooledDay has changed */
@@ -164,13 +172,13 @@ contract StakeableToken is UTXORedeemableToken {
 
         uint256 servedDays = 0;
 
+        bool prevUnpooled = (st._unpooledDay != 0);
         uint256 stakeReturn;
         uint256 payout = 0;
         uint256 penalty = 0;
+        uint256 cappedPenalty = 0;
 
         if (g._currentDay >= st._pooledDay) {
-            bool prevUnpooled = (st._unpooledDay != 0);
-
             if (prevUnpooled) {
                 /* Previously unpooled in goodAccounting(), so must have served full term */
                 servedDays = st._stakedDays;
@@ -183,12 +191,7 @@ contract StakeableToken is UTXORedeemableToken {
                 }
             }
 
-            (stakeReturn, payout, penalty) = _applyPayoutAndPenalty(
-                g,
-                st,
-                servedDays,
-                prevUnpooled
-            );
+            (stakeReturn, payout, penalty, cappedPenalty) = _calcStakeReturn(g, st, servedDays);
         } else {
             /* Stake hasn't been added to the global pool yet, so no penalties or rewards apply */
             g._nextStakeSharesTotal -= st._stakeShares;
@@ -204,6 +207,11 @@ contract StakeableToken is UTXORedeemableToken {
             penalty,
             uint16(servedDays)
         );
+
+        if (cappedPenalty != 0 && !prevUnpooled) {
+            /* Split penalty proceeds only if not previously unpooled by goodAccounting() */
+            _splitPenaltyProceeds(g, cappedPenalty);
+        }
 
         if (stakeReturn != 0) {
             /* Transfer stake return from contract back to staker */
@@ -301,40 +309,10 @@ contract StakeableToken is UTXORedeemableToken {
         st._unpooledDay = g._currentDay;
     }
 
-    function _applyPayoutAndPenalty(
-        GlobalsCache memory g,
-        StakeCache memory st,
-        uint256 servedDays,
-        bool prevUnpooled
-    )
-        private
-        returns (uint256 stakeReturn, uint256 payout, uint256 penalty)
-    {
-        (stakeReturn, payout, penalty) = _calcStakeReturn(g, st, servedDays);
-
-        if (penalty != 0) {
-            uint256 cappedPenalty = penalty;
-
-            if (cappedPenalty > stakeReturn) {
-                /* Cannot have a negative stake return */
-                cappedPenalty = stakeReturn;
-                stakeReturn = 0;
-            } else {
-                /* Remove penalty from the stake return */
-                stakeReturn -= cappedPenalty;
-            }
-            /* Split penalty proceeds only if not previously unpooled by goodAccounting() */
-            if (!prevUnpooled) {
-                _splitPenaltyProceeds(g, cappedPenalty);
-            }
-        }
-        return (stakeReturn, payout, penalty);
-    }
-
     function _calcStakeReturn(GlobalsCache memory g, StakeCache memory st, uint256 servedDays)
         private
         view
-        returns (uint256 stakeReturn, uint256 payout, uint256 penalty)
+        returns (uint256 stakeReturn, uint256 payout, uint256 penalty, uint256 cappedPenalty)
     {
         if (servedDays < st._stakedDays) {
             (payout, penalty) = _calcPayoutAndEarlyPenalty(
@@ -355,7 +333,18 @@ contract StakeableToken is UTXORedeemableToken {
                 stakeReturn
             );
         }
-        return (stakeReturn, payout, penalty);
+        if (penalty != 0) {
+            if (penalty > stakeReturn) {
+                /* Cannot have a negative stake return */
+                cappedPenalty = stakeReturn;
+                stakeReturn = 0;
+            } else {
+                /* Remove penalty from the stake return */
+                cappedPenalty = penalty;
+                stakeReturn -= cappedPenalty;
+            }
+        }
+        return (stakeReturn, payout, penalty, cappedPenalty);
     }
 
     /**
@@ -429,10 +418,10 @@ contract StakeableToken is UTXORedeemableToken {
      * and adds penalty to payout pool
      * @param stakedDaysParam param from stake
      * @param unpooledDays stake unpooledDay minus stake pooledDay
-     * @param stakeReturn committed stakeHearts plus payout
+     * @param rawStakeReturn committed stakeHearts plus payout
      * @return penalty Hearts
      */
-    function _calcLatePenalty(uint256 stakedDaysParam, uint256 unpooledDays, uint256 stakeReturn)
+    function _calcLatePenalty(uint256 stakedDaysParam, uint256 unpooledDays, uint256 rawStakeReturn)
         private
         pure
         returns (uint256)
@@ -444,6 +433,6 @@ contract StakeableToken is UTXORedeemableToken {
         }
 
         /* Calculate penalty as a percentage of stake return based on time */
-        return stakeReturn * (unpooledDays - stakedDaysParam) / LATE_PENALTY_SCALE_DAYS;
+        return rawStakeReturn * (unpooledDays - stakedDaysParam) / LATE_PENALTY_SCALE_DAYS;
     }
 }

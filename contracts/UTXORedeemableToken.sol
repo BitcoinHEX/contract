@@ -65,19 +65,19 @@ contract UTXORedeemableToken is UTXOClaimValidation {
 
     function _claimSatoshisSync(uint256 rawSatoshis, address claimToAddr, address referrerAddr)
         private
-        returns (uint256 claimedHearts)
+        returns (uint256 totalClaimedHearts)
     {
         GlobalsCache memory g;
         GlobalsCache memory gSnapshot;
         _loadGlobals(g);
         _snapshotGlobalsCache(g, gSnapshot);
 
-        claimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, referrerAddr);
+        totalClaimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, referrerAddr);
 
         _syncGlobals1(g, gSnapshot);
         _saveGlobals2(g);
 
-        return claimedHearts;
+        return totalClaimedHearts;
     }
 
     /**
@@ -94,7 +94,7 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         address referrerAddr
     )
         private
-        returns (uint256)
+        returns (uint256 totalClaimedHearts)
     {
         /* Disable claims after the claim phase is over */
         require(g._currentDay < CLAIM_PHASE_DAYS, "HEX: Claim phase has ended");
@@ -129,63 +129,62 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         uint256 claimedHearts = adjSatoshis * HEARTS_PER_SATOSHI;
         uint256 claimBonusHearts = _calcSpeedBonus(claimedHearts, phaseDaysRemaining);
 
+        totalClaimedHearts = claimedHearts + claimBonusHearts;
+
         /* Increment claim count to track viral rewards */
         g._claimedBtcAddrCount++;
 
-        /* Claim pre-minted Hearts from contract balance */
-        _transfer(address(this), claimToAddr, claimedHearts);
-
-        /* Now merge bonus into amount for total */
-        claimedHearts += claimBonusHearts;
+        uint256 originBonusHearts = claimBonusHearts;
 
         if (referrerAddr == address(0)) {
             /* No referrer */
-            _mint(claimToAddr, claimBonusHearts);
-            _mint(ORIGIN_ADDR, claimBonusHearts);
-
             emit Claim(
                 uint40(block.timestamp),
                 claimToAddr,
                 rawSatoshis,
                 adjSatoshis,
-                claimedHearts
-            );
-            return claimedHearts;
-        }
-
-        /* Referral bonus of 20% of total claimed Hearts */
-        uint256 referBonusHearts = claimedHearts / 5;
-        uint256 combinedBonusHearts = claimBonusHearts + referBonusHearts;
-
-        _mint(ORIGIN_ADDR, combinedBonusHearts);
-        if (referrerAddr == claimToAddr) {
-            /* Self-refer can use one mint() instead of two */
-            _mint(claimToAddr, combinedBonusHearts);
-
-            claimedHearts += referBonusHearts;
-
-            emit ClaimReferredBySelf(
-                uint40(block.timestamp),
-                claimToAddr,
-                rawSatoshis,
-                adjSatoshis,
-                claimedHearts
+                totalClaimedHearts
             );
         } else {
-            /* Referred by different address */
-            _mint(claimToAddr, claimBonusHearts);
-            _mint(referrerAddr, referBonusHearts);
+            /* Referral bonus of 20% of total claimed Hearts */
+            uint256 referBonusHearts = totalClaimedHearts / 5;
 
-            emit ClaimReferredByOther(
-                uint40(block.timestamp),
-                claimToAddr,
-                rawSatoshis,
-                adjSatoshis,
-                claimedHearts,
-                referrerAddr
-            );
+            originBonusHearts += referBonusHearts;
+
+            if (referrerAddr == claimToAddr) {
+                /* Self-referred */
+                claimBonusHearts += referBonusHearts;
+                totalClaimedHearts += referBonusHearts;
+
+                emit ClaimReferredBySelf(
+                    uint40(block.timestamp),
+                    claimToAddr,
+                    rawSatoshis,
+                    adjSatoshis,
+                    totalClaimedHearts
+                );
+            } else {
+                /* Referred by different address */
+                emit ClaimReferredByOther(
+                    uint40(block.timestamp),
+                    claimToAddr,
+                    rawSatoshis,
+                    adjSatoshis,
+                    totalClaimedHearts,
+                    referrerAddr
+                );
+
+                _mint(referrerAddr, referBonusHearts);
+            }
         }
-        return claimedHearts;
+
+        _mint(ORIGIN_ADDR, originBonusHearts);
+        _mint(claimToAddr, claimBonusHearts);
+
+        /* Claim pre-minted Hearts from contract balance */
+        _transfer(address(this), claimToAddr, claimedHearts);
+
+        return totalClaimedHearts;
     }
 
     /**
