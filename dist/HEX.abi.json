@@ -368,7 +368,7 @@
     "constant": true,
     "inputs": [
       {
-        "name": "btcAddress",
+        "name": "btcAddr",
         "type": "bytes20"
       },
       {
@@ -733,7 +733,7 @@
     "constant": true,
     "inputs": [
       {
-        "name": "btcAddress",
+        "name": "btcAddr",
         "type": "bytes20"
       },
       {

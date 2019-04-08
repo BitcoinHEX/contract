@@ -46,19 +46,19 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         );
 
         /* Derive BTC address from public key */
-        bytes20 btcAddress = pubKeyToBtcAddress(pubKeyX, pubKeyY, addrType);
+        bytes20 btcAddr = pubKeyToBtcAddress(pubKeyX, pubKeyY, addrType);
 
         /* Ensure BTC address has not yet been claimed */
-        require(!claimedBtcAddresses[btcAddress], "HEX: BTC address balance already claimed");
+        require(!claimedBtcAddresses[btcAddr], "HEX: BTC address balance already claimed");
 
         /* Ensure BTC address is part of the Merkle tree */
         require(
-            _btcAddressIsValid(btcAddress, rawSatoshis, proof),
+            _btcAddressIsValid(btcAddr, rawSatoshis, proof),
             "HEX: BTC address or balance unknown"
         );
 
         /* Mark BTC address as claimed */
-        claimedBtcAddresses[btcAddress] = true;
+        claimedBtcAddresses[btcAddr] = true;
 
         return _claimSatoshisSync(rawSatoshis, claimToAddr, referrerAddr);
     }
