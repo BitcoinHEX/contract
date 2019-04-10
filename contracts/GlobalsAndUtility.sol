@@ -371,6 +371,7 @@ contract GlobalsAndUtility is ERC20 {
         stRef.pooledDay = uint16(st._pooledDay);
         stRef.stakedDays = uint16(st._stakedDays);
         stRef.unpooledDay = uint16(st._unpooledDay);
+        stRef.lastCompoundedDay = uint16(st._lastCompoundedDay);
         stRef.stakeSharesSnapshots = _shareSnapshotCacheToStore(st._stakeSharesSnapshots);
     }
 
@@ -392,6 +393,7 @@ contract GlobalsAndUtility is ERC20 {
                 uint16(newPooledDay),
                 uint16(newStakedDays),
                 uint16(0), // unpooledDay
+                uint16(0), // lastCompoundedDay
                 new StakeSnapshotStore[](0)
             )
         );
