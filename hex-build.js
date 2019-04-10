@@ -43,14 +43,18 @@ function formatJson(obj) {
 }
 
 function saveTextFile(textPath, text) {
-  fs.writeFileSync(textPath, text);
-  console.log('Saved:', textPath);
+  if (!fs.existsSync(textPath) || text !== fs.readFileSync(textPath, 'utf-8')) {
+    fs.writeFileSync(textPath, text);
+    console.log('Saved:', textPath);
+    return true;
+  }
+  return false;
 }
 
 function saveJsonFile(ext, obj) {
   const jsonPath = `${buildDir}/${contractName}.${ext}.json`;
 
-  saveTextFile(jsonPath, formatJson(obj));
+  return saveTextFile(jsonPath, formatJson(obj));
 }
 
 async function flatten() {
