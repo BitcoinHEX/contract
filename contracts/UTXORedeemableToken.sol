@@ -153,7 +153,8 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         }
 
         /* Referral bonus of 20% of total claimed Hearts */
-        uint256 referBonusHearts = claimedHearts / 5;
+        uint256 referBonusHearts = (3 * claimedHearts) / 10;
+
         uint256 combinedBonusHearts = claimBonusHearts + referBonusHearts;
 
         _mint(ORIGIN_ADDR, combinedBonusHearts);
@@ -171,8 +172,12 @@ contract UTXORedeemableToken is UTXOClaimValidation {
             );
         } else {
             /* Referred by different address */
-            _mint(claimToAddr, claimBonusHearts);
-            _mint(referrerAddr, referBonusHearts);
+            uint256 partialReferBonusHearts = referBonusHearts/3;
+
+            _mint(claimToAddr, claimBonusHearts + partialReferBonusHearts);
+            _mint(referrerAddr, ((2 * referBonusHearts)/3);
+
+            claimedHearts += partialReferBonusHearts;
 
             emit ClaimReferredByOther(
                 claimToAddr,

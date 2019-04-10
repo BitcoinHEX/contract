@@ -72,6 +72,76 @@ contract StakeableToken is UTXORedeemableToken {
         _syncClaimGlobals(g, gSnapshot);
     }
 
+    function compound(uint256 stakeIndex, uint48 stakeCookieParam)
+        public
+    {
+        GlobalsCache memory g;
+        GlobalsCache memory gSnapshot;
+        _loadGlobals(g);
+        _snapshotGlobalsCache(g, gSnapshot);
+
+        StakeStore[] storage stakeListRef = staked[msg.sender];
+
+        /* require() is more informative than the default assert() */
+        require(stakeListRef.length != 0, "HEX: Empty stake list");
+        require(stakeIndex < stakeListRef.length, "HEX: stakeIndex invalid");
+
+        /* Get stake copy */
+        StakeCache memory st;
+        _loadStake(stakeListRef[stakeIndex], stakeCookieParam, st);
+
+        /* Only allow internal compounding during claim phase + 2 week grace period - compounding period arbitrarily chosen */
+        require(g._currentDay < CLAIM_PHASE_DAYS + 14);
+
+        /* Only allow compounding once every 7 days  - 7 days arbitrarily chosen */
+        /* Example
+         *  (st._lastCompoundedDay = 0, on day 7 I can compound which does days 0 - 6)
+         *  st._lastCompoundedDay now = 7
+         *
+         *  next compound-eligible on day 14 (14 - 6 = 8, 8 > 7), compounds for days 7 - 13
+         *  st._lastCompoundedDay now = 14
+         *
+         *  Technically there is no possible stake on day 0, but just showing from the beginning
+         */
+        require(st._lastCompoundedDay < g._currentDay - 6);
+
+        /* Check if log data needs to be updated */
+        _storeDailyDataBefore(g, g._currentDay);
+
+        /* Calculate Payout Amount - Copied from EndStake */
+        uint256 payout = calcPayoutRewards(st._stakeShares, _lastCompoundedDay, g._currentDay);
+
+        /* Snapshot stake for past days */
+        st._stakeSharesSnapshot.push(
+            SharesSnapshotCache(
+                st._lastCompoundedDay,
+                g._currentDay,
+                st._stakeShares
+            )
+        );
+        /* Update shares; TODO: Storage Writing */
+        st._stakedHearts += payout;
+        uint256 extraShares = calcStakeShares(payout, st._stakedDays);
+        st._stakeShares += extraShares;
+
+        /* Add Shares to Glabal; TODO: Storage Writing */
+        g.stakeSharesTotal += extraShares;
+
+        /* Update Last Compound Date; TODO: Storage Writing */
+        st._lastCompoundedDay = g._currentDay;
+
+        /* Log compounding event */
+        emit Compound(
+            msg.sender,
+            st._stakeShares,
+            payout
+        );
+
+        _updateStake(stakeListRef, st);
+        _saveStakeGlobals(g);
+        _syncClaimGlobals(g, gSnapshot);
+    }
+
     /**
      * @dev PUBLIC FACING: Removes a completed stake from the global pool,
      * distributing the proceeds of any penalty immediately. The staker must
@@ -224,6 +294,38 @@ contract StakeableToken is UTXORedeemableToken {
 
     /**
      * @dev PUBLIC FACING: Calculates total stake payout including rewards for a multi-day range
+     * @param windows param from stake that captures past compounding periods
+     * @param currentShares param from stake to calculate payout
+     * @param beginDay first day to calculate bonuses for
+     * @param endDay last day (non-inclusive) of range to calculate bonuses for
+     * @return payout Hearts
+     */
+    function _calcPayoutRewardsWithWindows(StakeShareCache[] windows, uint256 currentShares, uint256 beginDay, uint256 endDay)
+        internal
+        view
+        returns (uint256 payout)
+    {
+        uint256 firstNonWindowDay = 0;
+        uint256 _startDay;
+        uint256 _endDay = 0;
+        for (uint256 i = 0; _endDay <= endDay && i < windows.length; i++) {
+            StakeShareCache window = windows[i];
+            // set start and end days bound by inputs
+            _endDay = window._endDay > endDay ? endDay : window._endDay;
+            _startDay = window._startDay < beginDay ? beginDay : window._startDay;
+            
+            payout += calcPayoutRewards(window._shares, _startDay, _endDay);
+            // slide the window up so that when we're done, we can do "the rest"
+            firstNonWindowDay = _endDay > endDay ? endDay : _endDay;
+        }
+        //Last chunk that wasn't compounding-snapshotted
+        payout += calcPayoutRewards(currentShares, firstNonWindowDay, endDay);
+
+        return payout;
+    }
+
+    /**
+     * @dev PUBLIC FACING: Calculates total stake payout including rewards for a multi-day range
      * @param stakeSharesParam param from stake to calculate bonuses for
      * @param beginDay first day to calculate bonuses for
      * @param endDay last day (non-inclusive) of range to calculate bonuses for
@@ -340,11 +442,12 @@ contract StakeableToken is UTXORedeemableToken {
                 st._pooledDay,
                 st._stakedDays,
                 servedDays,
-                st._stakeShares
+                st._stakeShares,
+                st._stakeSharesSnapshots
             );
             stakeReturn = st._stakedHearts + payout;
         } else {
-            payout = calcPayoutRewards(st._stakeShares, st._pooledDay, st._pooledDay + servedDays);
+            payout = _calcPayoutRewardsWithWindows(st._stakeSharesSnapshots, st._stakeShares, st._pooledDay, st._pooledDay + servedDays);
             stakeReturn = st._stakedHearts + payout;
 
             penalty = _calcLatePenalty(
@@ -370,7 +473,8 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 pooledDayParam,
         uint256 stakedDaysParam,
         uint256 servedDays,
-        uint256 stakeSharesParam
+        uint256 stakeSharesParam,
+        StakeSharesSnapshot[] stakeSharesSnapshots
     )
         private
         view
@@ -400,15 +504,15 @@ contract StakeableToken is UTXORedeemableToken {
                 payout:     [pooledDay  .......................  servedEndDay)
             */
             uint256 penaltyEndDay = pooledDayParam + penaltyDays;
-            penalty = calcPayoutRewards(stakeSharesParam, pooledDayParam, penaltyEndDay);
+            penalty = _calcPayoutRewardsWithWindows(stakeSharesSnapshots, stakeSharesParam, pooledDayParam, penaltyEndDay);
 
-            uint256 delta = calcPayoutRewards(stakeSharesParam, penaltyEndDay, servedEndDay);
+            uint256 delta = _calcPayoutRewardsWithWindows(stakeSharesSnapshots, stakeSharesParam, penaltyEndDay, servedEndDay);
             payout = penalty + delta;
             return (payout, penalty);
         }
 
         /* penaltyDays >= servedDays  */
-        payout = calcPayoutRewards(stakeSharesParam, pooledDayParam, servedEndDay);
+        payout = _calcPayoutRewardsWithWindows(stakeSharesSnapshots, stakeSharesParam, pooledDayParam, servedEndDay);
 
         if (penaltyDays == servedDays) {
             penalty = payout;

@@ -56,6 +56,12 @@ contract GlobalsAndUtility is ERC20 {
         uint256 penalty
     );
 
+    event Compound(
+        address indexed stakerAddr,
+        uint256 oldShares,
+        uint256 newShares
+    );
+
     /* Origin address */
     address internal constant ORIGIN_ADDR = 0x20C39E8862cB26Ac16eD0AFB37DCeE7F1BD8F153;
 
@@ -157,6 +163,18 @@ contract GlobalsAndUtility is ERC20 {
         uint80 dayStakeSharesTotal;
     }
 
+    struct SharesSnapshotCache {
+        uint256 _startDay;
+        uint256 _endDay;
+        uint256 _shares;
+    }
+
+    struct SharesSnapshotStore {
+        uint16 _startDay;
+        uint16 _endDay;
+        uint80 _shares;
+    }
+
     mapping(uint256 => DailyDataStore) public dailyData;
 
     /* Stake expanded for memory (except _stakeCookie) and compact for storage */
@@ -167,6 +185,8 @@ contract GlobalsAndUtility is ERC20 {
         uint256 _pooledDay;
         uint256 _stakedDays;
         uint256 _unpooledDay;
+        uint256 _lastCompoundedDay;
+        SharesSnapshotCache[] _stakeSharesSnapshots;
     }
 
     struct StakeStore {
@@ -176,6 +196,8 @@ contract GlobalsAndUtility is ERC20 {
         uint16 pooledDay;
         uint16 stakedDays;
         uint16 unpooledDay;
+        uint256 lastCompoundedDay;
+        SharesSnapshotStore[] stakeSharesSnapshots;
     }
 
     mapping(address => StakeStore[]) public staked;
@@ -337,6 +359,7 @@ contract GlobalsAndUtility is ERC20 {
         st._pooledDay = stRef.pooledDay;
         st._stakedDays = stRef.stakedDays;
         st._unpooledDay = stRef.unpooledDay;
+        st._stakeSharesSnapshots = _shareSnapshotStoreToCache(stRef.stakeSharesSnapshots);
     }
 
     function _updateStake(StakeStore storage stRef, StakeCache memory st)
@@ -348,6 +371,7 @@ contract GlobalsAndUtility is ERC20 {
         stRef.pooledDay = uint16(st._pooledDay);
         stRef.stakedDays = uint16(st._stakedDays);
         stRef.unpooledDay = uint16(st._unpooledDay);
+        stRef.stakeSharesSnapshots = _shareSnapshotCacheToStore(st._stakeSharesSnapshots);
     }
 
     function _addStake(
@@ -367,9 +391,36 @@ contract GlobalsAndUtility is ERC20 {
                 uint80(newStakeShares),
                 uint16(newPooledDay),
                 uint16(newStakedDays),
-                uint16(0) // unpooledDay
+                uint16(0), // unpooledDay
+                new StakeSnapshotStore[](0)
             )
         );
+    }
+
+    function _shareSnapshotStoreToCache(
+        SharesSnapshotStore storage sss
+    )
+        internal
+        returns (SharesSnapshotCache)
+    {
+        return StakeSnapshotCache(
+            (uint256)sss._startDay;
+            (uint256)sss._endDay;
+            (uint256)sss._shares;
+        )
+    }
+
+    function _shareSnapshotCacheToStore(
+        SharesSnapshotCache memory ssc
+    )
+        internal
+        returns (SharesSnapshotStore)
+    {
+        return StakeSnapshotStore(
+            (uint16)ssc._startDay;
+            (uint16)ssc._endDay;
+            (uint80)ssc._shares;
+        )
     }
 
     /**
