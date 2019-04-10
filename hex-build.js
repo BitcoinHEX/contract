@@ -84,8 +84,11 @@ async function build() {
 
   const contract = output.contracts[contractFile][contractName];
   const metadata = JSON.parse(contract.metadata);
+  
+  const abi = metadata.output.abi;
+  delete metadata.output.abi;
 
-  saveJsonFile('abi', metadata.output.abi);
+  saveJsonFile('abi', abi);
   saveJsonFile('evm', contract.evm);
   saveJsonFile('metadata', metadata);
 
