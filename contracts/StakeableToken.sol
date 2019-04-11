@@ -5,23 +5,17 @@ import "./UTXORedeemableToken.sol";
 
 contract StakeableToken is UTXORedeemableToken {
     /**
-     * @dev PUBLIC FACING: Open a stake. The order of the stake list can change when
-     * a stake is removed, so the stake cookie allows the contract to reject invalidated
-     * indexes to protect callers from themselves.
-     * @param newStakeCookie Random or unique value to reference this stake (caller-provided)
+     * @dev PUBLIC FACING: Open a stake.
      * @param newStakedHearts Number of Hearts to stake
      * @param newStakedDays Number of days to stake
      */
-    function startStake(uint48 newStakeCookie, uint256 newStakedHearts, uint256 newStakedDays)
+    function startStake(uint256 newStakedHearts, uint256 newStakedDays)
         external
     {
         GlobalsCache memory g;
         GlobalsCache memory gSnapshot;
         _loadGlobals(g);
         _snapshotGlobalsCache(g, gSnapshot);
-
-        /* Make sure cookie is non-zero */
-        require(newStakeCookie != 0, "HEX: newStakeCookie must be non-zero");
 
         /* Make sure staked amount is non-zero */
         require(newStakedHearts != 0, "HEX: newStakedHearts must be non-zero");
@@ -47,9 +41,10 @@ contract StakeableToken is UTXORedeemableToken {
 
         SharesSnapshotStore[] storage compoundingSnapshots;
         /* Create Stake */
+        uint48 newStakeId = ++g._latestStakeId;
         _addStake(
             staked[msg.sender],
-            newStakeCookie,
+            newStakeId,
             newStakedHearts,
             newStakeShares,
             newPooledDay,
@@ -58,10 +53,11 @@ contract StakeableToken is UTXORedeemableToken {
         );
 
         emit StartStake(
+            uint40(block.timestamp),
             msg.sender,
-            newStakeCookie,
+            newStakeId,
             newStakedHearts,
-            newStakedDays
+            uint16(newStakedDays)
         );
 
         /* Stake is added to pool in next round, not current round */
@@ -70,8 +66,8 @@ contract StakeableToken is UTXORedeemableToken {
         /* Transfer staked Hearts to contract */
         _transfer(msg.sender, address(this), newStakedHearts);
 
-        _saveStakeGlobals(g);
-        _syncClaimGlobals(g, gSnapshot);
+        _saveGlobals1(g);
+        _syncGlobals2(g, gSnapshot);
     }
 
     function compound(uint256 stakeIndex, uint48 stakeCookieParam)
@@ -150,9 +146,9 @@ contract StakeableToken is UTXORedeemableToken {
      * still call endStake() to retrieve their stake return (if any).
      * @param stakerAddr Address of staker
      * @param stakeIndex Index of stake within stake list
-     * @param stakeCookieParam The stake's cookie value
+     * @param stakeIdParam The stake's id
      */
-    function goodAccounting(address stakerAddr, uint256 stakeIndex, uint48 stakeCookieParam)
+    function goodAccounting(address stakerAddr, uint256 stakeIndex, uint48 stakeIdParam)
         external
     {
         GlobalsCache memory g;
@@ -168,7 +164,7 @@ contract StakeableToken is UTXORedeemableToken {
 
         /* Get stake copy */
         StakeCache memory st;
-        _loadStake(stRef, stakeCookieParam, st);
+        _loadStake(stRef, stakeIdParam, st);
 
         /* Stake must have served full term */
         require(g._currentDay >= st._pooledDay + st._stakedDays, "HEX: Stake not fully served");
@@ -182,38 +178,50 @@ contract StakeableToken is UTXORedeemableToken {
         /* Remove stake from global pool */
         _unpoolStake(g, st);
 
-        /* Return values are unused here */
-        _applyPayoutAndPenalty(g, st, st._stakedDays, false);
+        /* stakeReturn value is unused here */
+        (, uint256 payout, uint256 penalty, uint256 cappedPenalty) = _calcStakeReturn(
+            g,
+            st,
+            st._stakedDays
+        );
 
         if (msg.sender == stakerAddr) {
             emit GoodAccountingBySelf(
+                uint40(block.timestamp),
                 stakerAddr,
-                stakeIndex,
-                stakeCookieParam
+                stakeIdParam,
+                payout,
+                penalty
             );
         } else {
             emit GoodAccountingByOther(
+                uint40(block.timestamp),
                 stakerAddr,
-                stakeIndex,
-                stakeCookieParam,
+                stakeIdParam,
+                payout,
+                penalty,
                 msg.sender
             );
+        }
+
+        if (cappedPenalty != 0) {
+            _splitPenaltyProceeds(g, cappedPenalty);
         }
 
         /* st._unpooledDay has changed */
         _updateStake(stRef, st);
 
-        _saveStakeGlobals(g);
-        _syncClaimGlobals(g, gSnapshot);
+        _saveGlobals1(g);
+        _syncGlobals2(g, gSnapshot);
     }
 
     /**
      * @dev PUBLIC FACING: Closes a stake. The order of the stake list can change so
-     * a stake cookie is used to reject stale indexes.
+     * a stake id is used to reject stale indexes.
      * @param stakeIndex Index of stake within stake list
-     * @param stakeCookieParam The stake's cookie value
+     * @param stakeIdParam The stake's id
      */
-    function endStake(uint256 stakeIndex, uint48 stakeCookieParam)
+    function endStake(uint256 stakeIndex, uint48 stakeIdParam)
         external
     {
         GlobalsCache memory g;
@@ -229,19 +237,20 @@ contract StakeableToken is UTXORedeemableToken {
 
         /* Get stake copy */
         StakeCache memory st;
-        _loadStake(stakeListRef[stakeIndex], stakeCookieParam, st);
+        _loadStake(stakeListRef[stakeIndex], stakeIdParam, st);
 
         /* Check if log data needs to be updated */
         _storeDailyDataBefore(g, g._currentDay);
 
         uint256 servedDays = 0;
 
+        bool prevUnpooled = (st._unpooledDay != 0);
         uint256 stakeReturn;
+        uint256 payout = 0;
         uint256 penalty = 0;
+        uint256 cappedPenalty = 0;
 
         if (g._currentDay >= st._pooledDay) {
-            bool prevUnpooled = (st._unpooledDay != 0);
-
             if (prevUnpooled) {
                 /* Previously unpooled in goodAccounting(), so must have served full term */
                 servedDays = st._stakedDays;
@@ -254,7 +263,7 @@ contract StakeableToken is UTXORedeemableToken {
                 }
             }
 
-            (stakeReturn, penalty) = _applyPayoutAndPenalty(g, st, servedDays, prevUnpooled);
+            (stakeReturn, payout, penalty, cappedPenalty) = _calcStakeReturn(g, st, servedDays);
         } else {
             /* Stake hasn't been added to the global pool yet, so no penalties or rewards apply */
             g._nextStakeSharesTotal -= st._stakeShares;
@@ -263,13 +272,18 @@ contract StakeableToken is UTXORedeemableToken {
         }
 
         emit EndStake(
+            uint40(block.timestamp),
             msg.sender,
-            stakeIndex,
-            stakeCookieParam,
-            servedDays,
-            stakeReturn,
-            penalty
+            stakeIdParam,
+            payout,
+            penalty,
+            uint16(servedDays)
         );
+
+        if (cappedPenalty != 0 && !prevUnpooled) {
+            /* Split penalty proceeds only if not previously unpooled by goodAccounting() */
+            _splitPenaltyProceeds(g, cappedPenalty);
+        }
 
         if (stakeReturn != 0) {
             /* Transfer stake return from contract back to staker */
@@ -278,8 +292,8 @@ contract StakeableToken is UTXORedeemableToken {
 
         _removeStakeFromList(stakeListRef, stakeIndex);
 
-        _saveStakeGlobals(g);
-        _syncClaimGlobals(g, gSnapshot);
+        _saveGlobals1(g);
+        _syncGlobals2(g, gSnapshot);
     }
 
     /**
@@ -399,45 +413,11 @@ contract StakeableToken is UTXORedeemableToken {
         st._unpooledDay = g._currentDay;
     }
 
-    function _applyPayoutAndPenalty(
-        GlobalsCache memory g,
-        StakeCache memory st,
-        uint256 servedDays,
-        bool prevUnpooled
-    )
-        private
-        returns (uint256 stakeReturn, uint256 penalty)
-    {
-        (stakeReturn, penalty) = _calcStakeReturnAndPenalty(g, st, servedDays);
-
-        if (penalty != 0) {
-            if (penalty > stakeReturn) {
-                /* Cannot have a negative stake return */
-                penalty = stakeReturn;
-                stakeReturn = 0;
-            } else {
-                /* Remove penalty from the stake return */
-                stakeReturn -= penalty;
-            }
-            /* Split penalty proceeds only if not previously unpooled by goodAccounting() */
-            if (!prevUnpooled) {
-                _splitPenaltyProceeds(g, penalty);
-            }
-        }
-        return (stakeReturn, penalty);
-    }
-
-    function _calcStakeReturnAndPenalty(
-        GlobalsCache memory g,
-        StakeCache memory st,
-        uint256 servedDays
-    )
+    function _calcStakeReturn(GlobalsCache memory g, StakeCache memory st, uint256 servedDays)
         private
         view
-        returns (uint256 stakeReturn, uint256 penalty)
+        returns (uint256 stakeReturn, uint256 payout, uint256 penalty, uint256 cappedPenalty)
     {
-        uint256 payout;
-
         if (servedDays < st._stakedDays) {
             (payout, penalty) = _calcPayoutAndEarlyPenalty(
                 g,
@@ -458,7 +438,18 @@ contract StakeableToken is UTXORedeemableToken {
                 stakeReturn
             );
         }
-        return (stakeReturn, penalty);
+        if (penalty != 0) {
+            if (penalty > stakeReturn) {
+                /* Cannot have a negative stake return */
+                cappedPenalty = stakeReturn;
+                stakeReturn = 0;
+            } else {
+                /* Remove penalty from the stake return */
+                cappedPenalty = penalty;
+                stakeReturn -= cappedPenalty;
+            }
+        }
+        return (stakeReturn, payout, penalty, cappedPenalty);
     }
 
     /**
@@ -533,10 +524,10 @@ contract StakeableToken is UTXORedeemableToken {
      * and adds penalty to payout pool
      * @param stakedDaysParam param from stake
      * @param unpooledDays stake unpooledDay minus stake pooledDay
-     * @param stakeReturn committed stakeHearts plus payout
+     * @param rawStakeReturn committed stakeHearts plus payout
      * @return penalty Hearts
      */
-    function _calcLatePenalty(uint256 stakedDaysParam, uint256 unpooledDays, uint256 stakeReturn)
+    function _calcLatePenalty(uint256 stakedDaysParam, uint256 unpooledDays, uint256 rawStakeReturn)
         private
         pure
         returns (uint256)
@@ -548,6 +539,6 @@ contract StakeableToken is UTXORedeemableToken {
         }
 
         /* Calculate penalty as a percentage of stake return based on time */
-        return stakeReturn * (unpooledDays - stakedDaysParam) / LATE_PENALTY_SCALE_DAYS;
+        return rawStakeReturn * (unpooledDays - stakedDaysParam) / LATE_PENALTY_SCALE_DAYS;
     }
 }

@@ -46,44 +46,50 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         );
 
         /* Derive BTC address from public key */
-        bytes20 btcAddress = pubKeyToBtcAddress(pubKeyX, pubKeyY, addrType);
+        bytes20 btcAddr = pubKeyToBtcAddress(pubKeyX, pubKeyY, addrType);
 
         /* Ensure BTC address has not yet been claimed */
-        require(!claimedBtcAddresses[btcAddress], "HEX: BTC address balance already claimed");
+        require(!claimedBtcAddresses[btcAddr], "HEX: BTC address balance already claimed");
 
         /* Ensure BTC address is part of the Merkle tree */
         require(
-            _btcAddressIsValid(btcAddress, rawSatoshis, proof),
+            _btcAddressIsValid(btcAddr, rawSatoshis, proof),
             "HEX: BTC address or balance unknown"
         );
 
         /* Mark BTC address as claimed */
-        claimedBtcAddresses[btcAddress] = true;
+        claimedBtcAddresses[btcAddr] = true;
 
-        return _claimSatoshisSync(rawSatoshis, claimToAddr, referrerAddr);
+        return _claimSatoshisSync(rawSatoshis, claimToAddr, btcAddr, referrerAddr);
     }
 
-    function _claimSatoshisSync(uint256 rawSatoshis, address claimToAddr, address referrerAddr)
+    function _claimSatoshisSync(
+        uint256 rawSatoshis,
+        address claimToAddr,
+        bytes20 btcAddr,
+        address referrerAddr
+    )
         private
-        returns (uint256 claimedHearts)
+        returns (uint256 totalClaimedHearts)
     {
         GlobalsCache memory g;
         GlobalsCache memory gSnapshot;
         _loadGlobals(g);
         _snapshotGlobalsCache(g, gSnapshot);
 
-        claimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, referrerAddr);
+        totalClaimedHearts = _claimSatoshis(g, rawSatoshis, claimToAddr, btcAddr, referrerAddr);
 
-        _syncStakeGlobals(g, gSnapshot);
-        _saveClaimGlobals(g);
+        _syncGlobals1(g, gSnapshot);
+        _saveGlobals2(g);
 
-        return claimedHearts;
+        return totalClaimedHearts;
     }
 
     /**
      * @dev Credit an Eth address with the Hearts value of a raw Satoshis balance
      * @param rawSatoshis Raw BTC address balance in Satoshis
      * @param claimToAddr Destination Eth address for the claimed Hearts to be sent
+     * @param btcAddr Bitcoin address (binary; no base58-check encoding)
      * @param referrerAddr (optional, send 0x0 for no referrer) Eth address of referring user
      * @return Total number of Hearts credited, if successful
      */
@@ -91,10 +97,11 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         GlobalsCache memory g,
         uint256 rawSatoshis,
         address claimToAddr,
+        bytes20 btcAddr,
         address referrerAddr
     )
         private
-        returns (uint256)
+        returns (uint256 totalClaimedHearts)
     {
         /* Disable claims after the claim phase is over */
         require(g._currentDay < CLAIM_PHASE_DAYS, "HEX: Claim phase has ended");
@@ -108,8 +115,80 @@ contract UTXORedeemableToken is UTXOClaimValidation {
             "HEX: CHK: _claimedBtcAddrCount"
         );
 
+        (uint256 adjSatoshis, uint256 claimedHearts, uint256 claimBonusHearts) = _calcClaimValues(
+            g,
+            rawSatoshis
+        );
+
+        totalClaimedHearts = claimedHearts + claimBonusHearts;
+
+        /* Increment claim count to track viral rewards */
+        g._claimedBtcAddrCount++;
+
+        uint256 originBonusHearts = claimBonusHearts;
+
+        if (referrerAddr == address(0)) {
+            /* No referrer */
+            emit Claim(
+                uint40(block.timestamp),
+                claimToAddr,
+                btcAddr,
+                rawSatoshis,
+                adjSatoshis,
+                totalClaimedHearts
+            );
+        } else {
+            /* Referral bonus of 20% of total claimed Hearts */
+            uint256 referBonusHearts = totalClaimedHearts / 5;
+
+            originBonusHearts += referBonusHearts;
+
+            if (referrerAddr == claimToAddr) {
+                /* Self-referred */
+                claimBonusHearts += referBonusHearts;
+                totalClaimedHearts += referBonusHearts;
+
+                emit ClaimReferredBySelf(
+                    uint40(block.timestamp),
+                    claimToAddr,
+                    btcAddr,
+                    rawSatoshis,
+                    adjSatoshis,
+                    totalClaimedHearts
+                );
+            } else {
+                /* Referred by different address */
+                emit ClaimReferredByOther(
+                    uint40(block.timestamp),
+                    claimToAddr,
+                    btcAddr,
+                    rawSatoshis,
+                    adjSatoshis,
+                    totalClaimedHearts,
+                    referrerAddr
+                );
+
+                _mint(referrerAddr, referBonusHearts);
+            }
+        }
+
+        _mint(ORIGIN_ADDR, originBonusHearts);
+        _mint(claimToAddr, claimBonusHearts);
+
+
+        /* Claim pre-minted Hearts from contract balance */
+        _transfer(address(this), claimToAddr, claimedHearts);
+
+        return totalClaimedHearts;
+    }
+
+    function _calcClaimValues(GlobalsCache memory g, uint256 rawSatoshis)
+        private
+        pure
+        returns (uint256 adjSatoshis, uint256 claimedHearts, uint256 claimBonusHearts)
+    {
         /* Apply Silly Whale reduction */
-        uint256 adjSatoshis = _adjustSillyWhale(rawSatoshis);
+        adjSatoshis = _adjustSillyWhale(rawSatoshis);
         require(
             g._claimedSatoshisTotal + adjSatoshis <= CLAIMABLE_SATOSHIS_TOTAL,
             "HEX: CHK: _claimedSatoshisTotal"
@@ -126,68 +205,10 @@ contract UTXORedeemableToken is UTXOClaimValidation {
         g._unclaimedSatoshisTotal -= adjSatoshis;
 
         /* Convert to Hearts and calculate speed bonus */
-        uint256 claimedHearts = adjSatoshis * HEARTS_PER_SATOSHI;
-        uint256 claimBonusHearts = _calcSpeedBonus(claimedHearts, phaseDaysRemaining);
+        claimedHearts = adjSatoshis * HEARTS_PER_SATOSHI;
+        claimBonusHearts = _calcSpeedBonus(claimedHearts, phaseDaysRemaining);
 
-        /* Increment claim count to track viral rewards */
-        g._claimedBtcAddrCount++;
-
-        /* Claim pre-minted Hearts from contract balance */
-        _transfer(address(this), claimToAddr, claimedHearts);
-
-        /* Now merge bonus into amount for total */
-        claimedHearts += claimBonusHearts;
-
-        if (referrerAddr == address(0)) {
-            /* No referrer */
-            _mint(claimToAddr, claimBonusHearts);
-            _mint(ORIGIN_ADDR, claimBonusHearts);
-
-            emit Claim(
-                claimToAddr,
-                rawSatoshis,
-                adjSatoshis,
-                claimedHearts
-            );
-            return claimedHearts;
-        }
-
-        /* Referral bonus of 20% of total claimed Hearts */
-        uint256 referBonusHearts = (3 * claimedHearts) / 10;
-
-        uint256 combinedBonusHearts = claimBonusHearts + referBonusHearts;
-
-        _mint(ORIGIN_ADDR, combinedBonusHearts);
-        if (referrerAddr == claimToAddr) {
-            /* Self-refer can use one mint() instead of two */
-            _mint(claimToAddr, combinedBonusHearts);
-
-            claimedHearts += referBonusHearts;
-
-            emit ClaimReferredBySelf(
-                claimToAddr,
-                rawSatoshis,
-                adjSatoshis,
-                claimedHearts
-            );
-        } else {
-            /* Referred by different address */
-            uint256 partialReferBonusHearts = referBonusHearts/3;
-
-            _mint(claimToAddr, claimBonusHearts + partialReferBonusHearts);
-            _mint(referrerAddr, (2 * referBonusHearts)/3);
-
-            claimedHearts += partialReferBonusHearts;
-
-            emit ClaimReferredByOther(
-                claimToAddr,
-                rawSatoshis,
-                adjSatoshis,
-                claimedHearts,
-                referrerAddr
-            );
-        }
-        return claimedHearts;
+        return (adjSatoshis, claimedHearts, claimBonusHearts);
     }
 
     /**

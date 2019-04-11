@@ -7,12 +7,12 @@ import "../node_modules/openzeppelin-solidity/contracts/cryptography/MerkleProof
 contract UTXOClaimValidation is GlobalsAndUtility {
     /**
      * @dev PUBLIC FACING: Verify a BTC address and balance are unclaimed and part of the Merkle tree
-     * @param btcAddress Bitcoin address (binary; no base58-check encoding)
+     * @param btcAddr Bitcoin address (binary; no base58-check encoding)
      * @param rawSatoshis Raw BTC address balance in Satoshis
      * @param proof Merkle tree proof
      * @return True if can be claimed
      */
-    function canClaimBtcAddress(bytes20 btcAddress, uint256 rawSatoshis, bytes32[] calldata proof)
+    function canClaimBtcAddress(bytes20 btcAddr, uint256 rawSatoshis, bytes32[] calldata proof)
         external
         view
         returns (bool)
@@ -20,27 +20,27 @@ contract UTXOClaimValidation is GlobalsAndUtility {
         require(_getCurrentDay() < CLAIM_PHASE_DAYS, "HEX: Claim phase has ended");
 
         /* Don't need to check Merkle proof if UTXO BTC address has already been claimed    */
-        if (claimedBtcAddresses[btcAddress]) {
+        if (claimedBtcAddresses[btcAddr]) {
             return false;
         }
 
         /* Verify the Merkle tree proof */
-        return _btcAddressIsValid(btcAddress, rawSatoshis, proof);
+        return _btcAddressIsValid(btcAddr, rawSatoshis, proof);
     }
 
     /**
      * @dev PUBLIC FACING: Verify a BTC address and balance are part of the Merkle tree
-     * @param btcAddress Bitcoin address (binary; no base58-check encoding)
+     * @param btcAddr Bitcoin address (binary; no base58-check encoding)
      * @param rawSatoshis Raw BTC address balance in Satoshis
      * @param proof Merkle tree proof
      * @return True if valid
      */
-    function btcAddressIsValid(bytes20 btcAddress, uint256 rawSatoshis, bytes32[] calldata proof)
+    function btcAddressIsValid(bytes20 btcAddr, uint256 rawSatoshis, bytes32[] calldata proof)
         external
         pure
         returns (bool)
     {
-        return _btcAddressIsValid(btcAddress, rawSatoshis, proof);
+        return _btcAddressIsValid(btcAddr, rawSatoshis, proof);
     }
 
     /**
@@ -156,18 +156,18 @@ contract UTXOClaimValidation is GlobalsAndUtility {
 
     /**
      * @dev Verify a BTC address and balance are part of the Merkle tree
-     * @param btcAddress Bitcoin address (binary; no base58-check encoding)
+     * @param btcAddr Bitcoin address (binary; no base58-check encoding)
      * @param rawSatoshis Raw BTC address balance in Satoshis
      * @param proof Merkle tree proof
      * @return True if valid
      */
-    function _btcAddressIsValid(bytes20 btcAddress, uint256 rawSatoshis, bytes32[] memory proof)
+    function _btcAddressIsValid(bytes20 btcAddr, uint256 rawSatoshis, bytes32[] memory proof)
         internal
         pure
         returns (bool)
     {
         /* Calculate the 32 byte Merkle leaf associated with this BTC address and balance */
-        bytes32 merkleLeaf = bytes32(btcAddress) | bytes32(rawSatoshis);
+        bytes32 merkleLeaf = bytes32(btcAddr) | bytes32(rawSatoshis);
 
         /* Verify the Merkle tree proof */
         return _merkleProofIsValid(merkleLeaf, proof);

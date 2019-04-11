@@ -5,22 +5,35 @@ import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 contract GlobalsAndUtility is ERC20 {
     /* Define events */
+    event DailyDataUpdate(
+        uint40 timestamp,
+        uint16 daysStoredAdded,
+        uint16 daysStoredTotal,
+        address indexed updaterAddr
+    );
+
     event Claim(
+        uint40 timestamp,
         address indexed claimToAddr,
+        bytes20 indexed btcAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
         uint256 claimedHearts
     );
 
     event ClaimReferredBySelf(
+        uint40 timestamp,
         address indexed claimToAddr,
+        bytes20 indexed btcAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
         uint256 claimedHearts
     );
 
     event ClaimReferredByOther(
+        uint40 timestamp,
         address indexed claimToAddr,
+        bytes20 indexed btcAddr,
         uint256 rawSatoshis,
         uint256 adjSatoshis,
         uint256 claimedHearts,
@@ -28,32 +41,37 @@ contract GlobalsAndUtility is ERC20 {
     );
 
     event StartStake(
+        uint40 timestamp,
         address indexed stakerAddr,
-        uint48 indexed stakeCookie,
+        uint48 indexed stakeId,
         uint256 stakedHearts,
-        uint256 stakedDays
+        uint16 stakedDays
     );
 
     event GoodAccountingBySelf(
+        uint40 timestamp,
         address indexed stakerAddr,
-        uint256 stakeIndex,
-        uint48 indexed stakeCookie
+        uint48 indexed stakeId,
+        uint256 payout,
+        uint256 penalty
     );
 
     event GoodAccountingByOther(
+        uint40 timestamp,
         address indexed stakerAddr,
-        uint256 stakeIndex,
-        uint48 indexed stakeCookie,
+        uint48 indexed stakeId,
+        uint256 payout,
+        uint256 penalty,
         address indexed otherAddr
     );
 
     event EndStake(
+        uint40 timestamp,
         address indexed stakerAddr,
-        uint256 stakeIndex,
-        uint48 indexed stakeCookie,
-        uint256 servedDays,
-        uint256 stakeReturn,
-        uint256 penalty
+        uint48 indexed stakeId,
+        uint256 payout,
+        uint256 penalty,
+        uint16 servedDays
     );
 
     event Compound(
@@ -127,13 +145,15 @@ contract GlobalsAndUtility is ERC20 {
     uint8 internal constant BTC_ADDR_TYPE_P2WPKH_IN_P2SH = 2;
     uint8 internal constant BTC_ADDR_TYPE_COUNT = 3;
 
-    /* Globals expanded for memory and compact for storage */
+    /* Globals expanded for memory (except _latestStakeId) and compact for storage */
     struct GlobalsCache {
+        // 1
         uint256 _daysStored;
         uint256 _stakeSharesTotal;
         uint256 _nextStakeSharesTotal;
+        uint48 _latestStakeId;
+        // 2
         uint256 _stakePenaltyPool;
-        //
         uint256 _unclaimedSatoshisTotal;
         uint256 _claimedSatoshisTotal;
         uint256 _claimedBtcAddrCount;
@@ -142,11 +162,13 @@ contract GlobalsAndUtility is ERC20 {
     }
 
     struct GlobalsStore {
+        // 1
         uint16 daysStored;
         uint80 stakeSharesTotal;
         uint80 nextStakeSharesTotal;
+        uint48 latestStakeId;
+        // 2
         uint80 stakePenaltyPool;
-        //
         uint64 unclaimedSatoshisTotal;
         uint64 claimedSatoshisTotal;
         uint32 claimedBtcAddrCount;
@@ -177,9 +199,9 @@ contract GlobalsAndUtility is ERC20 {
 
     mapping(uint256 => DailyDataStore) public dailyData;
 
-    /* Stake expanded for memory (except _stakeCookie) and compact for storage */
+    /* Stake expanded for memory (except _stakeId) and compact for storage */
     struct StakeCache {
-        uint48 _stakeCookie;
+        uint48 _stakeId;
         uint256 _stakedHearts;
         uint256 _stakeShares;
         uint256 _pooledDay;
@@ -191,7 +213,7 @@ contract GlobalsAndUtility is ERC20 {
     }
 
     struct StakeStore {
-        uint48 stakeCookie;
+        uint48 stakeId;
         uint80 stakedHearts;
         uint80 stakeShares;
         uint16 pooledDay;
@@ -236,8 +258,8 @@ contract GlobalsAndUtility is ERC20 {
             _storeDailyDataBefore(g, g._currentDay);
         }
 
-        _syncStakeGlobals(g, gSnapshot);
-        _syncClaimGlobals(g, gSnapshot);
+        _syncGlobals1(g, gSnapshot);
+        _syncGlobals2(g, gSnapshot);
     }
 
     /**
@@ -251,6 +273,61 @@ contract GlobalsAndUtility is ERC20 {
     {
         /* totalSupply() will always be >= balanceOf(...) */
         return totalSupply() - balanceOf(address(this));
+    }
+
+    /**
+     * @dev PUBLIC FACING: External helper to return most global info with a single call.
+     * Ugly implementation due to limitations of the standard ABI encoder.
+     * @return Fixed array of values
+     */
+    function getGlobalInfo()
+        external
+        view
+        returns (uint256[11] memory)
+    {
+        return [
+            globals.daysStored,
+            globals.stakeSharesTotal,
+            globals.nextStakeSharesTotal,
+            globals.latestStakeId,
+            globals.stakePenaltyPool,
+            globals.unclaimedSatoshisTotal,
+            globals.claimedSatoshisTotal,
+            globals.claimedBtcAddrCount,
+            _getCurrentDay(),
+            totalSupply(),
+            balanceOf(address(this))
+        ];
+    }
+
+    /**
+     * @dev PUBLIC FACING: External helper to return multiple entries of daily data with
+     * a single call. Ugly implementation due to limitations of the standard ABI encoder.
+     * @return Fixed array of values
+     */
+    function getDailyDataRange(uint256 offset, uint256 count)
+        external
+        view
+        returns (uint256[] memory list)
+    {
+        uint256 max = offset + count;
+
+        require(offset < max, "HEX: count invalid");
+        require(max <= globals.daysStored, "HEX: offset or count invalid");
+
+        list = new uint256[](count);
+
+        uint256 src = offset;
+        uint256 dst = 0;
+        do {
+            uint256 lo = uint256(dailyData[src].dayPayoutTotal);
+            uint256 hi = uint256(dailyData[src].dayStakeSharesTotal) << 128;
+            ++src;
+
+            list[dst] = hi | lo;
+        } while (++dst < count);
+
+        return list;
     }
 
     /**
@@ -277,84 +354,86 @@ contract GlobalsAndUtility is ERC20 {
         internal
         view
     {
+        // 1
         g._daysStored = globals.daysStored;
         g._stakeSharesTotal = globals.stakeSharesTotal;
         g._nextStakeSharesTotal = globals.nextStakeSharesTotal;
+        g._latestStakeId = globals.latestStakeId;
+        // 2
         g._stakePenaltyPool = globals.stakePenaltyPool;
-
+        g._unclaimedSatoshisTotal = globals.unclaimedSatoshisTotal;
+        g._claimedSatoshisTotal = globals.claimedSatoshisTotal;
+        g._claimedBtcAddrCount = uint256(globals.claimedBtcAddrCount);
+        //
         g._currentDay = _getCurrentDay();
-
-        if (g._daysStored < CLAIM_PHASE_DAYS) {
-            g._unclaimedSatoshisTotal = globals.unclaimedSatoshisTotal;
-            g._claimedSatoshisTotal = globals.claimedSatoshisTotal;
-            g._claimedBtcAddrCount = uint256(globals.claimedBtcAddrCount);
-        }
     }
 
     function _snapshotGlobalsCache(GlobalsCache memory g, GlobalsCache memory gSnapshot)
         internal
         pure
     {
+        // 1
         gSnapshot._daysStored = g._daysStored;
         gSnapshot._stakeSharesTotal = g._stakeSharesTotal;
         gSnapshot._nextStakeSharesTotal = g._nextStakeSharesTotal;
+        gSnapshot._latestStakeId = g._latestStakeId;
+        // 2
         gSnapshot._stakePenaltyPool = g._stakePenaltyPool;
-
         gSnapshot._unclaimedSatoshisTotal = g._unclaimedSatoshisTotal;
         gSnapshot._claimedSatoshisTotal = g._claimedSatoshisTotal;
         gSnapshot._claimedBtcAddrCount = g._claimedBtcAddrCount;
-
-        gSnapshot._currentDay = g._currentDay;
     }
 
-    function _saveStakeGlobals(GlobalsCache memory g)
+    function _saveGlobals1(GlobalsCache memory g)
         internal
     {
         globals.daysStored = uint16(g._daysStored);
         globals.stakeSharesTotal = uint80(g._stakeSharesTotal);
         globals.nextStakeSharesTotal = uint80(g._nextStakeSharesTotal);
-        globals.stakePenaltyPool = uint80(g._stakePenaltyPool);
+        globals.latestStakeId = g._latestStakeId;
     }
 
-    function _saveClaimGlobals(GlobalsCache memory g)
-        internal
-    {
-        globals.unclaimedSatoshisTotal = uint64(g._unclaimedSatoshisTotal);
-        globals.claimedSatoshisTotal = uint64(g._claimedSatoshisTotal);
-        globals.claimedBtcAddrCount = uint32(g._claimedBtcAddrCount);
-    }
-
-    function _syncStakeGlobals(GlobalsCache memory g, GlobalsCache memory gSnapshot)
+    function _syncGlobals1(GlobalsCache memory g, GlobalsCache memory gSnapshot)
         internal
     {
         if (g._daysStored == gSnapshot._daysStored
             && g._stakeSharesTotal == gSnapshot._stakeSharesTotal
             && g._nextStakeSharesTotal == gSnapshot._nextStakeSharesTotal
-            && g._stakePenaltyPool == gSnapshot._stakePenaltyPool) {
+            && g._latestStakeId == gSnapshot._latestStakeId) {
             return;
         }
-        _saveStakeGlobals(g);
+        _saveGlobals1(g);
     }
 
-    function _syncClaimGlobals(GlobalsCache memory g, GlobalsCache memory gSnapshot)
+    function _saveGlobals2(GlobalsCache memory g)
         internal
     {
-        if (g._unclaimedSatoshisTotal == gSnapshot._unclaimedSatoshisTotal
+        globals.stakePenaltyPool = uint80(g._stakePenaltyPool);
+        globals.unclaimedSatoshisTotal = uint64(g._unclaimedSatoshisTotal);
+        globals.claimedSatoshisTotal = uint64(g._claimedSatoshisTotal);
+        globals.claimedBtcAddrCount = uint32(g._claimedBtcAddrCount);
+    }
+
+    function _syncGlobals2(GlobalsCache memory g, GlobalsCache memory gSnapshot)
+        internal
+    {
+        if (g._stakePenaltyPool == gSnapshot._stakePenaltyPool
+            && g._unclaimedSatoshisTotal == gSnapshot._unclaimedSatoshisTotal
             && g._claimedSatoshisTotal == gSnapshot._claimedSatoshisTotal
             && g._claimedBtcAddrCount == gSnapshot._claimedBtcAddrCount) {
             return;
         }
-        _saveClaimGlobals(g);
+        _saveGlobals2(g);
     }
 
-    function _loadStake(StakeStore storage stRef, uint48 stakeCookieParam, StakeCache memory st)
+    function _loadStake(StakeStore storage stRef, uint48 stakeIdParam, StakeCache memory st)
         internal
         view
     {
         /* Ensure caller's stakeIndex is still current */
-        require(stakeCookieParam == stRef.stakeCookie, "HEX: stakeCookieParam not in stake");
+        require(stakeIdParam == stRef.stakeId, "HEX: stakeIdParam not in stake");
 
-        st._stakeCookie = stRef.stakeCookie;
+        st._stakeId = stRef.stakeId;
         st._stakedHearts = stRef.stakedHearts;
         st._stakeShares = stRef.stakeShares;
         st._pooledDay = stRef.pooledDay;
@@ -366,7 +445,7 @@ contract GlobalsAndUtility is ERC20 {
     function _updateStake(StakeStore storage stRef, StakeCache memory st)
         internal
     {
-        stRef.stakeCookie = st._stakeCookie;
+        stRef.stakeId = st._stakeId;
         stRef.stakedHearts = uint80(st._stakedHearts);
         stRef.stakeShares = uint80(st._stakeShares);
         stRef.pooledDay = uint16(st._pooledDay);
@@ -386,7 +465,7 @@ contract GlobalsAndUtility is ERC20 {
 
     function _addStake(
         StakeStore[] storage stakeListRef,
-        uint48 newStakeCookie,
+        uint48 newStakeId,
         uint256 newStakedHearts,
         uint256 newStakeShares,
         uint256 newPooledDay,
@@ -397,7 +476,7 @@ contract GlobalsAndUtility is ERC20 {
     {
         stakeListRef.push(
             StakeStore(
-                newStakeCookie,
+                newStakeId,
                 uint80(newStakedHearts),
                 uint80(newStakeShares),
                 uint16(newPooledDay),
@@ -510,6 +589,12 @@ contract GlobalsAndUtility is ERC20 {
             }
         } while (++day < beforeDay);
 
+        emit DailyDataUpdate(
+            uint40(block.timestamp),
+            uint16(day - g._daysStored),
+            uint16(day),
+            msg.sender
+        );
         g._daysStored = day;
 
         if (rs._mintContractBatch != 0) {
