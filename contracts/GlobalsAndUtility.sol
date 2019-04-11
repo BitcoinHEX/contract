@@ -381,6 +381,7 @@ contract GlobalsAndUtility is ERC20 {
                     uint80(st._newSnapshots[i]._shares)
                 )
 			);
+        }
     }
 
     function _addStake(
@@ -389,7 +390,8 @@ contract GlobalsAndUtility is ERC20 {
         uint256 newStakedHearts,
         uint256 newStakeShares,
         uint256 newPooledDay,
-        uint256 newStakedDays
+        uint256 newStakedDays,
+        SharesSnapshotStore[] compoundingSnapshots
     )
         internal
     {
@@ -402,7 +404,7 @@ contract GlobalsAndUtility is ERC20 {
                 uint16(newStakedDays),
                 uint16(0), // unpooledDay
                 uint16(0), // lastCompoundedDay
-                new SharesSnapshotStore[](0)
+                compoundingSnapshots
             )
         );
     }
@@ -411,6 +413,7 @@ contract GlobalsAndUtility is ERC20 {
         SharesSnapshotStore[] storage sss
     )
         internal
+        view
         returns (SharesSnapshotCache[] memory)
     {
         SharesSnapshotCache[] memory caches = new SharesSnapshotCache[](sss.length);

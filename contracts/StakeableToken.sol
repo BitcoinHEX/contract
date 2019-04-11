@@ -45,6 +45,7 @@ contract StakeableToken is UTXORedeemableToken {
         */
         uint256 newPooledDay = g._currentDay + 1;
 
+        SharesSnapshotStore[] storage compoundingSnapshots;
         /* Create Stake */
         _addStake(
             staked[msg.sender],
@@ -52,7 +53,8 @@ contract StakeableToken is UTXORedeemableToken {
             newStakedHearts,
             newStakeShares,
             newPooledDay,
-            newStakedDays
+            newStakedDays,
+            compoundingSnapshots
         );
 
         emit StartStake(
@@ -112,20 +114,20 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 payout = calcPayoutRewards(st._stakeShares, st._lastCompoundedDay, g._currentDay);
 
         /* Snapshot stake for past days */
-        st._stakeSharesSnapshot.push(
+        st._newSnapshots = new SharesSnapshotCache[](1);
+        st._newSnapshots[0] = 
             SharesSnapshotCache(
                 st._lastCompoundedDay,
                 g._currentDay,
                 st._stakeShares
-            )
-        );
+            );
         /* Update shares; TODO: Storage Writing */
         st._stakedHearts += payout;
         uint256 extraShares = calcStakeShares(payout, st._stakedDays);
         st._stakeShares += extraShares;
 
         /* Add Shares to Glabal; TODO: Storage Writing */
-        g.stakeSharesTotal += extraShares;
+        g._stakeSharesTotal += extraShares;
 
         /* Update Last Compound Date; TODO: Storage Writing */
         st._lastCompoundedDay = g._currentDay;
@@ -137,7 +139,7 @@ contract StakeableToken is UTXORedeemableToken {
             payout
         );
 
-        _updateStake(stakeListRef, st);
+        _updateStake(stakeListRef[stakeIndex], st);
         _saveStakeGlobals(g);
         _syncClaimGlobals(g, gSnapshot);
     }
