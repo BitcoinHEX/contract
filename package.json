@@ -1,5 +1,5 @@
 {
-  "name": "bitcoinhex",
+  "name": "hex",
   "version": "0.0.1",
   "description": "Bitcoin fork onto Ethereum",
   "devDependencies": {
