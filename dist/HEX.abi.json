@@ -1,0 +1,976 @@
+[
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "name",
+    "outputs": [
+      {
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "approve",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes20"
+      }
+    ],
+    "name": "claimedBtcAddresses",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferFrom",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "merkleLeaf",
+        "type": "bytes32"
+      },
+      {
+        "name": "proof",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "merkleProofIsValid",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "pubKeyX",
+        "type": "bytes32"
+      },
+      {
+        "name": "pubKeyY",
+        "type": "bytes32"
+      },
+      {
+        "name": "addrType",
+        "type": "uint8"
+      }
+    ],
+    "name": "pubKeyToBtcAddress",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes20"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "claimToAddr",
+        "type": "address"
+      },
+      {
+        "name": "pubKeyX",
+        "type": "bytes32"
+      },
+      {
+        "name": "pubKeyY",
+        "type": "bytes32"
+      },
+      {
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "name": "signatureMatchesClaim",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "pubKeyX",
+        "type": "bytes32"
+      },
+      {
+        "name": "pubKeyY",
+        "type": "bytes32"
+      }
+    ],
+    "name": "pubKeyToEthAddress",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "name": "addedValue",
+        "type": "uint256"
+      }
+    ],
+    "name": "increaseAllowance",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "getCurrentDay",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "beforeDay",
+        "type": "uint256"
+      }
+    ],
+    "name": "storeDailyDataBefore",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "rawSatoshis",
+        "type": "uint256"
+      },
+      {
+        "name": "proof",
+        "type": "bytes32[]"
+      },
+      {
+        "name": "claimToAddr",
+        "type": "address"
+      },
+      {
+        "name": "pubKeyX",
+        "type": "bytes32"
+      },
+      {
+        "name": "pubKeyY",
+        "type": "bytes32"
+      },
+      {
+        "name": "addrType",
+        "type": "uint8"
+      },
+      {
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "name": "s",
+        "type": "bytes32"
+      },
+      {
+        "name": "referrerAddr",
+        "type": "address"
+      }
+    ],
+    "name": "claimBtcAddress",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "stakeIndex",
+        "type": "uint256"
+      },
+      {
+        "name": "stakeCookieParam",
+        "type": "uint48"
+      }
+    ],
+    "name": "endStake",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "btcAddress",
+        "type": "bytes20"
+      },
+      {
+        "name": "rawSatoshis",
+        "type": "uint256"
+      },
+      {
+        "name": "proof",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "canClaimBtcAddress",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "stakerAddr",
+        "type": "address"
+      },
+      {
+        "name": "stakeIndex",
+        "type": "uint256"
+      },
+      {
+        "name": "stakeCookieParam",
+        "type": "uint48"
+      }
+    ],
+    "name": "goodAccounting",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [],
+    "name": "flushTrappedEth",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "staked",
+    "outputs": [
+      {
+        "name": "stakeCookie",
+        "type": "uint48"
+      },
+      {
+        "name": "stakedHearts",
+        "type": "uint80"
+      },
+      {
+        "name": "stakeShares",
+        "type": "uint80"
+      },
+      {
+        "name": "pooledDay",
+        "type": "uint16"
+      },
+      {
+        "name": "stakedDays",
+        "type": "uint16"
+      },
+      {
+        "name": "unpooledDay",
+        "type": "uint16"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "dailyData",
+    "outputs": [
+      {
+        "name": "dayPayoutTotal",
+        "type": "uint80"
+      },
+      {
+        "name": "dayStakeSharesTotal",
+        "type": "uint80"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "circulatingSupply",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "symbol",
+    "outputs": [
+      {
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "name": "subtractedValue",
+        "type": "uint256"
+      }
+    ],
+    "name": "decreaseAllowance",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "transfer",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "newStakeCookie",
+        "type": "uint48"
+      },
+      {
+        "name": "newStakedHearts",
+        "type": "uint256"
+      },
+      {
+        "name": "newStakedDays",
+        "type": "uint256"
+      }
+    ],
+    "name": "startStake",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "globals",
+    "outputs": [
+      {
+        "name": "daysStored",
+        "type": "uint16"
+      },
+      {
+        "name": "stakeSharesTotal",
+        "type": "uint80"
+      },
+      {
+        "name": "nextStakeSharesTotal",
+        "type": "uint80"
+      },
+      {
+        "name": "stakePenaltyPool",
+        "type": "uint80"
+      },
+      {
+        "name": "unclaimedSatoshisTotal",
+        "type": "uint64"
+      },
+      {
+        "name": "claimedSatoshisTotal",
+        "type": "uint64"
+      },
+      {
+        "name": "claimedBtcAddrCount",
+        "type": "uint32"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "stakeSharesParam",
+        "type": "uint256"
+      },
+      {
+        "name": "beginDay",
+        "type": "uint256"
+      },
+      {
+        "name": "endDay",
+        "type": "uint256"
+      }
+    ],
+    "name": "calcPayoutRewards",
+    "outputs": [
+      {
+        "name": "payout",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "ethAddr",
+        "type": "address"
+      }
+    ],
+    "name": "getStakeCount",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "allowance",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "btcAddress",
+        "type": "bytes20"
+      },
+      {
+        "name": "rawSatoshis",
+        "type": "uint256"
+      },
+      {
+        "name": "proof",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "btcAddressIsValid",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "payable": true,
+    "stateMutability": "payable",
+    "type": "fallback"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "claimToAddr",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "rawSatoshis",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "adjSatoshis",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "claimedHearts",
+        "type": "uint256"
+      }
+    ],
+    "name": "Claim",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "claimToAddr",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "rawSatoshis",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "adjSatoshis",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "claimedHearts",
+        "type": "uint256"
+      }
+    ],
+    "name": "ClaimReferredBySelf",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "claimToAddr",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "rawSatoshis",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "adjSatoshis",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "claimedHearts",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "name": "referrerAddr",
+        "type": "address"
+      }
+    ],
+    "name": "ClaimReferredByOther",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "stakerAddr",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "stakeCookie",
+        "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "name": "stakedHearts",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "stakedDays",
+        "type": "uint256"
+      }
+    ],
+    "name": "StartStake",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "stakerAddr",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "stakeIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "name": "stakeCookie",
+        "type": "uint48"
+      }
+    ],
+    "name": "GoodAccountingBySelf",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "stakerAddr",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "stakeIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "name": "stakeCookie",
+        "type": "uint48"
+      },
+      {
+        "indexed": true,
+        "name": "otherAddr",
+        "type": "address"
+      }
+    ],
+    "name": "GoodAccountingByOther",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "stakerAddr",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "stakeIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "name": "stakeCookie",
+        "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "name": "servedDays",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "stakeReturn",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "penalty",
+        "type": "uint256"
+      }
+    ],
+    "name": "EndStake",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Transfer",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Approval",
+    "type": "event"
+  }
+]
