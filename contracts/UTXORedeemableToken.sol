@@ -120,10 +120,38 @@ contract UTXORedeemableToken is UTXOClaimValidation {
             rawSatoshis
         );
 
-        totalClaimedHearts = claimedHearts + claimBonusHearts;
-
         /* Increment claim count to track viral rewards */
         g._claimedBtcAddrCount++;
+
+        totalClaimedHearts = _remitBonuses(
+            claimToAddr,
+            btcAddr,
+            rawSatoshis,
+            adjSatoshis,
+            claimedHearts,
+            claimBonusHearts,
+            referrerAddr
+        );
+
+        /* Claim pre-minted Hearts from contract balance */
+        _transfer(address(this), claimToAddr, claimedHearts);
+
+        return totalClaimedHearts;
+    }
+
+    function _remitBonuses(
+        address claimToAddr,
+        bytes20 btcAddr,
+        uint256 rawSatoshis,
+        uint256 adjSatoshis,
+        uint256 claimedHearts,
+        uint256 claimBonusHearts,
+        address referrerAddr
+    )
+        private
+        returns (uint256 totalClaimedHearts)
+    {
+        totalClaimedHearts = claimedHearts + claimBonusHearts;
 
         uint256 originBonusHearts = claimBonusHearts;
 
@@ -138,15 +166,20 @@ contract UTXORedeemableToken is UTXOClaimValidation {
                 totalClaimedHearts
             );
         } else {
-            /* Referral bonus of 20% of total claimed Hearts */
-            uint256 referBonusHearts = totalClaimedHearts / 5;
+            /*
+                Of total claimed Hearts, referral bonus of 10% to claimer,
+                and referrer bonus of 20% to referrer.
+            */
+            uint256 referralBonusHearts = totalClaimedHearts / 10;
+            uint256 referrerBonusHearts = referralBonusHearts * 2;
+            uint256 combinedBonusHearts = referralBonusHearts + referrerBonusHearts;
 
-            originBonusHearts += referBonusHearts;
+            originBonusHearts += combinedBonusHearts;
 
             if (referrerAddr == claimToAddr) {
-                /* Self-referred */
-                claimBonusHearts += referBonusHearts;
-                totalClaimedHearts += referBonusHearts;
+                /* Self-referred is combined (referral + referrer) */
+                claimBonusHearts += combinedBonusHearts;
+                totalClaimedHearts += combinedBonusHearts;
 
                 emit ClaimReferredBySelf(
                     uint40(block.timestamp),
@@ -158,6 +191,9 @@ contract UTXORedeemableToken is UTXOClaimValidation {
                 );
             } else {
                 /* Referred by different address */
+                claimBonusHearts += referralBonusHearts;
+                totalClaimedHearts += referralBonusHearts;
+
                 emit ClaimReferredByOther(
                     uint40(block.timestamp),
                     claimToAddr,
@@ -168,15 +204,12 @@ contract UTXORedeemableToken is UTXOClaimValidation {
                     referrerAddr
                 );
 
-                _mint(referrerAddr, referBonusHearts);
+                _mint(referrerAddr, referrerBonusHearts);
             }
         }
 
         _mint(ORIGIN_ADDR, originBonusHearts);
         _mint(claimToAddr, claimBonusHearts);
-
-        /* Claim pre-minted Hearts from contract balance */
-        _transfer(address(this), claimToAddr, claimedHearts);
 
         return totalClaimedHearts;
     }
