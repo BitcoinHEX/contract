@@ -5,6 +5,13 @@ import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 contract GlobalsAndUtility is ERC20 {
     /* Define events */
+    event DailyDataUpdate(
+        uint40 timestamp,
+        uint16 daysStoredAdded,
+        uint16 daysStoredTotal,
+        address indexed updaterAddr
+    );
+
     event Claim(
         uint40 timestamp,
         address indexed claimToAddr,
@@ -526,6 +533,12 @@ contract GlobalsAndUtility is ERC20 {
             }
         } while (++day < beforeDay);
 
+        emit DailyDataUpdate(
+            uint40(block.timestamp),
+            uint16(day - g._daysStored),
+            uint16(day),
+            msg.sender
+        );
         g._daysStored = day;
 
         if (rs._mintContractBatch != 0) {

@@ -776,6 +776,33 @@
         "type": "uint40"
       },
       {
+        "indexed": false,
+        "name": "daysStoredAdded",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "name": "daysStoredTotal",
+        "type": "uint16"
+      },
+      {
+        "indexed": true,
+        "name": "updaterAddr",
+        "type": "address"
+      }
+    ],
+    "name": "DailyDataUpdate",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "timestamp",
+        "type": "uint40"
+      },
+      {
         "indexed": true,
         "name": "claimToAddr",
         "type": "address"
