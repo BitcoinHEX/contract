@@ -140,7 +140,7 @@ contract GlobalsAndUtility is ERC20 {
     uint8 internal constant BTC_ADDR_TYPE_COUNT = 3;
 
     /* Starting Share Price */
-    uint80 internal constant INITIAL_SHARES_PER_HEART = 1e10;
+    uint80 internal constant INITIAL_SHARES_PER_HEART = 1e18;
 
     /* Globals expanded for memory (except _latestStakeId) and compact for storage */
     struct GlobalsCache {
