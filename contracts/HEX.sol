@@ -9,6 +9,7 @@ contract HEX is StakeableToken {
     {
         /* Add all Satoshis from UTXO snapshot to contract */
         globals.unclaimedSatoshisTotal = uint64(FULL_SATOSHIS_TOTAL);
+        globals.sharesPerHeart = INITIAL_SHARES_PER_HEART;
         _mint(address(this), FULL_SATOSHIS_TOTAL * HEARTS_PER_SATOSHI);
     }
 

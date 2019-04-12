@@ -139,13 +139,21 @@ contract GlobalsAndUtility is ERC20 {
     uint8 internal constant BTC_ADDR_TYPE_P2WPKH_IN_P2SH = 2;
     uint8 internal constant BTC_ADDR_TYPE_COUNT = 3;
 
+    /* Starting Share Price */
+    uint80 internal constant INITIAL_SHARES_PER_HEART = 1e10;
+
     /* Globals expanded for memory (except _latestStakeId) and compact for storage */
     struct GlobalsCache {
         // 1
         uint256 _daysStored;
+        uint256 _stakedHeartsTotal;
         uint256 _stakeSharesTotal;
         uint256 _nextStakeSharesTotal;
         uint48 _latestStakeId;
+        // share price
+        uint256 _sharesPerHeart;
+        // total "paper" payouts for share price
+        uint256 _pendingPayoutTotal;
         // 2
         uint256 _stakePenaltyPool;
         uint256 _unclaimedSatoshisTotal;
@@ -158,9 +166,12 @@ contract GlobalsAndUtility is ERC20 {
     struct GlobalsStore {
         // 1
         uint16 daysStored;
+        uint80 stakedHeartsTotal;
         uint80 stakeSharesTotal;
         uint80 nextStakeSharesTotal;
         uint48 latestStakeId;
+        uint80 sharesPerHeart;
+        uint80 pendingPayoutTotal;
         // 2
         uint80 stakePenaltyPool;
         uint64 unclaimedSatoshisTotal;
@@ -333,9 +344,13 @@ contract GlobalsAndUtility is ERC20 {
     {
         // 1
         g._daysStored = globals.daysStored;
+        g._stakedHeartsTotal = globals.stakedHeartsTotal;
         g._stakeSharesTotal = globals.stakeSharesTotal;
         g._nextStakeSharesTotal = globals.nextStakeSharesTotal;
         g._latestStakeId = globals.latestStakeId;
+        g._sharesPerHeart = globals.sharesPerHeart;
+
+        g._pendingPayoutTotal = globals.pendingPayoutTotal;
         // 2
         g._stakePenaltyPool = globals.stakePenaltyPool;
         g._unclaimedSatoshisTotal = globals.unclaimedSatoshisTotal;
@@ -351,9 +366,12 @@ contract GlobalsAndUtility is ERC20 {
     {
         // 1
         gSnapshot._daysStored = g._daysStored;
+        gSnapshot._stakedHeartsTotal = g._stakedHeartsTotal;
         gSnapshot._stakeSharesTotal = g._stakeSharesTotal;
         gSnapshot._nextStakeSharesTotal = g._nextStakeSharesTotal;
         gSnapshot._latestStakeId = g._latestStakeId;
+        gSnapshot._sharesPerHeart = g._sharesPerHeart;
+        gSnapshot._pendingPayoutTotal = g._pendingPayoutTotal;
         // 2
         gSnapshot._stakePenaltyPool = g._stakePenaltyPool;
         gSnapshot._unclaimedSatoshisTotal = g._unclaimedSatoshisTotal;
@@ -365,18 +383,24 @@ contract GlobalsAndUtility is ERC20 {
         internal
     {
         globals.daysStored = uint16(g._daysStored);
+        globals.stakedHeartsTotal = uint80(g._stakedHeartsTotal);
         globals.stakeSharesTotal = uint80(g._stakeSharesTotal);
         globals.nextStakeSharesTotal = uint80(g._nextStakeSharesTotal);
         globals.latestStakeId = g._latestStakeId;
+        globals.sharesPerHeart = uint80(g._sharesPerHeart);
+        globals.pendingPayoutTotal = uint80(g._pendingPayoutTotal);
     }
 
     function _syncGlobals1(GlobalsCache memory g, GlobalsCache memory gSnapshot)
         internal
     {
         if (g._daysStored == gSnapshot._daysStored
+            && g._stakedHeartsTotal == gSnapshot._stakedHeartsTotal
             && g._stakeSharesTotal == gSnapshot._stakeSharesTotal
             && g._nextStakeSharesTotal == gSnapshot._nextStakeSharesTotal
-            && g._latestStakeId == gSnapshot._latestStakeId) {
+            && g._latestStakeId == gSnapshot._latestStakeId
+            && g._sharesPerHeart == gSnapshot._sharesPerHeart
+            && g._pendingPayoutTotal == gSnapshot._pendingPayoutTotal) {
             return;
         }
         _saveGlobals1(g);
@@ -506,11 +530,15 @@ contract GlobalsAndUtility is ERC20 {
         rs._totalSupplyCached = totalSupply();
 
         uint256 day = g._daysStored;
+        uint256 totalPendingPayout = g._pendingPayoutTotal;
         do {
             if (g._stakeSharesTotal != 0) {
                 _calcDailyRound(g, rs, day);
                 dailyData[day].dayPayoutTotal = uint80(rs._payoutTotal);
                 dailyData[day].dayStakeSharesTotal = uint80(g._stakeSharesTotal);
+                /* capture additional pending payout */
+                totalPendingPayout += rs._payoutTotal;
+
             } else {
                 if (day == CLAIM_REWARD_DAYS && g._unclaimedSatoshisTotal != 0) {
                     /*
@@ -539,7 +567,17 @@ contract GlobalsAndUtility is ERC20 {
             uint16(day),
             msg.sender
         );
+
+        /* share price = (stakedHearts + payoutTotal) / sharesTotal 
+        * to keep precision we always assume >1 shares per heart
+        * so our shares per hearts is 1 / price
+        * i.e. sharesTotal/(stakedHearts + payoutTotal)
+        */
+        
+        g._sharesPerHeart = g._stakeSharesTotal / (totalPendingPayout + g._stakedHeartsTotal);
+
         g._daysStored = day;
+        g._pendingPayoutTotal = totalPendingPayout;
 
         if (rs._mintContractBatch != 0) {
             _mint(address(this), rs._mintContractBatch);

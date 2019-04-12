@@ -29,7 +29,8 @@ contract StakeableToken is UTXORedeemableToken {
         /* Check if log data needs to be updated */
         _storeDailyDataBefore(g, g._currentDay);
 
-        uint256 newStakeShares = calcStakeShares(newStakedHearts, newStakedDays);
+        uint256 newStakeShares = calcStakeShares(newStakedHearts, g._sharesPerHeart);
+        newStakeShares = applyLongerPaysBetter(newStakeShares, newStakedDays);
 
         /*
             The startStake timestamp will always be part-way through the current
@@ -60,6 +61,9 @@ contract StakeableToken is UTXORedeemableToken {
 
         /* Stake is added to pool in next round, not current round */
         g._nextStakeSharesTotal += newStakeShares;
+
+        /* capture total hearts staked for share price */
+        g._stakedHeartsTotal += newStakedHearts;
 
         /* Transfer staked Hearts to contract */
         _transfer(msg.sender, address(this), newStakedHearts);
@@ -112,6 +116,10 @@ contract StakeableToken is UTXORedeemableToken {
             st,
             st._stakedDays
         );
+
+        /* remove hearts and pending payout from share price calculation */
+        g._stakedHeartsTotal -= st._stakedHearts;
+        g._pendingPayoutTotal -= payout;
 
         if (msg.sender == stakerAddr) {
             emit GoodAccountingBySelf(
@@ -177,6 +185,7 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 payout = 0;
         uint256 penalty = 0;
         uint256 cappedPenalty = 0;
+        uint256 pendingValueRemoved = 0;
 
         if (g._currentDay >= st._pooledDay) {
             if (prevUnpooled) {
@@ -192,12 +201,19 @@ contract StakeableToken is UTXORedeemableToken {
             }
 
             (stakeReturn, payout, penalty, cappedPenalty) = _calcStakeReturn(g, st, servedDays);
+            pendingValueRemoved = payout;
         } else {
             /* Stake hasn't been added to the global pool yet, so no penalties or rewards apply */
             g._nextStakeSharesTotal -= st._stakeShares;
 
             stakeReturn = st._stakedHearts;
+            pendingValueRemoved = stakeReturn;
         }
+
+        /* remove hearts from share price calculation */
+        g._stakedHeartsTotal -= st._stakedHearts;
+        /* remove pending value from share price calculation */
+        g._pendingPayoutTotal -= pendingValueRemoved;
 
         emit EndStake(
             uint40(block.timestamp),
@@ -253,13 +269,31 @@ contract StakeableToken is UTXORedeemableToken {
         }
         return payout;
     }
+    
+    /**
+     * @dev Calculate stakeShares for a new stake based on share price
+     *  Price can slide between many shares per heart or many hearts per share depending on
+     *  dynamic conditions. We manage this by tracking both, though it's only ever either one
+     *  way or the other, i.e. one of the inputs is always 0
+     * @param newStakedHearts Number of Hearts to stake
+     * @param sharesPerHeart number of shares for each heart
+     */
+
+    function calcStakeShares(uint256 newStakedHearts, uint256 sharesPerHeart)
+        private
+        pure
+        returns (uint256)
+    {
+        require(sharesPerHeart > 0, "HEX: share price undecidable");
+        return newStakedHearts * sharesPerHeart;
+    }
 
     /**
-     * @dev Calculate stakeShares for a new stake, including any bonus
-     * @param newStakedHearts Number of Hearts to stake
+     * @dev Apply LPB bonus for a new stake based on days
+     * @param newStakeShares Number of shares to stake
      * @param newStakedDays Number of days to stake
      */
-    function calcStakeShares(uint256 newStakedHearts, uint256 newStakedDays)
+    function applyLongerPaysBetter(uint256 newStakeShares, uint256 newStakedDays)
         private
         pure
         returns (uint256)
@@ -291,14 +325,14 @@ contract StakeableToken is UTXORedeemableToken {
         */
         if (newStakedDays <= 1) {
             /* No bonus shares if there are no extra days */
-            return newStakedHearts;
+            return newStakeShares;
         }
 
         uint256 extraDays = newStakedDays < 3641
             ? newStakedDays - 1
             : 3640;
 
-        return newStakedHearts + newStakedHearts * extraDays / 1820;
+        return newStakeShares + newStakeShares * extraDays / 1820;
     }
 
     function _unpoolStake(GlobalsCache memory g, StakeCache memory st)
