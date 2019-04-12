@@ -279,7 +279,7 @@ contract StakeableToken is UTXORedeemableToken {
      * @param sharesPerHeart number of shares for each heart
      */
 
-    function calcStakeShares(uint256 newStakedHearts, uint256 sharesPerHeart)
+    function calcStakeShares(uint256 newStakedHearts, uint80 sharesPerHeart)
         private
         pure
         returns (uint256)

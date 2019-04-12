@@ -151,7 +151,7 @@ contract GlobalsAndUtility is ERC20 {
         uint256 _nextStakeSharesTotal;
         uint48 _latestStakeId;
         // share price
-        uint256 _sharesPerHeart;
+        uint80 _sharesPerHeart;
         // total "paper" payouts for share price
         uint256 _pendingPayoutTotal;
         // 2
@@ -167,8 +167,8 @@ contract GlobalsAndUtility is ERC20 {
         // 1
         uint16 daysStored;
         uint80 stakedHeartsTotal;
-        uint80 stakeSharesTotal;
-        uint80 nextStakeSharesTotal;
+        uint256 stakeSharesTotal;
+        uint256 nextStakeSharesTotal;
         uint48 latestStakeId;
         uint80 sharesPerHeart;
         uint80 pendingPayoutTotal;
@@ -187,7 +187,7 @@ contract GlobalsAndUtility is ERC20 {
     /* Period data */
     struct DailyDataStore {
         uint80 dayPayoutTotal;
-        uint80 dayStakeSharesTotal;
+        uint256 dayStakeSharesTotal;
     }
 
     mapping(uint256 => DailyDataStore) public dailyData;
@@ -271,13 +271,15 @@ contract GlobalsAndUtility is ERC20 {
     function getGlobalInfo()
         external
         view
-        returns (uint256[11] memory)
+        returns (uint256[13] memory)
     {
         return [
             globals.daysStored,
+            globals.stakedHeartsTotal,
             globals.stakeSharesTotal,
             globals.nextStakeSharesTotal,
             globals.latestStakeId,
+            globals.sharesPerHeart,
             globals.stakePenaltyPool,
             globals.unclaimedSatoshisTotal,
             globals.claimedSatoshisTotal,
@@ -384,8 +386,8 @@ contract GlobalsAndUtility is ERC20 {
     {
         globals.daysStored = uint16(g._daysStored);
         globals.stakedHeartsTotal = uint80(g._stakedHeartsTotal);
-        globals.stakeSharesTotal = uint80(g._stakeSharesTotal);
-        globals.nextStakeSharesTotal = uint80(g._nextStakeSharesTotal);
+        globals.stakeSharesTotal = uint256(g._stakeSharesTotal);
+        globals.nextStakeSharesTotal = uint256(g._nextStakeSharesTotal);
         globals.latestStakeId = g._latestStakeId;
         globals.sharesPerHeart = uint80(g._sharesPerHeart);
         globals.pendingPayoutTotal = uint80(g._pendingPayoutTotal);
@@ -535,7 +537,7 @@ contract GlobalsAndUtility is ERC20 {
             if (g._stakeSharesTotal != 0) {
                 _calcDailyRound(g, rs, day);
                 dailyData[day].dayPayoutTotal = uint80(rs._payoutTotal);
-                dailyData[day].dayStakeSharesTotal = uint80(g._stakeSharesTotal);
+                dailyData[day].dayStakeSharesTotal = g._stakeSharesTotal;
                 /* capture additional pending payout */
                 totalPendingPayout += rs._payoutTotal;
 
@@ -573,8 +575,15 @@ contract GlobalsAndUtility is ERC20 {
         * so our shares per hearts is 1 / price
         * i.e. sharesTotal/(stakedHearts + payoutTotal)
         */
-        
-        g._sharesPerHeart = g._stakeSharesTotal / (totalPendingPayout + g._stakedHeartsTotal);
+        if(g._stakeSharesTotal == 0){
+            // no stakes, leave price unchanged
+        }
+        else if(totalPendingPayout + g._stakedHeartsTotal == 0){
+            // div by 0, instead reset to original price
+            g._sharesPerHeart = INITIAL_SHARES_PER_HEART;
+        } else {
+            g._sharesPerHeart = uint80(g._stakeSharesTotal / (totalPendingPayout + g._stakedHeartsTotal));
+        }
 
         g._daysStored = day;
         g._pendingPayoutTotal = totalPendingPayout;
