@@ -278,8 +278,6 @@ contract StakeableToken is UTXORedeemableToken {
             maxExtraDays    = 200% / 20% * 364
                             = 10 * 364
                             = 3640
-            maxStakedDays   = maxExtraDays + 1
-                            = 3641
 
             stakeShares     = stakedHearts + stakedHearts * bonusPercent
                             = stakedHearts + stakedHearts * (extraDays / 364) * 20%
@@ -294,7 +292,7 @@ contract StakeableToken is UTXORedeemableToken {
             return newStakedHearts;
         }
 
-        uint256 extraDays = newStakedDays < 3641
+        uint256 extraDays = newStakedDays <= 3640
             ? newStakedDays - 1
             : 3640;
 
