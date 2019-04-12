@@ -128,6 +128,18 @@ contract GlobalsAndUtility is ERC20 {
     uint256 private constant LATE_PENALTY_SCALE_WEEKS = 100;
     uint256 internal constant LATE_PENALTY_SCALE_DAYS = LATE_PENALTY_SCALE_WEEKS * 7;
 
+    /* Stake shares Longer Pays Better bonus constants used by calcStakeShares() */
+    uint256 private constant LPB_D_BONUS_PERCENT = 20;
+    uint256 private constant LPB_D_BONUS_CAP_PERCENT = 200;
+    uint256 internal constant LPB_D = 364 * 100 / LPB_D_BONUS_PERCENT;
+    uint256 internal constant LPB_D_CAP_DAYS = LPB_D * LPB_D_BONUS_CAP_PERCENT / 100;
+
+    /* Stake shares Larger Pays Better bonus constants used by calcStakeShares() */
+    uint256 private constant LPB_H_BONUS_PERCENT = 10;
+    uint256 private constant LPB_H_CAP_HEX = 150 * 1e6;
+    uint256 internal constant LPB_H_CAP_HEARTS = LPB_H_CAP_HEX * HEARTS_PER_HEX;
+    uint256 internal constant LPB_H = LPB_H_CAP_HEARTS * 100 / LPB_H_BONUS_PERCENT;
+
     /* Hex digits used by createHexStringFromAddress() */
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
     uint256 internal constant ETH_ADDRESS_BYTE_LEN = 20;

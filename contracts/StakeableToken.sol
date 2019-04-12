@@ -29,8 +29,7 @@ contract StakeableToken is UTXORedeemableToken {
         /* Check if log data needs to be updated */
         _storeDailyDataBefore(g, g._currentDay);
 
-        uint256 newStakeShares = calcStakeShares(newStakedHearts, g._sharesPerHeart);
-        newStakeShares = applyLongerPaysBetter(newStakeShares, newStakedDays);
+        uint256 newStakeShares = calcStakeShares(newStakedHearts, newStakedDays, g._sharesPerHeart);
 
         /*
             The startStake timestamp will always be part-way through the current
@@ -269,70 +268,92 @@ contract StakeableToken is UTXORedeemableToken {
         }
         return payout;
     }
-    
-    /**
-     * @dev Calculate stakeShares for a new stake based on share price
-     *  Price can slide between many shares per heart or many hearts per share depending on
-     *  dynamic conditions. We manage this by tracking both, though it's only ever either one
-     *  way or the other, i.e. one of the inputs is always 0
-     * @param newStakedHearts Number of Hearts to stake
-     * @param sharesPerHeart number of shares for each heart
-     */
-
-    function calcStakeShares(uint256 newStakedHearts, uint80 sharesPerHeart)
-        private
-        pure
-        returns (uint256)
-    {
-        require(sharesPerHeart > 0, "HEX: share price undecidable");
-        return newStakedHearts * sharesPerHeart;
-    }
 
     /**
      * @dev Apply LPB bonus for a new stake based on days
-     * @param newStakeShares Number of shares to stake
+     * @param newStakedHearts Number of hearts to stake
      * @param newStakedDays Number of days to stake
+     * @param sharesPerHeart Number of shares for each heart
      */
-    function applyLongerPaysBetter(uint256 newStakeShares, uint256 newStakedDays)
+    function calcStakeShares(uint256 newStakedHearts, uint256 newStakedDays, uint80 sharesPerHeart)
         private
         pure
         returns (uint256)
     {
         /*
+            LONGER PAYS BETTER:
+
             If longer than 1 day stake is committed to, each extra day
             gives bonus shares of approximately 0.0548%, which is approximately 20%
             extra per year of increased stakelength committed to, but capped to a
             maximum of 200% extra.
 
-            extraDays       = stakedDays - 1
+            extraDays       =  stakedDays - 1
 
-            bonusPercent    = (extraDays / 364) * 20%
-            extraDays       = bonusPercent / 20% * 364
+            longerBonus%    = (extraDays / 364) * 20%
+                            = (extraDays / 364) / 5
+                            =  extraDays / 1820
+                            =  extraDays / LPB_D
 
-            maxExtraDays    = 200% / 20% * 364
-                            = 10 * 364
-                            = 3640
-            maxStakedDays   = maxExtraDays + 1
-                            = 3641
+            extraDays       =  longerBonus% * 1820
+            extraDaysCap    =  longerBonusCap% * 1820
+                            =  200% * 1820
+                            =  3640
+                            =  LPB_D_CAP_DAYS
 
-            stakeShares     = stakedHearts + stakedHearts * bonusPercent
-                            = stakedHearts + stakedHearts * (extraDays / 364) * 20%
-                            = stakedHearts + stakedHearts * (extraDays / 364) * 20/100
-                            = stakedHearts + stakedHearts * extraDays / 364 * 20 / 100
-                            = stakedHearts + stakedHearts * extraDays * 20 / 364 / 100
-                            = stakedHearts + stakedHearts * extraDays * 20 / 36400
-                            = stakedHearts + stakedHearts * extraDays / 1820
+            longerAmount    =  hearts * longerBonus%
+
+            LARGER PAYS BETTER:
+
+            Bonus percentage scaled 0% to 10% for the first 150M HEX of stake.
+
+            largerBonus%    = (hearts / 150e14) * 10%
+                            = (hearts / 150e14) / 10
+                            =  hearts / 150e15
+
+            largerAmount    =  hearts * largerBonus%
+
+            combinedBonus%  =         longerBonus%  +  largerBonus%
+
+                                        extraWeeks     hearts
+                            =           ----------  +  ------
+                                            260        150e15
+
+                                extraDays * 150e15     hearts * 1820
+                            =   ------------------  +  -------------
+                                   1820 * 150e15       1820 * 150e15
+
+                                extraDays * 150e15     hearts * 1820
+                            =   ------------------  +  -------------
+                                  1820 * 150e15        1820 * 150e15
+
+                                extraDays * 150e15  +  hearts * 1820
+                            =   ------------------------------------
+                                            1820 * 150e15
+
+            combinedAmount  = hearts * combinedBonus%
+                            = hearts * (extraDays * 150e15  +  hearts * 1820)  / (1820 * 150e15)
+                            = hearts * (extraDays * LPB_H   +  hearts * LPB_D) / (LPB_D * LPB_H)
+
+            stakeShares     = hearts + combinedAmount
         */
-        if (newStakedDays <= 1) {
-            /* No bonus shares if there are no extra days */
-            return newStakeShares;
+        require(sharesPerHeart > 0, "HEX: share price undecidable");
+
+        uint256 cappedExtraDays = 0;
+
+        /* Must be more than 1 day for Longer-Pays-Better */
+        if (newStakedDays > 1) {
+            cappedExtraDays = newStakedDays <= LPB_D_CAP_DAYS ? newStakedDays - 1 : LPB_D_CAP_DAYS;
         }
 
-        uint256 extraDays = newStakedDays < 3641
-            ? newStakedDays - 1
-            : 3640;
+        uint256 cappedStakedHearts = newStakedHearts <= LPB_H_CAP_HEARTS
+            ? newStakedHearts
+            : LPB_H_CAP_HEARTS;
 
-        return newStakeShares + newStakeShares * extraDays / 1820;
+        uint256 combinedAmount = cappedExtraDays * LPB_H + cappedStakedHearts * LPB_D;
+        combinedAmount = newStakedHearts * combinedAmount / (LPB_D * LPB_H);
+
+        return sharesPerHeart * (newStakedHearts + combinedAmount);
     }
 
     function _unpoolStake(GlobalsCache memory g, StakeCache memory st)
