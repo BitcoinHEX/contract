@@ -206,7 +206,7 @@ contract StakeableToken is UTXORedeemableToken {
             g._nextStakeSharesTotal -= st._stakeShares;
 
             stakeReturn = st._stakedHearts;
-            pendingValueRemoved = stakeReturn;
+            pendingValueRemoved = 0;
         }
 
         /* remove hearts from share price calculation */
