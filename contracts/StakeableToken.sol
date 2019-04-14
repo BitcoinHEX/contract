@@ -185,11 +185,14 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 penalty = 0;
         uint256 cappedPenalty = 0;
         uint256 pendingValueRemoved = 0;
+        uint256 stakedHeartsRemoved = st._stakedHearts;
 
         if (g._currentDay >= st._pooledDay) {
             if (prevUnpooled) {
                 /* Previously unpooled in goodAccounting(), so must have served full term */
                 servedDays = st._stakedDays;
+                //We were unpooled so we accounted for our staked hearts
+                stakedHeartsRemoved = 0;
             } else {
                 _unpoolStake(g, st);
 
@@ -200,17 +203,19 @@ contract StakeableToken is UTXORedeemableToken {
             }
 
             (stakeReturn, payout, penalty, cappedPenalty) = _calcStakeReturn(g, st, servedDays);
-            pendingValueRemoved = payout;
+            //Good accounting would remove our pending value so only count if we didn't do that
+            if(!prevUnpooled){
+                pendingValueRemoved = payout;
+            }
         } else {
             /* Stake hasn't been added to the global pool yet, so no penalties or rewards apply */
             g._nextStakeSharesTotal -= st._stakeShares;
 
             stakeReturn = st._stakedHearts;
-            pendingValueRemoved = 0;
         }
 
         /* remove hearts from share price calculation */
-        g._stakedHeartsTotal -= st._stakedHearts;
+        g._stakedHeartsTotal -= stakedHeartsRemoved;
         /* remove pending value from share price calculation */
         g._pendingPayoutTotal -= pendingValueRemoved;
 
