@@ -29,7 +29,7 @@ contract StakeableToken is UTXORedeemableToken {
         /* Check if log data needs to be updated */
         _storeDailyDataBefore(g, g._currentDay);
 
-        uint256 newStakeShares = calcStakeShares(newStakedHearts, newStakedDays);
+        uint256 newStakeShares = calcStakeShares(newStakedHearts, newStakedDays, g._sharesPerHeart);
 
         /*
             The startStake timestamp will always be part-way through the current
@@ -220,6 +220,17 @@ contract StakeableToken is UTXORedeemableToken {
 
         _removeStakeFromList(stakeListRef, stakeIndex);
 
+        /*
+            Apply worst-price logic
+            Worst price is the current shares / return, adjusted for potential Larger Pays
+            Better on a restake OR the current shares/heart, whichever is lower
+        */
+        uint256 effectiveReturn = stakeReturn > LPB_H_CAP_HEARTS ? LPB_H_CAP_HEARTS : stakeReturn;
+        uint256 proposedPrice = st._stakeShares/(stakeReturn + stakeReturn * effectiveReturn / LPB_H);
+        if(proposedPrice < g._sharesPerHeart){
+            g._sharesPerHeart = proposedPrice;
+        }
+        
         _saveGlobals1(g);
         _syncGlobals2(g, gSnapshot);
     }
@@ -259,7 +270,7 @@ contract StakeableToken is UTXORedeemableToken {
      * @param newStakedHearts Number of Hearts to stake
      * @param newStakedDays Number of days to stake
      */
-    function calcStakeShares(uint256 newStakedHearts, uint256 newStakedDays)
+    function calcStakeShares(uint256 newStakedHearts, uint256 newStakedDays, uint256 sharesPerHeart)
         private
         pure
         returns (uint256)
@@ -335,7 +346,7 @@ contract StakeableToken is UTXORedeemableToken {
         uint256 combinedAmount = cappedExtraDays * LPB_H + cappedStakedHearts * LPB_D;
         combinedAmount = newStakedHearts * combinedAmount / (LPB_D * LPB_H);
 
-        return newStakedHearts + combinedAmount;
+        return sharesPerHeart * (newStakedHearts + combinedAmount);
     }
 
     function _unpoolStake(GlobalsCache memory g, StakeCache memory st)
