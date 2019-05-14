@@ -90,6 +90,7 @@ contract GlobalsAndUtility is ERC20 {
     uint256 private constant HEX_PER_BTC = 1e4;
     uint256 private constant SATOSHIS_PER_BTC = 1e8;
     uint256 internal constant HEARTS_PER_SATOSHI = HEARTS_PER_HEX / SATOSHIS_PER_BTC * HEX_PER_BTC;
+    uint256 internal constant INITIAL_SHARES_PER_HEART = 1e18;
 
     /* Time of contract launch (2019-03-04T00:00:00Z) */
     uint256 internal constant LAUNCH_TIME = 1551657600;
@@ -157,6 +158,7 @@ contract GlobalsAndUtility is ERC20 {
         uint256 _daysStored;
         uint256 _stakeSharesTotal;
         uint256 _nextStakeSharesTotal;
+        uint256 _sharesPerHeart;
         uint48 _latestStakeId;
         // 2
         uint256 _stakePenaltyPool;
@@ -172,6 +174,7 @@ contract GlobalsAndUtility is ERC20 {
         uint16 daysStored;
         uint80 stakeSharesTotal;
         uint80 nextStakeSharesTotal;
+        uint256 sharesPerHeart;
         uint48 latestStakeId;
         // 2
         uint80 stakePenaltyPool;
@@ -347,6 +350,7 @@ contract GlobalsAndUtility is ERC20 {
         g._daysStored = globals.daysStored;
         g._stakeSharesTotal = globals.stakeSharesTotal;
         g._nextStakeSharesTotal = globals.nextStakeSharesTotal;
+        g._sharesPerHeart = globals.sharesPerHeart;
         g._latestStakeId = globals.latestStakeId;
         // 2
         g._stakePenaltyPool = globals.stakePenaltyPool;
@@ -365,6 +369,7 @@ contract GlobalsAndUtility is ERC20 {
         gSnapshot._daysStored = g._daysStored;
         gSnapshot._stakeSharesTotal = g._stakeSharesTotal;
         gSnapshot._nextStakeSharesTotal = g._nextStakeSharesTotal;
+        gSnapshot._sharesPerHeart = g._sharesPerHeart;
         gSnapshot._latestStakeId = g._latestStakeId;
         // 2
         gSnapshot._stakePenaltyPool = g._stakePenaltyPool;
@@ -379,6 +384,7 @@ contract GlobalsAndUtility is ERC20 {
         globals.daysStored = uint16(g._daysStored);
         globals.stakeSharesTotal = uint80(g._stakeSharesTotal);
         globals.nextStakeSharesTotal = uint80(g._nextStakeSharesTotal);
+        globals.sharesPerHeart = g._sharesPerHeart;
         globals.latestStakeId = g._latestStakeId;
     }
 
@@ -388,6 +394,7 @@ contract GlobalsAndUtility is ERC20 {
         if (g._daysStored == gSnapshot._daysStored
             && g._stakeSharesTotal == gSnapshot._stakeSharesTotal
             && g._nextStakeSharesTotal == gSnapshot._nextStakeSharesTotal
+            && g._sharesPerHeart == gSnapshot._sharesPerHeart
             && g._latestStakeId == gSnapshot._latestStakeId) {
             return;
         }
