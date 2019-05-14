@@ -157,6 +157,7 @@ contract GlobalsAndUtility is ERC20 {
         uint256 _daysStored;
         uint256 _stakeSharesTotal;
         uint256 _nextStakeSharesTotal;
+        uint256 _heartsDaysTotal;
         uint48 _latestStakeId;
         // 2
         uint256 _stakePenaltyPool;
@@ -172,6 +173,7 @@ contract GlobalsAndUtility is ERC20 {
         uint16 daysStored;
         uint80 stakeSharesTotal;
         uint80 nextStakeSharesTotal;
+        uint256 heartsDaysTotal;
         uint48 latestStakeId;
         // 2
         uint80 stakePenaltyPool;
@@ -188,6 +190,8 @@ contract GlobalsAndUtility is ERC20 {
     /* Period data */
     struct DailyDataStore {
         uint80 dayPayoutTotal;
+        uint80 dayRewardTotal;
+        uint256 heartsDaysTotal;
         uint80 dayStakeSharesTotal;
     }
 
@@ -220,6 +224,7 @@ contract GlobalsAndUtility is ERC20 {
         uint256 _mintContractBatch;
         uint256 _mintOriginBatch;
         uint256 _payoutTotal;
+        uint256 _rewardTotal;
     }
 
     /**
@@ -347,6 +352,7 @@ contract GlobalsAndUtility is ERC20 {
         g._daysStored = globals.daysStored;
         g._stakeSharesTotal = globals.stakeSharesTotal;
         g._nextStakeSharesTotal = globals.nextStakeSharesTotal;
+        g._heartsDaysTotal = globals.heartsDaysTotal;
         g._latestStakeId = globals.latestStakeId;
         // 2
         g._stakePenaltyPool = globals.stakePenaltyPool;
@@ -365,6 +371,7 @@ contract GlobalsAndUtility is ERC20 {
         gSnapshot._daysStored = g._daysStored;
         gSnapshot._stakeSharesTotal = g._stakeSharesTotal;
         gSnapshot._nextStakeSharesTotal = g._nextStakeSharesTotal;
+        gSnapshot._heartsDaysTotal = g._heartsDaysTotal;
         gSnapshot._latestStakeId = g._latestStakeId;
         // 2
         gSnapshot._stakePenaltyPool = g._stakePenaltyPool;
@@ -379,6 +386,7 @@ contract GlobalsAndUtility is ERC20 {
         globals.daysStored = uint16(g._daysStored);
         globals.stakeSharesTotal = uint80(g._stakeSharesTotal);
         globals.nextStakeSharesTotal = uint80(g._nextStakeSharesTotal);
+        globals.heartsDaysTotal = g._heartsDaysTotal;
         globals.latestStakeId = g._latestStakeId;
     }
 
@@ -388,6 +396,7 @@ contract GlobalsAndUtility is ERC20 {
         if (g._daysStored == gSnapshot._daysStored
             && g._stakeSharesTotal == gSnapshot._stakeSharesTotal
             && g._nextStakeSharesTotal == gSnapshot._nextStakeSharesTotal
+            && g._heartsDaysTotal == gSnapshot._heartsDaysTotal
             && g._latestStakeId == gSnapshot._latestStakeId) {
             return;
         }
@@ -522,7 +531,10 @@ contract GlobalsAndUtility is ERC20 {
             if (g._stakeSharesTotal != 0) {
                 _calcDailyRound(g, rs, day);
                 dailyData[day].dayPayoutTotal = uint80(rs._payoutTotal);
+                dailyData[day].dayRewardTotal = uint80(rs._rewardTotal);
+                dailyData[day].heartsDaysTotal = g._heartsDaysTotal;
                 dailyData[day].dayStakeSharesTotal = uint80(g._stakeSharesTotal);
+                
             } else {
                 if (day == CLAIM_REWARD_DAYS && g._unclaimedSatoshisTotal != 0) {
                     /*
@@ -676,7 +688,7 @@ contract GlobalsAndUtility is ERC20 {
             */
             rs._payoutTotal += bonus;
             _batchMintContract(rs, rs._payoutTotal);
-            rs._payoutTotal += reward;
+            rs._rewardTotal = reward;
             _batchMintOrigin(rs, reward + bonus);
         } else {
             /*

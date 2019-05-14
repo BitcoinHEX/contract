@@ -30,6 +30,7 @@ contract StakeableToken is UTXORedeemableToken {
         _storeDailyDataBefore(g, g._currentDay);
 
         uint256 newStakeShares = calcStakeShares(newStakedHearts, newStakedDays);
+        g._heartsDaysTotal += newStakedHearts * newStakedDays;
 
         /*
             The startStake timestamp will always be part-way through the current
@@ -139,6 +140,8 @@ contract StakeableToken is UTXORedeemableToken {
         /* st._unpooledDay has changed */
         _updateStake(stRef, st);
 
+        g._heartsDaysTotal -= st._stakedHearts * st._stakedDays;
+
         _saveGlobals1(g);
         _syncGlobals2(g, gSnapshot);
     }
@@ -219,6 +222,8 @@ contract StakeableToken is UTXORedeemableToken {
         }
 
         _removeStakeFromList(stakeListRef, stakeIndex);
+
+        g._heartsDaysTotal -= st._stakedHearts * st._stakedDays;
 
         _saveGlobals1(g);
         _syncGlobals2(g, gSnapshot);
@@ -362,6 +367,14 @@ contract StakeableToken is UTXORedeemableToken {
             stakeReturn = st._stakedHearts + payout;
         } else {
             payout = calcPayoutRewards(st._stakeShares, st._pooledDay, st._pooledDay + servedDays);
+            /*
+                If this stake spans across the end of claim phase, payout their portion of accumulated WAAS
+                in the amount of staked hearts * days / total hearts * days on last claim day
+            */
+            if(st._pooledDay <= CLAIM_PHASE_DAYS && st._pooledDay + servedDays > CLAIM_PHASE_DAYS){
+                payout += dailyData[CLAIM_PHASE_DAYS].dayRewardTotal * st._stakedDays * st._stakedHearts / dailyData[CLAIM_PHASE_DAYS].heartsDaysTotal;
+            }
+
             stakeReturn = st._stakedHearts + payout;
 
             penalty = _calcLatePenalty(
